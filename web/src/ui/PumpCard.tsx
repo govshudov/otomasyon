@@ -52,7 +52,8 @@ export function PumpCard({ p, press, ratedA, onOpen }: {
       </div>
 
       <div className="tile warnRows">
-        {([['Temperatura', p.warn.temp], ['Tok', p.warn.tok], ['Suw derejesi', p.warn.level]] as [string, Sev][]).map(([l, s]) => (
+        {([['Temperatura', p.warn.temp], ['Tok', p.warn.tok],
+           [`Suw derejesi${p.level !== null ? ` · ${p.level.toFixed(2)} m` : ''}`, p.warn.level]] as [string, Sev][]).map(([l, s]) => (
           <div key={l} className={`wr ${s}`}><i />{l}<b>{SEV_TK[s]}</b></div>
         ))}
       </div>

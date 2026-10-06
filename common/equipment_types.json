@@ -242,6 +242,38 @@
         }
       }
     },
+    "level_sensor": {
+      "label": "Suw derejesiniň datçigi",
+      "node": "LT",
+      "$comment": "Her nasosyň sorujy öýjüginde (emme hücresi) suw derejesi. Hücre seviyesi havuzdan pompa debisiyle orantılı düşük olur (giriş kaybı); kavitasyon riskini ilk bu gösterir.",
+      "components": {},
+      "signals": {
+        "level_m": {
+          "label": "Suwuň derejesi",
+          "unit": "m",
+          "type": "float",
+          "range": [
+            0,
+            7
+          ],
+          "deadband": 0.01,
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": "<",
+              "value": 0.9,
+              "msg": "Suwuň derejesi örän pes — kawitasiýa howpy"
+            },
+            {
+              "level": "WARN",
+              "op": "<",
+              "value": 1.3,
+              "msg": "Suwuň derejesi pes"
+            }
+          ]
+        }
+      }
+    },
     "pump_hsc": {
       "label": "Gorizontal bölünýän korpusly nasos",
       "node": "PMP",

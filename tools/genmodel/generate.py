@@ -24,6 +24,7 @@ ROOT = HERE.parent.parent
 
 import bpy                                                     # noqa: E402
 
+import building as bldmod                                      # noqa: E402
 import civil                                                   # noqa: E402
 import export as exportmod                                     # noqa: E402
 import intake                                                  # noqa: E402
@@ -77,6 +78,7 @@ def main() -> int:
     print(f"\n=== {station['station_id']} — {station.get('name','')} ===")
 
     # ---------------- Yerleşim ---------------- #
+    pumpmod.configure(pa)
     cg = civil.cell_grid(g)
     civil.check_plan(g, cg)
     units, y_shift = pumpmod.layout(station, g, cg["centers"])
@@ -84,17 +86,50 @@ def main() -> int:
         print(f"  yelpaze için pompa sıraları ve kolektör {y_shift:.2f} m geri çekildi")
     if len(units) > cg["n"]:
         raise ValueError(f"{len(units)} pompa var ama {cg['n']} hücre — her pompanın hücresi olmalı")
+    pads = [pumpmod.footprint(u["eq"]["params"], u["x"], u["y"], u["side"], ground) for u in units]
+    hdr_cfg = dict(g["headers"], y=g["headers"]["y"] + y_shift)
 
     # ---------------- Beton yapı (tek mesh) ---------------- #
     b = prim.Builder()
     civil.channel(g, b)
     civil.cells(g, b, cg)
     br = civil.bridge(g, b)
-    civil.pump_pads(b, [pumpmod.footprint(u["eq"]["params"], u["x"], u["y"], u["side"], ground)
-                        for u in units])
+    civil.pump_pads(b, pads)
     ob = b.finish("STATIC__CIVIL")
     reg.structural(ob, "CIVIL")
     materials.assign(ob, mats["CONCRETE"])
+
+    # ---------------- Bina + toprak ---------------- #
+    bp = None
+    if "building" in g:
+        bp = bldmod.plan(g["building"], pa, g["channel"]["deck_el"], pads, hdr_cfg["y"])
+        bldmod.build(reg, mats, bp)
+        print(f"  bina: {2 * bp['xo']:.1f} × {bp['y1'] - bp['y0']:.1f} m, taban {bp['floor']:.2f}, "
+              f"saçak {bp['eave']:.2f}, mahya {bp['ridge']:.2f}")
+    z_pipe = ground + pumpmod.axis_height(units[0]["eq"]["params"])
+    by_id = {e["id"]: e for e in station["equipment"]}
+    fm_offset = bp["fm_offset"] if bp else None
+    pits = []
+    if bp and "meter_pit" in g:
+        # Ana hatlar binadan çıkınca toprağa girer; debimetreler binanın
+        # arkasında toprağa gömülü, üstü açık beton kuyularda durur.
+        # Ana hat x'i kolektörün ortası = beslediği pompaların ortalaması.
+        hx: dict[str, list[float]] = {}
+        for u in units:
+            hx.setdefault(u["eq"]["header"], []).append(u["x"])
+        mp = g["meter_pit"]
+        cy = bp["y1"] + mp["dist"]
+        pits = bldmod.meter_pits(reg, mats, mp, [sum(v) / len(v) for v in hx.values()], cy,
+                                 g["channel"]["deck_el"], z_pipe,
+                                 max(piping.radius(by_id[h]["params"]["dn"]) for h in hx))
+        fm_offset = cy - hdr_cfg["y"]
+        print(f"  debimetre kuyusu: {len(pits)} adet, bina arkasından {mp['dist']:.1f} m")
+    if "soil" in g:
+        sb = bldmod.soil(reg, mats, g, cg, bp, g["soil"], pits)
+        print(f"  toprak: x ±{sb['X']:.1f}, y {sb['y_a']:.1f} … {sb['y_b']:.1f}, taban {sb['z_bottom']:.2f}")
+        if bp:
+            # Ana hat bina duvarından çıkıp toprağın kesit yüzünde biter
+            hdr_cfg["run_length"] = sb["y_b"] - hdr_cfg["y"]
 
     print(f"  hücre sırası: {cg['n']} hücre, {cg['total_w']:.2f} m; "
           f"kanal {abs(g['channel']['plan'][0][0]):.1f} m")
@@ -105,8 +140,6 @@ def main() -> int:
     # ---------------- Pompa üniteleri + emme/basma hatları ---------------- #
     nrv_of = {e["source_pump"]: e for e in by_type.get("check_valve", [])}
     vlv_of = {e["interlock_pump"]: e for e in by_type.get("butterfly_valve", [])}
-    hdr_cfg = dict(g["headers"], y=g["headers"]["y"] + y_shift)
-    by_id = {e["id"]: e for e in station["equipment"]}
     header_xs: dict[str, list[float]] = {}
     built = {}
     for u in units:
@@ -116,10 +149,12 @@ def main() -> int:
                               piping.radius(prm["dn_suction"]), piping.radius(prm["dn_discharge"]))
         built[eq["id"]] = parts
         piping.suction_line(reg, mats, eq, u["cell_x"], cg["end_wall"], pa["riser_y"],
-                            pa["suction_el"], parts["_suction_point"])
+                            pa.get("suction_el"), parts["_suction_point"],
+                            drop_y=-cg["depth"] / 2.0,
+                            bell_z=g["channel"]["invert_el"] + pa.get("bell_clearance", 0.45))
         r_hdr = piping.radius(by_id[eq["header"]]["params"]["dn"])
         p_nrv, p_vlv, r = piping.discharge_line(reg, mats, eq, parts["_discharge_point"],
-                                                hdr_cfg["y"], r_hdr)
+                                                hdr_cfg["y"], r_hdr, with_nrv=eq["id"] in nrv_of)
         if eq["id"] in nrv_of:
             piping.check_valve(reg, mats, nrv_of[eq["id"]], p_nrv, r)
         if eq["id"] in vlv_of:
@@ -127,9 +162,9 @@ def main() -> int:
         header_xs.setdefault(eq["header"], []).append(u["x"])
     print(f"  pompa üniteleri: {len(built)} adet")
 
-    z_pipe = ground + pumpmod.axis_height(units[0]["eq"]["params"])
     for hid, xs in header_xs.items():
-        xm = piping.header(reg, mats, by_id[hid], xs, hdr_cfg["y"], z_pipe, hdr_cfg["run_length"])
+        xm = piping.header(reg, mats, by_id[hid], xs, hdr_cfg["y"], z_pipe, hdr_cfg["run_length"],
+                           fm_offset=fm_offset)
         print(f"  {hid}: {len(xs)} pompa, ana hat x={xm:+.2f}")
     print(f"  armatür: {len(nrv_of)} çekvalf, {len(vlv_of)} vana")
 
@@ -138,6 +173,13 @@ def main() -> int:
         intake.slide_gate(reg, mats, e, g, br)
     for e in by_type.get("trash_rack", []):
         intake.trash_rack(reg, mats, e, g, br)
+    cell_of = {u["eq"]["id"]: u["cell_x"] for u in units}
+    for e in by_type.get("level_sensor", []):
+        # Havuz tarafı: hücrenin ön kirişinde, hücrenin içine bakar; havuzdan
+        # bakınca SAĞ köşede (+X, perdenin yanı). Horn yarıçapı 0,16 + 0,09 pay.
+        intake.level_sensor(reg, mats, e, cell_of[e["source_pump"]] + cg["w"] / 2.0 - 0.25, g, cg)
+    if by_type.get("level_sensor"):
+        print(f"  seviye datçiği: {len(by_type['level_sensor'])} adet (hücre girişlerinde, havuz tarafı)")
 
     nominal = station["hydraulics"]["basin"].get("design_level", 3.2)
     for e in by_type.get("basin", []):

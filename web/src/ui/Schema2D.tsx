@@ -60,10 +60,9 @@ function sigDef(twin: TwinMap | null, eq: string, key: string): SignalDef | unde
   return e.components[c]?.signals[m]
 }
 
-export function Schema2D({ twin, station, onOpen3D }: {
+export function Schema2D({ twin, station }: {
   twin: TwinMap | null
   station: StationInfo
-  onOpen3D: (equipment: string) => void
 }) {
   const values = useTwin((s) => s.values)
   const stale = useTwin((s) => s.stale)
@@ -166,11 +165,10 @@ export function Schema2D({ twin, station, onOpen3D }: {
                              const v = views[id]
                              return v ? `${MODE_TK[v.mode]} · ${v.press === null ? '—' : v.press.toFixed(2)} bar` : '—'
                            }}
-                           cls={cls} onPick={onOpen3D} />
+                           cls={cls} />
               <LoadChart sid={sid} pumps={g.pumps} />
               <div className="tblTitle">
                 <b>Nasoslaryň jemleýji tablisasy</b>
-                <span className="sub2">dokun → 3D-de görkez</span>
               </div>
               <table className="tbl">
                 <thead>
@@ -183,7 +181,7 @@ export function Schema2D({ twin, station, onOpen3D }: {
                   {g.pumps.map((p, i) => {
                     const pv = views[p.id]
                     return (
-                      <tr key={p.id} onClick={() => onOpen3D(p.id)}>
+                      <tr key={p.id}>
                         <td><i className="dot" style={{ background: SERIES[i % SERIES.length] }} />
                           <b>{sid} {p.label}</b><div className="sub2">{p.id}</div></td>
                         <td><span className={`chip ${cls(p.id)}`}>
@@ -224,7 +222,7 @@ export function Schema2D({ twin, station, onOpen3D }: {
 
 const ROW = 58
 
-function GroupSchema({ sid, pumps, header, headerFlow, press, info, cls: clsOf, onPick }: {
+function GroupSchema({ sid, pumps, header, headerFlow, press, info, cls: clsOf }: {
   sid: string
   pumps: EqCfg[]
   header: EqCfg
@@ -232,7 +230,6 @@ function GroupSchema({ sid, pumps, header, headerFlow, press, info, cls: clsOf, 
   press: number | null
   info: (id: string) => string
   cls: (id: string) => string
-  onPick: (id: string) => void
 }) {
   const H = Math.max(pumps.length * ROW + 24, 150)
   const ys = pumps.map((_, i) => 12 + ROW / 2 + i * ROW + (H - 24 - pumps.length * ROW) / 2)
@@ -260,7 +257,7 @@ function GroupSchema({ sid, pumps, header, headerFlow, press, info, cls: clsOf, 
         const y = ys[i]
         const cls = clsOf(p.id)
         return (
-          <g key={p.id} className={`pumpRow ${cls}`} onClick={() => onPick(p.id)}>
+          <g key={p.id} className={`pumpRow ${cls}`}>
             <line x1={14} y1={y} x2={52} y2={y} className="feed" markerEnd="url(#ah)" />
             <rect x={58} y={y - 21} width={206} height={42} rx={6} className="box" />
             <text x={68} y={y - 5} className="name">{sid} {p.label}</text>

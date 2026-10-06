@@ -16,8 +16,14 @@ from mathutils import Vector
 
 from prim import Builder
 
-PAD_H = 0.25          # beton kaide kalınlığı
+PAD_H = 0.25          # beton kaide kalınlığı (pump_area.pad_h ile değişir)
 FRAME_H = 0.18        # çelik şase yüksekliği
+
+
+def configure(pa: dict) -> None:
+    """İstasyona özgü kaide yüksekliği. PS-21 çizimi: kaide 200,70 − taban 200,10 = 0,6 m."""
+    global PAD_H
+    PAD_H = float(pa.get("pad_h", PAD_H))
 
 
 def _scale(params: dict) -> float:

@@ -6,6 +6,10 @@ dikmeleri suyun içinden tabana iner. Soldaki sürgülü kapak, sağdaki ızgara
 """
 from __future__ import annotations
 
+import math
+
+from mathutils import Vector
+
 from prim import Builder
 
 GAP = 0.18            # iki panel arası boşluk
@@ -65,6 +69,38 @@ def slide_gate(reg, mats, eq: dict, g: dict, br: dict) -> None:
     ob = ho.finish(f"__hoist_{eid}")
     reg.equipment(ob, eid, "GATE__HOIST")
     ob.data.materials.append(mats["DARK"])
+
+
+def level_sensor(reg, mats, eq: dict, x: float, g: dict, cg: dict) -> None:
+    """Emme hücresi seviye datçiği — TEMASSIZ (radar/ultrasonik), suya girmez.
+
+    HAVUZ TARAFINDA, HÜCRENİN İÇİNE BAKAR: hücrenin ön kirişinin (havuz
+    tarafındaki kiriş) üstünde zeminle bir yatık taban plakası; oradan
+    hücrenin içine (pompa yönüne) kısa bir çıkıntı, ucunda kenarın hemen
+    altında aşağı bakan radar gövdesi + horn — hücredeki suyu ölçer.
+    Dikme/kol yok (vinç gibi durmasın). Hücrenin köşesinde (x çağırandan);
+    emme borusu hücre ekseninde, radar ışını ona değmez.
+    Tek düğüm — dokununca datçiğin kendi kartı açılır.
+    """
+    deck = g["channel"]["deck_el"]
+    y_face = -cg["depth"]                         # ön kirişin hücreye bakan yüzü
+    y_s = y_face + 0.38                           # radar ekseni: yüzden hücre içine 0,38 m
+    b = Builder()
+    b.box((0.26, 0.42, 0.03), (x, y_face - 0.17, deck + 0.015))                 # taban plakası (kiriş üstü)
+    y_a, y_b = y_face - 0.11, y_s + 0.11                                        # çıkıntı: kiriş üstünden radarın ucuna
+    b.box((0.10, y_b - y_a, 0.05), (x, (y_a + y_b) / 2.0, deck + 0.025))        # havuza çıkıntı
+    b.cylinder(0.10, 0.24, seg=16, loc=(x, y_s, deck - 0.10))                   # radar gövdesi
+    # Horn — aşağı açılır. Kesitler ARTAN kotla: loft kapak/yüz yönü buna bağlı
+    # (ters sırada normaller içe döner, three.js yüzleri eler).
+    rings = [(0.16, deck - 0.42), (0.09, deck - 0.22)]
+    b.loft([[Vector((x + r * math.cos(math.tau * i / 16), y_s + r * math.sin(math.tau * i / 16), z))
+             for i in range(16)] for r, z in rings])
+    ob = b.finish(f"__lt_{eq['id']}")
+    reg.equipment(ob, eq["id"])
+    ob.data.materials.append(mats["MACHINE"])
+    # Arayüzün ölçüm yazısını koyacağı nokta: radar gövdesinin hemen yanı
+    # (Blender koordinatı). Frontend geometriyi bilmeden yazıyı oraya bağlar.
+    ob["label_anchor"] = [round(x + 0.18, 3), round(y_s, 3), round(deck - 0.08, 3)]
 
 
 def trash_rack(reg, mats, eq: dict, g: dict, br: dict, w: float = 2.0,

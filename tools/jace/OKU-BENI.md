@@ -5,7 +5,18 @@
 Veriyi `station:|slot:/Twin/PS-01/...` noktalarından BajaScript ile okur
 (`web/src/data/niagara.ts`).
 
-## Hazırlık (her oturumda bir kez)
+## Tek komut (önerilen)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\jace\kur.ps1          # hazır paketi kurar
+powershell -ExecutionPolicy Bypass -File tools\jace\kur.ps1 -Build   # önce derler + paketler
+```
+
+Chrome'u gerekirse kendisi açar, JACE şifresini sorar, yedeği masaüstünde
+`twin_yedek_<tarih_saat>` klasörüne alır. Giriş başarısızsa artık açıkça
+"JACE'e giriş yapılamadı" der (önceden anlaşılmaz `/requirejs/config.js` hatası veriyordu).
+
+## Hazırlık — elle (her oturumda bir kez)
 
 Araçlar başsız Chrome'u DevTools portu 9333'ten sürer:
 
@@ -50,7 +61,7 @@ node tools\jace\deploy.mjs web\dist-niagara C:\Users\User\Desktop\twin_yedek_<ta
 2. geçici `FileDropTmp` programı (`/Twin` altında) — derlenmiş sınıf `FileDrop.program.json`
 3. yeni dosyalar `file:^twin`'e (index.html en sona), artık kullanılmayanlar silinir
 4. program kaldırılır; arayüzün kullandığı `/Twin/PS-01/...` noktalarından **eksik olanlar** eklenir
-   (pompa başına 16, esasy turba başına 3, howuz 1). Var olan noktaya ve değerine dokunulmaz,
+   (pompa başına 16, esasy turba başına 3, howuz 1, LT datçiği başına level_m + state). Var olan noktaya ve değerine dokunulmaz,
    hiçbir nokta silinmez. Nokta eklendiyse istasyon kaydedilir.
 
 Eklenecek listeyi JACE'e bağlanmadan görmek: `node tools\jace\deploy.mjs x y --plan`

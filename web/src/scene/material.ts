@@ -57,7 +57,13 @@ const FRAG_HEAD = /* glsl */ `
 `
 
 const FRAG_BODY = /* glsl */ `
-  diffuseColor.rgb = mix(diffuseColor.rgb, vState.rgb, vState.a);
+  // Durum/seçim rengi pişirilmiş ışıkla (köşe rengi) gölgelenerek karıştırılır.
+  // Düz renk karıştırılınca yüksek güçte parça tek renk lekeye dönüyor, motor
+  // kanatçıkları ve flanşlar ayırt edilemiyordu. 0.62 ≈ aydınlık üst yüzün
+  // köşe değeri: üst yüz durum renginin kendisi, yan ve oyuklar koyusu.
+  float shadeL = dot(vColor.rgb, vec3(0.3333));
+  vec3 stateLit = vState.rgb * clamp(shadeL / 0.62, 0.12, 1.4);
+  diffuseColor.rgb = mix(diffuseColor.rgb, stateLit, vState.a);
   // Akış: boru ekseni boyunca yürüyen bant. Dalga boyu 2.2 m — gerçek bir
   // borudaki akışı okunur kılan ölçek. Genlik sıfırsa hesap etkisiz.
   if (vFlow.y > 0.002) {

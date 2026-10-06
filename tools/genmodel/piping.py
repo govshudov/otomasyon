@@ -65,22 +65,36 @@ def _flow_extras(ob, area_r: float, w: tuple[float, float, float],
 # Emme hattı
 # --------------------------------------------------------------------------- #
 
-def suction_line(reg, mats, pump_eq: dict, cell_x: float, wall_out_y: float,
-                 riser_y: float, suction_z: float, inlet: Vector, seg: int = 14) -> None:
-    """Hücreden pompanın emme flanşına.
+def _bell(b: Builder, x: float, y: float, z: float, r: float, seg: int) -> None:
+    """Emme ağzı (voronka): ağzı aşağı bakan kesik koni, borunun ucunda."""
+    rings = [(r * 1.75, z), (r * 1.75, z + 0.06), (r * 1.02, z + 0.42)]
+    b.loft([[Vector((x + rr * math.cos(math.tau * i / seg), y + rr * math.sin(math.tau * i / seg), zz))
+             for i in range(seg)] for rr, zz in rings])
 
-    Başlık duvarının içinden yatay çıkar, duvar dibinde yükselir, pompa
-    kotunda dirsekle döner ve 45° kırılarak pompanın eksenine kayar.
+
+def suction_line(reg, mats, pump_eq: dict, cell_x: float, wall_out_y: float,
+                 riser_y: float, suction_z: float | None, inlet: Vector,
+                 drop_y: float, bell_z: float, seg: int = 14) -> None:
+    """Hücredeki emme ağzından pompanın emme flanşına.
+
+    Hücrenin ortasında suya dik inen ağızdan yükselir, başlık duvarını
+    `suction_z` kotunda (verilmezse pompa ekseni kotunda) yatay geçer;
+    kot farkı varsa duvar dibinde dirsekle pompa eksenine çıkar ve 45°
+    kırılarak pompanın eksenine kayar. PS-21 çizimindeki gibi hat havuza
+    suyun ÜSTÜNDEN girer, ağız aşağıda suyun içindedir.
     """
     eid = pump_eq["id"]
     r = radius(pump_eq["params"]["dn_suction"])
     z = inlet.z
+    zs = z if suction_z is None else suction_z
     dx = inlet.x - cell_x
     y_jog = riser_y + 1.0
-    path = [Vector((cell_x, wall_out_y - 0.6, suction_z)),
-            Vector((cell_x, riser_y, suction_z)),
-            Vector((cell_x, riser_y, z)),
-            Vector((cell_x, y_jog, z))]
+    path = [Vector((cell_x, drop_y, bell_z + 0.40)),
+            Vector((cell_x, drop_y, zs)),
+            Vector((cell_x, riser_y, zs))]
+    if abs(zs - z) > 0.05:
+        path.append(Vector((cell_x, riser_y, z)))
+    path.append(Vector((cell_x, y_jog, z)))
     if abs(dx) > 0.05:
         path.append(Vector((inlet.x, y_jog + abs(dx), z)))
     path.append(inlet)
@@ -88,8 +102,11 @@ def suction_line(reg, mats, pump_eq: dict, cell_x: float, wall_out_y: float,
 
     b = Builder()
     b.sweep(pts, r, ring_seg=seg)
-    flange_pair(b, Vector((cell_x, wall_out_y + 0.12, suction_z)), 'Y', r, seg)   # duvar çıkışı
-    flange_pair(b, Vector((cell_x, riser_y, z - 1.2)), 'Z', r, seg)              # yükseltici
+    _bell(b, cell_x, drop_y, bell_z, r, seg + 2)
+    flange_pair(b, Vector((cell_x, -0.15, zs)), 'Y', r, seg)                     # havuz tarafı duvar geçişi
+    flange_pair(b, Vector((cell_x, wall_out_y + 0.12, zs)), 'Y', r, seg)          # duvar çıkışı
+    if abs(zs - z) > 0.05:
+        flange_pair(b, Vector((cell_x, riser_y, z - 1.2)), 'Z', r, seg)          # yükseltici
     flange_pair(b, inlet + Vector((0, -0.35, 0)), 'Y', r, seg)                   # pompa önü
     ob = b.finish(f"__su_{eid}")
     reg.equipment(ob, eid, "PIPE__SUCTION")
@@ -102,10 +119,11 @@ def suction_line(reg, mats, pump_eq: dict, cell_x: float, wall_out_y: float,
 # --------------------------------------------------------------------------- #
 
 def discharge_line(reg, mats, pump_eq: dict, outlet: Vector, y_header: float,
-                   r_header: float, seg: int = 14) -> tuple[Vector, Vector, float]:
-    """Pompa basma flanşından kolektöre düz hat + kompansatör.
+                   r_header: float, seg: int = 14, with_nrv: bool = True) -> tuple[Vector, Vector, float]:
+    """Pompa basma flanşından kolektöre düz hat (kompansatör/körük yok).
 
-    Dönen: (çekvalf noktası, vana noktası, boru yarıçapı).
+    Dönen: (çekvalf noktası, vana noktası, boru yarıçapı). PS-01'de çekvalf
+    yok; nokta, konfigürasyonunda çekvalf olan istasyonlar için duruyor.
     """
     eid = pump_eq["id"]
     r = radius(pump_eq["params"]["dn_discharge"])
@@ -114,18 +132,14 @@ def discharge_line(reg, mats, pump_eq: dict, outlet: Vector, y_header: float,
     b = Builder()
     b.sweep([outlet, end], r, ring_seg=seg)
     flange_pair(b, outlet + Vector((0, 0.12, 0)), 'Y', r, seg)
-    # Kompansatör (körük) — pompa titreşimini hattan yalıtır
-    for i in range(5):
-        b.tube(r * 1.28, r * 1.0, 0.045, seg=seg,
-               loc=(outlet.x, outlet.y + 0.42 + i * 0.075, outlet.z), axis='Y')
-    flange_pair(b, outlet + Vector((0, 0.82, 0)), 'Y', r, seg)
     ob = b.finish(f"__br_{eid}")
     reg.equipment(ob, eid, "PIPE__DISCHARGE")
     ob.data.materials.append(mats["PIPE"])
     _flow_extras(ob, r, (0.0, 1.0, 0.0))
 
     p_nrv = outlet + Vector((0, 1.35, 0))
-    p_vlv = outlet + Vector((0, 2.20, 0))
+    # Çekvalf varsa vana onun mansabında, yoksa pompaya yakın
+    p_vlv = outlet + Vector((0, 2.20 if with_nrv else 1.20, 0))
     return p_nrv, p_vlv, r
 
 
@@ -144,7 +158,9 @@ def check_valve(reg, mats, eq: dict, point: Vector, r: float, seg: int = 14) -> 
 
 
 def butterfly_valve(reg, mats, eq: dict, point: Vector, r: float, seg: int = 14) -> None:
-    """Vana: boru üzerinde gövde + üstte dişli kutusu ve beyaz el çarkı."""
+    """Motorlu vana: boru üzerinde gövde + üstte elektrikli aktüatör
+    (redüktör, dikey aktüatör gövdesi, yanda elektrik motoru, üstte yerel
+    kumanda kutusu). El çarkı yok — vana PLC'den sürülür."""
     eid = eq["id"]
     body = Builder()
     body.tube(r * 1.25, r * 0.97, 0.30, seg=seg, loc=tuple(point), axis='Y')
@@ -157,12 +173,14 @@ def butterfly_valve(reg, mats, eq: dict, point: Vector, r: float, seg: int = 14)
     ob.data.materials.append(mats["PIPE"])
 
     zt = r * 1.75
+    P = lambda dx, dz: tuple(point + Vector((dx, 0, zt + dz)))                      # noqa: E731
     act = Builder()
-    act.box((0.24, 0.20, 0.16), tuple(point + Vector((0, 0, zt + 0.08))))         # dişli kutusu
-    act.cylinder(0.025, 0.22, seg=6, loc=tuple(point + Vector((0, 0, zt + 0.27))))  # mil
-    act.tube(0.24, 0.20, 0.035, seg=18, loc=tuple(point + Vector((0, 0, zt + 0.38))))  # el çarkı
-    for rz in (0.0, math.pi / 2):
-        act.box((0.42, 0.025, 0.025), tuple(point + Vector((0, 0, zt + 0.38))), rot_z=rz)
+    act.box((0.26, 0.22, 0.16), P(0.0, 0.08))                                        # redüktör
+    act.cylinder(0.13, 0.30, seg=16, loc=P(0.0, 0.31))                               # aktüatör gövdesi
+    act.cylinder(0.085, 0.30, seg=14, loc=P(0.27, 0.28), axis='X')                    # elektrik motoru
+    act.cylinder(0.07, 0.05, seg=14, loc=P(0.445, 0.28), axis='X')                   # motor fan kapağı
+    act.box((0.18, 0.15, 0.16), P(0.0, 0.54))                                        # yerel kumanda kutusu
+    act.cylinder(0.03, 0.04, seg=8, loc=P(0.0, 0.64))                                # seçici/ışık
     ob = act.finish(f"__va_{eid}")
     reg.equipment(ob, eid, "VLV__ACTUATOR")
     ob.data.materials.append(mats["MACHINE"])
@@ -173,9 +191,11 @@ def butterfly_valve(reg, mats, eq: dict, point: Vector, r: float, seg: int = 14)
 # --------------------------------------------------------------------------- #
 
 def header(reg, mats, eq: dict, xs: list[float], y: float, z: float,
-           run_length: float, seg: int = 16) -> float:
+           run_length: float, seg: int = 16, fm_offset: float | None = None) -> float:
     """Kolektör: pompaları toplayan enine hat + ortasından uzağa giden ana hat.
 
+    `fm_offset`: debimetrenin kolektörden uzaklığı (m). Bina varsa debimetre
+    bina içinde kalmalı — ana hat duvardan çıkınca toprağa girer.
     Dönen: ana hattın x konumu.
     """
     eid = eq["id"]
@@ -197,7 +217,7 @@ def header(reg, mats, eq: dict, xs: list[float], y: float, z: float,
     b.tube(r * 1.2, r * 0.98, r * 1.4, seg=seg, loc=(xm, y + r * 0.9, z), axis='Y')  # T yakası
     b.cylinder(r * 1.15, 0.10, seg=seg, loc=(xm, y_end, z), axis='Y')               # kör flanş
     # Debimetre: iki flanş arasında gövde + üstte transmitter
-    y_fm = y + run_length * 0.72
+    y_fm = y + (run_length * 0.72 if fm_offset is None else fm_offset)
     flange_pair(b, Vector((xm, y_fm - 0.45, z)), 'Y', r, seg)
     flange_pair(b, Vector((xm, y_fm + 0.45, z)), 'Y', r, seg)
     b.cylinder(r * 1.08, 0.80, seg=seg, loc=(xm, y_fm, z), axis='Y')

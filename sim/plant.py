@@ -92,6 +92,9 @@ class Plant:
         self.gates: dict[str, SlideGate] = {e["id"]: SlideGate(e, self.rng) for e in by_type.get("slide_gate", [])}
         self.racks: dict[str, TrashRack] = {e["id"]: TrashRack(e, self.rng) for e in by_type.get("trash_rack", [])}
         self.basin_id = by_type["basin"][0]["id"]
+        # Emme hücresi seviye datçikleri: datçik → beslediği pompa
+        self.level_sensors: dict[str, str] = {e["id"]: e["source_pump"] for e in by_type.get("level_sensor", [])}
+        self._lt_noise: dict[str, float] = {k: 0.0 for k in self.level_sensors}
 
         # Kolektörler: sürtünme katsayısı tasarım noktasından türetilir
         self.headers: dict[str, dict] = {}
@@ -239,6 +242,15 @@ class Plant:
             out[hid] = {"v": {"flow_m3h": h["flow"], "total_m3": h["total"],
                               "press_bar": h["press"], "velocity_ms": h["vel"]},
                         "s": {"state": "RUNNING" if h["flow"] > 5 else "STOPPED", "mode": "AUTO"}}
+        for lid, pid in self.level_sensors.items():
+            # Datçik hücre girişinde (havuz tarafı): seviye havuzdan biraz düşük,
+            # hücreye akış hızlandıkça debinin karesiyle (anma debisinde ~0,06 m).
+            # Gürültü yumuşatılmış — dalgalanma gibi.
+            pump = self.pumps[pid]
+            q = pump.q / max(pump.p["rated_flow_m3h"], 1.0)
+            n = self._lt_noise[lid] = self._lt_noise[lid] * 0.85 + self.rng.gauss(0.0, 0.006)
+            out[lid] = {"v": {"level_m": max(0.0, lvl - 0.06 * q * q + n)},
+                        "s": {"state": "RUNNING", "mode": "AUTO"}}
         for group in (self.pumps, self.valves, self.nrvs, self.gates, self.racks):
             for eq in group.values():
                 out[eq.id] = {"v": eq.signals(), "s": eq.status()}

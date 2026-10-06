@@ -175,7 +175,18 @@ onu bitiriyordu.
 `this.tex`'e koşulsuz yazıyor). `this.controls` referansı BIRAKILMIYOR —
 döngü ve kamera yardımcıları onu sekiz yerde koşulsuz kullanıyor.
 
-## 6.9 Pompa izleme panosu — 6 Ekim 2026 (BURADAN DEVAM)
+## 6.10 Pompa izleme panosu — 6 Ekim 2026 (BURADAN DEVAM)
+
+**İki bilgisayarın birleştirilmesi (6 Ekim akşamı):** 4 Ekim'den sonra iş ikiye ayrıldı —
+Dell'de 3D model (§6.9: bina, toprak, debimetre kuyuları, hücre seviye datçikleri LT-01…06,
+motorlu vanalar, NRV'siz basma hattı, sarı uyarı rengi), bu PC'de pompa izleme panosu (aşağısı).
+GitHub'daki iki ilk commit ortak geçmişe sahip değildi; birleştirmede 3D/model/üretici dosyaları
+Dell'den, pano/veri modeli/simülatör bu PC'den alındı, çakışan dosyalar (App, InfoCard, Schema2D,
+styles, TwinScene, katalog, istasyon, plant.py, deploy.mjs, belgeler) elle birleştirildi.
+Nasos kartındaki **Suw derejesi** artık nasosun kendi LT datçiğinden (yoksa howuzdan);
+2D şema Dell'deki gibi salt görüntü (3D'ye geçirmez). `.gitignore`'daki `data/` satırı
+`web/src/data/`'yı da dışlıyordu — iki tarafta da GitHub'a gitmemişti; `/data/` yapıldı.
+JACE paketi Dell'in modeliyle (parçalardan birleştirilen `build/ps-01-plain.glb`) yeniden üretildi.
 
 Kullanıcı referans olarak i4 Cortex pompa panosunun iki ekranını verdi (kart düzeni +
 büyük grafik). İstekler ve karşılıkları:
@@ -222,6 +233,50 @@ her yanıtta `X-Frame-Options: SAMEORIGIN` gönderiyor (yerel istasyonda ölçü
 arayüz Px ile AYNI istasyondan açılınca çalışır. TV_PX/MAPS.px yerel süpervizör
 istasyonlarında (SCADA_ANEW_*) var; JACE'te olup olmadığı bilinmiyor → arayüzün hangi
 istasyondan açılacağı kullanıcıya soruldu.
+
+## 6.9 Bina, toprak, alçak pompalar — 4 Ekim 2026 (web'de denendi, JACE'e henüz gitmedi)
+
+Ölçüler `1-25-4-Здание насосной станции_TX.dwg`'den (AutoCAD `accoreconsole` ile DXF/PDF'e
+çevrilip okundu). Kanal tabanı 0 = mutlak 197,40:
+
+| | Çizim | Model |
+|---|---|---|
+| Zemin ±0.00 | 203,90 | `deck_el` 6,5 |
+| Makine dairesi tabanı | 200,10 | `pump_area.ground_el` 2,7 (önce 6,5) |
+| Pompa kaidesi | 200,70 | `pad_h` 0,6 → eksen 4,06 |
+| Saçak / mahya | +7,83 / +8,78 | `building.eave_h` / `ridge_h` |
+
+- **Emme hattı** başlık duvarını pompa ekseni kotunda yatay geçer (suyun üstünden),
+  hücrenin ortasında dik iner, ucunda voronka suyun içinde (`suction_el: null`).
+- **Bina** (`tools/genmodel/building.py`): bodrum (hep görünür) + 4 duvar + çatı. Duvarlar
+  dış normalini `face_n` extras'ında taşır; arayüz **çatıyı ve kameraya bakan duvarları
+  gizler** ("Bina: kesik"), üst çubuktaki düğme binayı tam gösterir ("Bina: doly").
+  Gizli duvarlar seçim ışınında da atlanır.
+- **Toprak** (`STATIC__SOIL`): yapıların altını/çevresini dolduran blok. Yeni malzeme
+  açılmadı — beton malzemesinde, rengi köşe tonundan (`bake_tint`). **Draw call değişmedi.**
+- **Debimetre kuyuları** (`STATIC__FM-PIT`, `geometry.meter_pit`): toprak bina arkasında
+  9 m uzatıldı; her ana hatta bina dış yüzünden 4 m ötede, toprağa gömülü üstü açık
+  beton kuyu (3,0 × 4,0 m). Ana hat kuyudan geçer, debimetre (kolektör düğümünün
+  parçası) kuyunun ortasında. Kuyu ~2,6 m derin: debimetre yukarıdan/dik açıdan görünür.
+- Verisi olmayan yapılar (beton, toprak, bina, kuyu) seçilmez/vurgulanmaz; 2D şema
+  3D'ye geçirmez; "Bina: doly"ya geçince açık pompa kartı kapanır.
+- **Emme hücresi seviye datçikleri** LT-01…06 (yeni tip `level_sensor`, `source_pump` ile
+  pompaya bağlı): **temassız radar** — başlık duvarında dikme + hücre üstüne kol + aşağı
+  bakan horn, suya girmez. Tek düğüm, dokununca kendi kartı; üstünde sürekli değer
+  etiketi ("1.96 m", `SensorTags`). Sinyal `level_m` "Suwuň derejesi" (WARN < 1,3,
+  ALARM < 0,9). Simülatör: havuz seviyesi − 0,15·(Q/Q_anma)². JACE:
+  `/Twin/PS-01/LT-0x/level_m` + `state` (StringWritable, boşsa kartta rozet yok) —
+  `deploy.mjs` yoksa ekler.
+- **Durum renkleri koyulaştı:** koyu yeşil çalışıyor, koyu kırmızı alarm/arıza, **sarı**
+  = herhangi bir uyarı (bir şey iyi çalışmıyor). Gövde + motor birlikte boyanır; borular
+  artık tonlanmıyor. Arayüzdeki `--warn` de amberden sarıya döndü.
+- **Datçik yeri:** havuz tarafı — hücrenin ön kirişinde, zeminle bir, ön havuza çıkıntı;
+  yanında sahnede sabit boyda ölçüm yazısı (`SensorLabels`, yakınlaşınca büyür).
+- **Basma hattı (PS-01):** kompansatör (körük) kaldırıldı — düz boru; **çekvalfler (NRV)
+  konfigürasyondan çıkarıldı**; vanalar **motorlu** (redüktör + aktüatör + yanda elektrik
+  motoru + yerel kumanda kutusu, el çarkı yok). JACE'teki eski `NRV-0x` noktaları
+  zararsız, arayüz kullanmıyor.
+- `building` / `soil` / `meter_pit` / `level_sensor` yalnız PS-01'de tanımlı; PS-02/03 eski hâliyle (yeniden üretilmedi).
 
 ## 6.8 JACE'e taşındı — 3–4 Ekim 2026
 

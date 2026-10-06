@@ -24,6 +24,10 @@ export interface ComponentInfo {
   flowArea: number | null
   /** Hareketli parça: eksen (glTF uzayında) ve tam strok (m). Kapak kanadı gibi. */
   travel: { axis: THREE.Vector3; range: number } | null
+  /** Bina duvarı/çatısı: dış normal (glTF uzayında). Kameraya bakınca gizlenir. */
+  faceN: THREE.Vector3 | null
+  /** Ölçüm yazısının bağlandığı nokta (glTF uzayında) — seviye datçiği gibi. */
+  labelAnchor: THREE.Vector3 | null
 }
 
 export interface MergedScene {
@@ -178,6 +182,12 @@ export function mergeByMaterial(
               : new THREE.Vector3(1, 0, 0),
             range: ud.travel_range,
           }
+        : null,
+      faceN: Array.isArray(ud.face_n) && ud.face_n.length === 3
+        ? new THREE.Vector3(Number(ud.face_n[0]), Number(ud.face_n[2]), -Number(ud.face_n[1]))
+        : null,
+      labelAnchor: Array.isArray(ud.label_anchor) && ud.label_anchor.length === 3
+        ? new THREE.Vector3(Number(ud.label_anchor[0]), Number(ud.label_anchor[2]), -Number(ud.label_anchor[1]))
         : null,
     })
     byNode.set(mesh.name, id)

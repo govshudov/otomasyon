@@ -6,4 +6,4 @@ __pycache__/
 .env
 *.blend1
 web/dist/
-data/
+/data/

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useTwin } from '../data/store'
 import type { Bucket } from '../data/history'
-import { BEARING_KEYS, LEVEL_EQ, TEMP_KEYS, sevOf, sevRank, sigDef, thresholds } from '../data/pump'
+import { BEARING_KEYS, LEVEL_EQ, TEMP_KEYS, levelIdOf, sevOf, sevRank, sigDef, thresholds } from '../data/pump'
 import type { TwinMap } from '../scene/types'
 import { ChartBoard, type ChartSpec } from './ChartBoard'
 
@@ -31,7 +31,7 @@ export function combine(list: (Bucket[] | undefined)[], f: (rows: (Bucket | unde
 export function pumpTags(sid: string, id: string): string[] {
   const k = ['run_inv', 'run_pano', 'hours_inv', 'hours_pano', 'discharge_press_bar', 'vfd_freq_hz',
     'current_a', 'power_kw', ...TEMP_KEYS, ...BEARING_KEYS]
-  return [...k.map((x) => `${sid}.${id}.${x}`), `${sid}.${LEVEL_EQ}.level_m`]
+  return [...k.map((x) => `${sid}.${id}.${x}`), `${sid}.${levelIdOf(id) ?? LEVEL_EQ}.level_m`]
 }
 
 export function buildPumpCharts(sid: string, id: string, twin: TwinMap | null, d: Record<string, Bucket[]>): ChartSpec[] {
@@ -49,8 +49,10 @@ export function buildPumpCharts(sid: string, id: string, twin: TwinMap | null, d
   const wTemp = combine(tempKeys.map(t), (rows) => rows.every((r) => !r) ? null
     : Math.max(...rows.map((r, i) => sevB(r, tempKeys[i]))))
   const wTok = combine([t('current_a')], ([r]) => (r ? sevB(r, 'current_a') : null))
-  const lvl = d[`${sid}.${LEVEL_EQ}.level_m`]
-  const wLvl = combine([lvl], ([r]) => (r ? sevB(r, 'level_m', LEVEL_EQ) : null))
+  // Suw derejesi: nasosun kendi hücre datçiği (yoksa howuz)
+  const lvlEq = levelIdOf(id) ?? LEVEL_EQ
+  const lvl = d[`${sid}.${lvlEq}.level_m`]
+  const wLvl = combine([lvl], ([r]) => (r ? sevB(r, 'level_m', lvlEq) : null))
 
   const hTotal = combine([t('hours_inv'), t('hours_pano')], ([a, b]) => (!a && !b ? null : (a?.[1] ?? 0) + (b?.[1] ?? 0)))
 

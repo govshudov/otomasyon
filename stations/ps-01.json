@@ -41,16 +41,44 @@
       "thickness": 0.6
     },
     "pump_area": {
-      "ground_el": 6.5,
+      "$comment": "PS-21 TX çizimi (kanal tabanı 0 = mutlak 197,40): makine dairesi tabanı 200,10 → 2,7; kaide 200,70 → +0,6; pompa ekseni ≈ 201,46. suction_el null = emme hattı başlık duvarını pompa ekseni kotunda yatay geçer, hücrede ağza iner.",
+      "ground_el": 2.7,
+      "pad_h": 0.6,
       "pitch": 3.8,
       "group_gap": 1.2,
       "rows": [7.8, 9.4],
       "riser_y": 1.6,
-      "suction_el": 2.2
+      "suction_el": null,
+      "bell_clearance": 0.45
     },
     "headers": {
       "y": 13.4,
       "run_length": 22.0
+    },
+    "building": {
+      "$comment": "PS-21 TX: ±0.00 = 203,90 (deck_el); saçak +7,83, mahya +8,78; aks 6 m. Genişlik pompa kaidelerinden, derinlik kolektörden türetilir.",
+      "y0": 1.4,
+      "wall_t": 0.4,
+      "margin_x": 1.8,
+      "front_gap": 2.6,
+      "slab_t": 0.5,
+      "eave_h": 7.83,
+      "ridge_h": 8.78,
+      "bay": 6.0
+    },
+    "meter_pit": {
+      "$comment": "Ana hatlardaki debimetreler: bina arkasında toprağa gömülü, üstü açık beton kuyu. dist = bina dış yüzünden kuyu merkezine (m).",
+      "dist": 4.0,
+      "w": 3.0,
+      "l": 4.0,
+      "wall_t": 0.3,
+      "floor_gap": 0.6,
+      "kerb": 0.15
+    },
+    "soil": {
+      "depth": 2.5,
+      "margin": 5.0,
+      "margin_end": 9.0
     }
   },
   "hydraulics": {
@@ -414,58 +442,40 @@
       }
     },
     {
-      "id": "NRV-01",
-      "type": "check_valve",
-      "label": "N-1 gaýtarmaýan klapan",
-      "source_pump": "PMP-01",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-01",
+      "type": "level_sensor",
+      "label": "N-1 suwuň derejesi",
+      "source_pump": "PMP-01"
     },
     {
-      "id": "NRV-02",
-      "type": "check_valve",
-      "label": "N-2 gaýtarmaýan klapan",
-      "source_pump": "PMP-02",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-02",
+      "type": "level_sensor",
+      "label": "N-2 suwuň derejesi",
+      "source_pump": "PMP-02"
     },
     {
-      "id": "NRV-03",
-      "type": "check_valve",
-      "label": "N-3 gaýtarmaýan klapan",
-      "source_pump": "PMP-03",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-03",
+      "type": "level_sensor",
+      "label": "N-3 suwuň derejesi",
+      "source_pump": "PMP-03"
     },
     {
-      "id": "NRV-04",
-      "type": "check_valve",
-      "label": "N-4 gaýtarmaýan klapan",
-      "source_pump": "PMP-04",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-04",
+      "type": "level_sensor",
+      "label": "N-4 suwuň derejesi",
+      "source_pump": "PMP-04"
     },
     {
-      "id": "NRV-05",
-      "type": "check_valve",
-      "label": "N-5 gaýtarmaýan klapan",
-      "source_pump": "PMP-05",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-05",
+      "type": "level_sensor",
+      "label": "N-5 suwuň derejesi",
+      "source_pump": "PMP-05"
     },
     {
-      "id": "NRV-06",
-      "type": "check_valve",
-      "label": "N-6 gaýtarmaýan klapan",
-      "source_pump": "PMP-06",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-06",
+      "type": "level_sensor",
+      "label": "N-6 suwuň derejesi",
+      "source_pump": "PMP-06"
     }
   ]
 }

@@ -105,6 +105,15 @@ def bake(rays: int = 40, strength: float = 0.85, seed: int = 4) -> dict:
         mw = ob.matrix_world
         nm = mw.to_3x3().inverted_safe().transposed()
         transparent = any(m and m.name == "WATER" for m in me.materials)
+        # Ton: ayrı malzeme (= ayrı draw call) açmadan renk vermek için köşe
+        # rengi taban rengiyle birlikte bir çarpan da taşır. Toprak ve cephe
+        # CONCRETE malzemesinde kalır, rengi buradan gelir. Üst yüzler
+        # (n.z > 0.5) ayrı tonlanabilir — toprağın üstü açık, kesiti koyu.
+        tint = [float(c) for c in ob["bake_tint"]] if "bake_tint" in ob else None
+        tint_top = [float(c) for c in ob["bake_tint_top"]] if "bake_tint_top" in ob else tint
+        # Büyük düz yüzlerde (toprak bloğu) köşe başına AO metrelerce süren
+        # lekeli geçiş üretir; orada yalnız yönlü ışık kullanılır.
+        no_ao = bool(ob.get("bake_no_ao", False))
 
         for i, v in enumerate(me.vertices):
             p = mw @ v.co
@@ -118,7 +127,7 @@ def bake(rays: int = 40, strength: float = 0.85, seed: int = 4) -> dict:
 
             hits = 0
             origin = p + n * 2e-3
-            for d in dirs:
+            for d in ([] if no_ao else dirs):
                 w = t1 * d.x + t2 * d.y + n * d.z
                 if bvh.ray_cast(origin, w, AO_DISTANCE)[0] is not None:
                     hits += 1
@@ -140,7 +149,12 @@ def bake(rays: int = 40, strength: float = 0.85, seed: int = 4) -> dict:
                 val = max(val, 0.42)                   # su yüzeyi kararmasın
             val = max(0.05, min(0.95, val))
 
-            col.data[i].color = (val, val, val, 1.0)
+            t = tint_top if (tint and n.z > 0.5) else tint
+            if t:
+                col.data[i].color = (min(1.0, val * t[0]), min(1.0, val * t[1]),
+                                     min(1.0, val * t[2]), 1.0)
+            else:
+                col.data[i].color = (val, val, val, 1.0)
             total_v += 1
 
     return {"objects": len(objs), "vertices": total_v, "rays": total_v * len(dirs)}

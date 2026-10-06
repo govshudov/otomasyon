@@ -9,6 +9,7 @@ import { Alarms } from './ui/Alarms'
 import { Timeline } from './ui/Timeline'
 import { StationPicker, type StationInfo } from './ui/StationPicker'
 import { Schema2D } from './ui/Schema2D'
+import { SensorLabels } from './ui/SensorLabels'
 import { computeHealth } from './data/health'
 import { fetchStationConfig, fetchStations, niagaraUser, NIAGARA } from './data/niagara'
 import { groupsOf, levelSev, pumpView, runStateOf, type StationCfg } from './data/pump'
@@ -46,6 +47,14 @@ export default function App() {
   const [cfg, setCfg] = useState<StationCfg | null>(null)
   const [user, setUser] = useState(NIAGARA ? '…' : 'ýerli ulanyjy')
   const [charts, setCharts] = useState<{ id: string; label: string } | null>(null)
+
+  // Bina: 'kesik' = çatı ve kameraya bakan duvarlar gizli (pompalar görünür),
+  // 'doly' = bina dışarıdan tam. Model yeniden yüklenince de uygulanır.
+  const [hasBuilding, setHasBuilding] = useState(false)
+  const [buildingFull, setBuildingFull] = useState(false)
+  useEffect(() => {
+    sceneRef.current?.setBuildingMode(buildingFull ? 'full' : 'cut')
+  }, [buildingFull, twin])
 
   const setPage = useCallback((p: Page) => { setPageRaw(p); store('twin.page', p) }, [])
   useEffect(() => { store('twin.side', mini ? 'mini' : 'full') }, [mini])
@@ -122,6 +131,7 @@ export default function App() {
         mergedRef.current = merged
         setTwin(tm); setTwinMap(tm)
         setMeshInfo({ source: merged.stats.sourceMeshes, merged: merged.stats.drawCalls, components: merged.components.length })
+        setHasBuilding(merged.components.some((c) => c.faceN !== null))
       },
     })
     sceneRef.current = scene
@@ -246,6 +256,10 @@ export default function App() {
   const cardRef = useCallback((el: HTMLDivElement | null) => {
     sceneRef.current?.setCard(el, el ? sel.equipment : null)
   }, [sel.equipment])
+  // Datçiklerin yanındaki ölçüm yazıları — konum ve ölçeği sahne yazar
+  const registerLabels = useCallback((items: { el: HTMLElement; equipment: string }[]) => {
+    sceneRef.current?.setLabels(items)
+  }, [])
   const closeCard = useCallback(() => {
     setSel({ equipment: null, component: null }); setExplode(0)
   }, [])
@@ -332,6 +346,16 @@ export default function App() {
             {is3d && historyEnabled && !playback.active && (
               <button onClick={() => enterPlayback()}>Taryhy oýnat</button>
             )}
+            {is3d && hasBuilding && (
+              <button className={buildingFull ? 'on' : ''} onClick={() => {
+                // Bina kapanınca pompa görünmez; kartı açık kalırsa görünmeyen
+                // pompanın bilgisi ortada asılı kalıyordu.
+                if (!buildingFull) closeCard()
+                setBuildingFull(!buildingFull)
+              }}>
+                {buildingFull ? 'Bina: doly' : 'Bina: kesik'}
+              </button>
+            )}
             {is3d && (
               <button onClick={() => setShowAlarms((v) => !v)}>{showAlarms ? 'Duýduryşlary gizle' : 'Duýduryşlar'}</button>
             )}
@@ -353,6 +377,7 @@ export default function App() {
             </div>
           )}
           {is3d && <Timeline />}
+          {is3d && twin && <SensorLabels twin={twin} register={registerLabels} />}
 
           {is3d && cardEq && twin && sel.equipment && (
             <InfoCard key={sel.equipment} station={twin.station} id={sel.equipment} eq={cardEq}
@@ -360,7 +385,7 @@ export default function App() {
                       onCharts={() => openCharts(sel.equipment!, cardEq.label)} />
           )}
 
-          {!is3d && station && <div className="mainArea"><Schema2D twin={twin} station={station} onOpen3D={open3D} /></div>}
+          {!is3d && station && <div className="mainArea"><Schema2D twin={twin} station={station} /></div>}
         </>
       )}
 

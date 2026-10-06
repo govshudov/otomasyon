@@ -22,7 +22,8 @@ export interface PerfStats {
 
 export interface SceneEvents {
   onPick?: (info: ComponentInfo | null) => void
-  onHover?: (info: ComponentInfo | null) => void
+  /** Yalnız fare. x/y: imlecin ekran konumu (parçaya girildiği an). */
+  onHover?: (info: ComponentInfo | null, x: number, y: number) => void
   onStats?: (s: PerfStats) => void
   onDoubleTap?: (info: ComponentInfo | null) => void
   onReady?: (m: MergedScene, t: TwinMap) => void
@@ -39,10 +40,20 @@ const HOME_DIR = new THREE.Vector3(0.646, 0.588, 0.487).normalize()
  * uzun ve basık; küre köşegene göre hesaplandığı için 1,0 onu ekranda küçük bırakıyor. */
 const HOME_FIT = 0.66
 
-/** Kamera çerçevesi için tesisin sınır kutusu (bileşen sınır kürelerinden). */
+/** Kameraya bakınca gizlenen bina üst yapısı (duvar, pencere, çatı) ya da toprak bloğu. */
+function isEnvelope(c: ComponentInfo): boolean {
+  return c.faceN !== null || c.node === 'STATIC__SOIL'
+}
+
+/**
+ * Kamera çerçevesi için tesisin sınır kutusu (bileşen sınır kürelerinden).
+ * Toprak ve bina üst yapısı hariç: uzun bloğun sınır küresi kutuyu her yönde
+ * şişirir, tesis ekranda küçülür (eski arazi katmanında yaşandı).
+ */
 function plantBox(merged: MergedScene): THREE.Box3 {
   const box = new THREE.Box3()
   for (const c of merged.components) {
+    if (isEnvelope(c)) continue
     box.expandByPoint(c.center.clone().addScalar(-c.radius))
     box.expandByPoint(c.center.clone().addScalar(c.radius))
   }
@@ -83,6 +94,13 @@ function sameMap(a: Map<string, string>, b: Map<string, string>): boolean {
 /** Çalışma durumuna göre boyanan pompa parçaları (motor + pompa gövdesi). */
 const STATUS_PARTS = new Set(['MOTOR', 'PUMP'])
 
+// Sahnedeki ölçüm yazıları: dünyada yazı yüksekliği (m) ve ekranda sınırlar (px).
+// CSS'teki temel yazı boyu LABEL_BASE_PX; ölçek bunun katı olarak verilir.
+const LABEL_H = 0.22
+const LABEL_BASE_PX = 20
+const LABEL_MIN_PX = 11
+const LABEL_MAX_PX = 34
+
 const TAP_SLOP_PX = 7
 const TAP_SLOP_TOUCH_PX = 14      // parmak fareden daha çok kayar
 const FRAME_MS = 1000 / 60
@@ -119,6 +137,13 @@ export class TwinScene {
   private motion = new Map<string, number>()   // düğüm adı -> strok oranı 0..1
   private dirtyState = true
   private dirtyXform = true
+
+  // Bina kesiti: 'cut' iken çatı ve kameraya bakan duvarlar gizlenir —
+  // pompalar binanın içinden görünür. 'full' binayı dışarıdan tam gösterir.
+  private buildingMode: 'cut' | 'full' = 'cut'
+  private envelope: ComponentInfo[] = []
+  private hiddenIds = new Set<number>()
+  private camLocal = new THREE.Vector3()
 
   // Kamera geçişi
   private tween: { from: THREE.Vector3; to: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; t: number; dur: number } | null = null
@@ -236,6 +261,8 @@ export class TwinScene {
       createTwinMaterial(color.getHex(), this.tex, { transparent, opacity: transparent ? 0.6 : 1 }),
     )
     this.scene.add(this.merged.group)
+    this.envelope = this.merged.components.filter((c) => c.faceN !== null)
+    this.hiddenIds = new Set()
 
     // mergeByMaterial geometrileri KLONLAYIP birleştiriyor; klonları kendi
     // bırakıyor ama kaynak glTF'in geometrileri elde kalıyor. Birleştirme
@@ -293,9 +320,45 @@ export class TwinScene {
     this.selected = this.hovered = null
     this.selectedEq = null
     this.card = null
+    this.labels = []
     this.focus = this.focusNode = null
     this.health.clear(); this.runState.clear()
     this.explodeAmount.clear(); this.flow.clear(); this.motion.clear()
+    this.envelope = []
+    this.hiddenIds = new Set()
+  }
+
+  /** Modelde bina üst yapısı var mı (yoksa arayüz düğmeyi göstermez). */
+  get hasBuilding(): boolean { return this.envelope.length > 0 }
+
+  setBuildingMode(mode: 'cut' | 'full'): void {
+    if (this.buildingMode === mode) return
+    this.buildingMode = mode
+    this.updateCutaway()
+    this.wake()
+  }
+
+  /**
+   * Kesit görünüm: dış normali kameraya bakan duvar (ve çatı) gizlenir.
+   * Kamera binanın +X tarafındaysa +X duvarı aradadır; uzak duvarlar ise
+   * içten görünür ve bağlamı korur. Kamera her hareket ettiğinde çağrılır —
+   * birkaç bileşenlik nokta çarpımı, maliyeti yok. Küme değişmedikçe doku
+   * yazılmaz.
+   */
+  private updateCutaway(): void {
+    if (!this.envelope.length) return
+    const next = new Set<number>()
+    if (this.buildingMode === 'cut') {
+      // Bileşen merkezleri grup (model) uzayında; kamerayı oraya taşı
+      const cam = this.merged ? this.merged.group.worldToLocal(this.camLocal.copy(this.camera.position))
+        : this.camLocal.copy(this.camera.position)
+      for (const c of this.envelope) {
+        if (c.faceN!.dot(cam.clone().sub(c.center)) > 0) next.add(c.id)
+      }
+    }
+    if (next.size === this.hiddenIds.size && [...next].every((id) => this.hiddenIds.has(id))) return
+    this.hiddenIds = next
+    this.dirtyXform = true
   }
 
   private countMeshes(root: THREE.Object3D): number {
@@ -376,9 +439,17 @@ export class TwinScene {
             this.hovered = id
             this.dirtyState = true
             this.wake()
-            this.events.onHover?.(info)
+            this.events.onHover?.(info, e.clientX, e.clientY)
           }
         })
+      })
+      // Fare tuvalden (ya da bir panelin üstüne) çıkınca vurgu ve değer yazısı kalksın
+      this.canvas.addEventListener('pointerleave', (e) => {
+        if (e.pointerType !== 'mouse' || this.hovered === null) return
+        this.hovered = null
+        this.dirtyState = true
+        this.wake()
+        this.events.onHover?.(null, e.clientX, e.clientY)
       })
     }
   }
@@ -394,7 +465,14 @@ export class TwinScene {
       const attr = geo.getAttribute('aCompId')
       if (!attr || !h.face) continue
       const id = Math.round(attr.getX(h.face.a))
+      // Gizli duvar GPU'da çökertiliyor ama CPU ışını onu hâlâ görür;
+      // atlanmazsa kesit görünümde içerideki pompaya dokunulamaz.
+      if (this.hiddenIds.has(id)) continue
       const info = this.merged.components[id]
+      // Verisi olmayan yapı (beton havuz, toprak, bina) yalnız görüntüdür:
+      // vurgulanmaz, seçilmez, çift dokunmada çerçevelenmez. Önündeki parçayı
+      // kapattığı için arkasına da geçilmez — boşluğa dokunmuş sayılır.
+      if (info?.isStatic) return null
       if (info) return info
     }
     return null
@@ -453,7 +531,50 @@ export class TwinScene {
     return cam ? new THREE.Vector3(cam.target[0], cam.target[1] + cam.radius * 0.6, cam.target[2]) : null
   }
 
+  /**
+   * Ekipmanın yanında sahnede duran ölçüm yazıları (seviye datçikleri).
+   * Yazı dünyada sabit boyda (LABEL_H metre): yakınlaşınca büyür,
+   * uzaklaşınca küçülür — 3D bir nesne gibi. Uzakta okunur bir alt sınırda,
+   * çok yakında bir üst sınırda kalır; hiç gizlenmez. Konum + ölçek her
+   * çizilen karede yalnız `transform` ile yazılır (yerleşim hesabı yok).
+   */
+  private labels: { el: HTMLElement; anchor: THREE.Vector3 }[] = []
+
+  setLabels(items: { el: HTMLElement; equipment: string }[]): void {
+    this.labels = []
+    for (const it of items) {
+      const ids = this.merged?.byEquipment.get(it.equipment) ?? []
+      const comp = ids.map((i) => this.merged!.components[i]).find((c) => c.labelAnchor)
+      const anchor = comp?.labelAnchor?.clone() ?? this.anchorOf(it.equipment)
+      if (anchor) this.labels.push({ el: it.el, anchor })
+      else it.el.style.visibility = 'hidden'
+    }
+    this.placeLabels()
+    this.wake()
+  }
+
+  private placeLabels(): void {
+    if (!this.labels.length) return
+    const w = this.canvas.clientWidth, h = this.canvas.clientHeight
+    const pxPerMAt1 = h / (2 * Math.tan((this.camera.fov * Math.PI) / 360))   // 1 m uzaklıkta 1 m kaç piksel
+    for (const l of this.labels) {
+      const p = this.cardPos.copy(l.anchor).project(this.camera)
+      // Uzaktan da görünsün: küçülme LABEL_MIN_PX'te durur, yazı gizlenmez
+      const px = Math.max(LABEL_MIN_PX, (LABEL_H * pxPerMAt1) / l.anchor.distanceTo(this.camera.position))
+      if (p.z > 1 || Math.abs(p.x) > 1.1 || Math.abs(p.y) > 1.1) {
+        l.el.style.visibility = 'hidden'
+        continue
+      }
+      const x = Math.round((p.x * 0.5 + 0.5) * w)
+      const y = Math.round((-p.y * 0.5 + 0.5) * h)
+      const s = Math.min(px, LABEL_MAX_PX) / LABEL_BASE_PX
+      l.el.style.transform = `translate(${x}px, ${y}px) translateY(-50%) scale(${s.toFixed(3)})`
+      l.el.style.visibility = 'visible'
+    }
+  }
+
   private placeCard(): void {
+    this.placeLabels()
     const card = this.card
     if (!card) return
     const p = this.cardPos.copy(card.anchor).project(this.camera)
@@ -598,21 +719,27 @@ export class TwinScene {
         const compH = compKey ? this.health.get(compKey) : undefined
         const eqH = this.health.get(c.equipment)
 
+        const run = this.runState.get(c.equipment)
         if (compH) {
           // Arıza TAM OLARAK bu parçada: tam güçle boya.
-          const o = stateOverlay(compH, undefined)
+          const o = stateOverlay(compH, run)
+          color = o.color; strength = o.strength
+        } else if (eqH && (!c.component || STATUS_PARTS.has(c.component))) {
+          // (Bileşensiz tek parçalı ekipman — seviye datçiği — da tam renk alır.)
+          // Pompanın durum rengi gövde + motorda: bir yeri iyi çalışmıyorsa
+          // (uyarı) ikisi birden sarı, alarm/arızada koyu kırmızı. Operatör
+          // uzaktan "bu pompa sorunlu" diye görsün.
+          const o = stateOverlay(eqH, run)
           color = o.color; strength = o.strength
         } else if (eqH) {
-          // Ekipmanda arıza var ama başka parçada. Bu parçayı hafifçe tonla —
-          // uzaktan hangi ünitenin etkilendiği görünsün, ama arızalı parça
-          // yanında sönük kalsın. ISA-101: göz tek bir yere gitmeli.
-          const o = stateOverlay(eqH, undefined)
-          color = o.color
-          strength = o.strength * 0.18
+          // Ekipmanda sorun var ama bu parça (boru, şase, kaplin) durum parçası
+          // değil: kendi renginde kalır. Eskiden hafifçe tonlanıyordu; koyu
+          // durum renkleri mavi boruyla karışıp mor/kahve çamur yapıyordu ve
+          // ünitenin durumu zaten gövde + motorda okunuyor.
         } else if (c.component && STATUS_PARTS.has(c.component)) {
           // Çalışma durumu yalnız motor ve pompa gövdesinde: işleýär yeşil,
           // durdy renksiz, näsaz kırmızı. Borular kendi renginde kalır.
-          const o = stateOverlay(undefined, this.runState.get(c.equipment))
+          const o = stateOverlay(undefined, run)
           color = o.color; strength = o.strength
         }
       }
@@ -721,6 +848,7 @@ export class TwinScene {
           }
         }
       }
+      if (this.hiddenIds.has(c.id)) dim = 0      // bina kesiti
       data[i + 3] = Math.round(dim * 255)
     }
     this.tex.xform.needsUpdate = true
@@ -874,6 +1002,7 @@ export class TwinScene {
       this.stepTween(dt)
       const moved = this.controls.update()
       if (moved) this.wake()
+      if (moved || this.tween || this.dirtyXform) this.updateCutaway()
       if (this.dirtyState) this.applyState()
       if (this.dirtyXform) this.applyXform()
       if (this.dirtyFlow) this.applyFlow()

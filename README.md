@@ -242,8 +242,9 @@ sahypa açylandan bäri biriken değerler (`web/src/data/history.ts`).
 (SUW HASAPLAÝJY MAGLUMATLARY) tasarım dilindedir: 6 KPI kartı (beket debisi,
 girýän akym, howuz derejesi, işleýän nasoslar, jemi kuwwat, duýduryşlar), her
 pompa grubu için şema (nasos → kollektör → esasy turba, balans), son 2 saatin
-ýük paýlanyşy (kuwwat) grafiği ve nasos tablosu. Tablo satırına ya da şemadaki
-pompaya dokununca 3D açılır, pompanın kartı gösterilir. 2D açıkken 3D render
+ýük paýlanyşy (kuwwat) grafiği ve nasos tablosu. 2D sayfa salt görüntüdür:
+pompaya ya da tablo satırına dokunmak 3D'ye geçirmez (yalnız geçiş düğmesi
+geçirir). 2D açıkken 3D render
 döngüsü tamamen durur (Pi'de GPU boşa çalışmaz).
 
 **Arayüz dili Türkmencedir.** Sinyal/ekipman adları ve alarm mesajları katalogdan

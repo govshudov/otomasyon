@@ -19,6 +19,9 @@ import { Icon } from './icons'
  * "Grafikler" 8 grafiği açar. Diğer ekipmanda twin-map'teki sinyal listesi.
  */
 
+/** Durumu isteğe bağlı ekipman tipleri — durum gelmiyorsa kartta rozet gösterilmez. */
+const STATELESS = new Set(['level_sensor'])
+
 export function severity(v: number | boolean | null, sig: SignalDef): 'ok' | 'warn' | 'alarm' {
   if (v === null) return 'ok'
   let worst: 'ok' | 'warn' | 'alarm' = 'ok'
@@ -106,7 +109,10 @@ export function InfoCard({ station, id, eq, cardRef, onClose, onCharts }: {
           <b>{station} {eq.label}</b>
           <div className="sub">{id}</div>
         </div>
-        {!isPump && <span className={`chip ${stateClass(st, h)}`}>{STATE_TK[st] ?? st}</span>}
+        {/* Datçikte durum isteğe bağlı: JACE'te LT-0x/state noktası değer
+            taşıyorsa rozet görünür; boşsa rozet yerine yalnız değer satırı. */}
+        {!isPump && !(STATELESS.has(eq.type) && st === 'UNKNOWN') &&
+          <span className={`chip ${stateClass(st, h)}`}>{STATE_TK[st] ?? st}</span>}
         {isPump && onCharts && (
           <button className="x" onClick={onCharts} title="Grafikler" aria-label="grafikler"><Icon.chart size={15} /></button>
         )}

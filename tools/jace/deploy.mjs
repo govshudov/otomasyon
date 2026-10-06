@@ -3,7 +3,8 @@
 //  2) geçici FileDrop programı (station:|slot:/Twin/FileDropTmp) ile file:^twin'e yeni dosyalar
 //  3) kullanılmayan eski asset/modellerin silinmesi, programın kaldırılması
 //  4) /Twin/PS-01 altında arayüzün KULLANDIĞI noktalardan eksik olanların eklenmesi
-//     (pompa: 16 sinyal; esasy turba: akym, jemi göwrüm, basyş; howuz: suw derejesi).
+//     (pompa: 16 sinyal; esasy turba: akym, jemi göwrüm, basyş; howuz: suw derejesi;
+//     hücre datçikleri LT-0x: level_m + state). Hedef istasyonda /Twin/PS-01 yoksa hiçbir şey yazılmaz.
 //     Var olan noktaya ve değerine dokunulmaz; hiçbir nokta silinmez.
 //  5) nokta eklendiyse istasyonun kaydedilmesi
 import fs from 'node:fs'
@@ -21,15 +22,18 @@ const P = JSON.parse(fs.readFileSync(FILEDROP, 'utf8').replace(/^[^{]*/, '').rep
 const ROOT = path.resolve(HERE, '../..')
 const TYPES = JSON.parse(fs.readFileSync(path.join(ROOT, 'common/equipment_types.json'), 'utf8')).types
 const STATION = JSON.parse(fs.readFileSync(path.join(ROOT, 'stations/ps-01.json'), 'utf8'))
-const USED = { pump_hsc: null, header: ['flow_m3h', 'total_m3', 'press_bar'], basin: ['level_m'] }
+const USED = { pump_hsc: null, header: ['flow_m3h', 'total_m3', 'press_bar'], basin: ['level_m'], level_sensor: null }
 const SPEC = []
 for (const e of STATION.equipment) {
   if (!(e.type in USED)) continue
   for (const [key, sd] of Object.entries(TYPES[e.type].signals)) {
     if (USED[e.type] && !USED[e.type].includes(key)) continue
-    SPEC.push({ path: [e.id, ...key.split('.')], bool: sd.type === 'bool', unit: sd.unit ?? '' })
+    SPEC.push({ path: [e.id, ...key.split('.')], kind: sd.type === 'bool' ? 'bool' : 'num', unit: sd.unit ?? '' })
   }
+  // Datçik kartının rozeti: RUNNING / FAULT / STOPPED / MAINT (boşsa rozet gösterilmez)
+  if (e.type === 'level_sensor') SPEC.push({ path: [e.id, 'state'], kind: 'str', unit: '' })
 }
+const PT_TYPE = { num: 'control:NumericWritable', bool: 'control:BooleanWritable', str: 'control:StringWritable' }
 
 // JACE'te bulunmuş/bulunabilecek her dosya: yeni pakette olmayanlar silinir.
 // (2026-10-04: Draco'lu ilk kurulumun JS'i ve draco/ çözücüleri de artık gereksiz.)
@@ -38,12 +42,15 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   'models/ps-03.glb', 'models/ps-03-twin-map.json',
   'assets/index-DWz777XG.js', 'assets/index-CV2qGtO1.js', 'assets/index-BH4tkQQQ.js', 'assets/index-BboAZoN4.js', 'assets/index-dldDpmq8.css', 'models/ps-01-station.json',
   'draco/gltf/draco_decoder.js', 'draco/gltf/draco_decoder.wasm', 'draco/gltf/draco_wasm_wrapper.js',
-  // 4 Ekim kurulumu (3D + 2D şema sürümü)
-  'assets/index-CFPaVDo4.js', 'assets/index-CRVcrTOC.css']
+  // 4 Ekim kurulumları (bu PC: 3D + 2D şema; Dell: bina/toprak/datçik sürümleri)
+  'assets/index-CFPaVDo4.js', 'assets/index-CRVcrTOC.css',
+  'assets/index-BQ10q0hM.js', 'assets/index-DbwbtYDd.js', 'assets/index-CvpPhrAj.js',
+  'assets/index-DHC1wxPk.js', 'assets/index-MsweaQ7G.css', 'assets/index-ChJTJYhX.js', 'assets/index-CUVKD536.css',
+  'models/ps-01.part0.bin', 'models/ps-01.part1.bin', 'models/ps-01.part2.bin', 'models/ps-01.part3.bin']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {
-  for (const s of SPEC) console.log(`  /Twin/PS-01/${s.path.join('/')}  ${s.bool ? 'BooleanWritable' : 'NumericWritable'}  ${s.unit}`)
+  for (const s of SPEC) console.log(`  /Twin/PS-01/${s.path.join('/')}  ${PT_TYPE[s.kind].split(':')[1]}  ${s.unit}`)
   console.log(`${SPEC.length} nokta (yalnız EKSİK olanlar eklenir)`)
   process.exit(0)
 }
@@ -56,6 +63,15 @@ const remove = OLD.filter((f) => !files.includes(f))
 
 const p = await bajaPage()
 const log = (...a) => console.log(...a)
+
+// 0) İkiz nokta ağacı var mı? Dosya yazan geçici program da /Twin altına
+// kurulduğu için ağaç yoksa hiçbir adım çalışmaz — hiçbir şey yazmadan dur.
+const hasTwin = await p.eval(`window.__baja.Ord.make('station:|slot:/Twin/PS$2d01').get().then(() => true, () => false)`)
+if (!hasTwin) {
+  log(`DUR: ${H} istasyonunda Config → Twin → PS-01 yok. Önce Workbench'te JACE'ten`)
+  log(`'Twin' klasörünü kopyalayıp bu istasyonun Config'ine yapıştırın ve kaydedin. Hiçbir şey yazılmadı.`)
+  await p.close(); process.exit(2)
+}
 
 // 1) yerel yedek — klasör zaten varsa (ilk kurulumun yedeği) ona dokunulmaz
 for (const rel of fs.existsSync(BACKUP) ? [] : OLD) {
@@ -102,10 +118,10 @@ await p.eval(`(() => {
     if (root.has('FileDropTmp')) await root.remove('FileDropTmp')
     return 'FileDropTmp kaldırıldı'
   }
-  // spec: [{ path: ['PMP-01','MOTOR','t1'], bool, unit }] — eksik klasör/nokta eklenir, var olana dokunulmaz.
+  // spec: [{ path: ['PMP-01','MOTOR','t1'], kind: num|bool|str, unit }] — eksik klasör/nokta eklenir, var olana dokunulmaz.
   // Birim (facets) aynı birimli MEVCUT bir noktadan kopyalanır; yoksa facets'siz eklenir.
   window.__addPoints = async (spec) => {
-    await baja.importTypes({ typeSpecs: ['control:NumericWritable', 'control:BooleanWritable', 'baja:Folder'] })
+    await baja.importTypes({ typeSpecs: ['control:NumericWritable', 'control:BooleanWritable', 'control:StringWritable', 'baja:Folder'] })
     const esc = (s) => baja.SlotPath.escape(s)
     const root = await baja.Ord.make('station:|slot:/Twin/' + esc('PS-01')).get()
     const load = async (c) => { await Promise.resolve(c.loadSlots && c.loadSlots()); return c }
@@ -119,7 +135,7 @@ await p.eval(`(() => {
     const tPt = await find(['PMP-01', 'MOTOR', 'temp'])
     if (tPt) facetsByUnit['°C'] = tPt.get('facets')
     for (const s of spec) {
-      if (s.bool || !s.unit || facetsByUnit[s.unit]) continue
+      if (s.kind !== 'num' || !s.unit || facetsByUnit[s.unit]) continue
       const pt = await find(s.path)
       if (pt) facetsByUnit[s.unit] = pt.get('facets')
     }
@@ -133,10 +149,10 @@ await p.eval(`(() => {
       }
       const name = esc(s.path[s.path.length - 1])
       if (c.has(name)) { had++; continue }
-      const pt = baja.$(s.bool ? 'control:BooleanWritable' : 'control:NumericWritable')
+      const pt = baja.$(${JSON.stringify(PT_TYPE)}[s.kind])
       try {
-        if (s.bool) pt.set({ slot: 'facets', value: baja.Facets.make(['trueText', 'falseText'], ['işleýär', 'durýar']) })
-        else if (facetsByUnit[s.unit]) pt.set({ slot: 'facets', value: facetsByUnit[s.unit] })
+        if (s.kind === 'bool') pt.set({ slot: 'facets', value: baja.Facets.make(['trueText', 'falseText'], ['işleýär', 'durýar']) })
+        else if (s.kind === 'num' && facetsByUnit[s.unit]) pt.set({ slot: 'facets', value: facetsByUnit[s.unit] })
       } catch (e) { /* facets olmadan da çalışır */ }
       await c.add({ slot: name, value: pt })
       out.push(s.path.join('/') + ' eklendi')
