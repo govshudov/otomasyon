@@ -1,0 +1,9 @@
+build/
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.env
+*.blend1
+web/dist/
+data/

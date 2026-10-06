@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Dijital İkizi Kapat
+Comment=Ekranı kapat (servisler çalışmaya devam eder)
+Exec=/home/dovran/otomasyon/deploy/desktop/twin-control.sh durdur
+Icon=/home/dovran/otomasyon/deploy/desktop/twin-icon.svg
+Terminal=false
+Categories=Utility;Monitor;
+StartupNotify=false

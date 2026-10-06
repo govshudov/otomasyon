@@ -1,0 +1,177 @@
+name: su-yapisi-ikiz
+
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: twin-mqtt
+    restart: unless-stopped
+    ports: ["1883:1883", "9001:9001"]
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-W", "3"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # TimescaleDB imajı 2,27 GB. Pi'de yer darsa DB_IMAGE=postgres:16-alpine ile
+  # (250 MB) çalıştırılabilir — API hypertable yoksa düz PostgreSQL'e düşer,
+  # tüm sorgular çalışmaya devam eder.
+  # Geçmiş veri isteğe bağlı. Demo kurulumunda (PLC yok, sadece gösterim)
+  # kapalıdır: SD karta sürekli yazmanın anlamı yok. Açmak için:
+  #   HISTORY_ENABLED=1 docker compose --profile kiosk --profile history up -d
+  timescale:
+    profiles: ["history"]
+    image: ${DB_IMAGE:-timescale/timescaledb:latest-pg16}
+    container_name: twin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: twin
+      POSTGRES_USER: twin
+      POSTGRES_DB: twin
+    ports: ["5432:5432"]
+    volumes:
+      - ts-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twin -d twin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: su-yapisi-ikiz-api:latest
+    build: { context: ., dockerfile: api/Dockerfile }
+    container_name: twin-api
+    restart: unless-stopped
+    # Veritabanına ZORUNLU bağımlılık yok — kapalıysa API geçmişsiz çalışır.
+    depends_on:
+      mosquitto: { condition: service_started }
+    environment:
+      # Geçmiş modu:
+      #   memory -> bellekte, diske yazmaz (DEMO — varsayılan)
+      #   db     -> kalıcı, veritabanı gerekir (PLC fazı)
+      #   off    -> kapalı, trend ve oynatma gizlenir
+      HISTORY_MODE: "${HISTORY_MODE:-memory}"
+      HISTORY_WINDOW_MIN: "${HISTORY_WINDOW_MIN:-120}"
+      HISTORY_MIN_INTERVAL_S: "${HISTORY_MIN_INTERVAL_S:-10}"
+      # Açılışta grafikler boş olmasın diye geçmiş ÜRETİLİR.
+      # GERÇEK PLC'YE GEÇERKEN 0 YAPILMALI.
+      HISTORY_SEED_DEMO: "${HISTORY_SEED_DEMO:-1}"
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      TIMESCALE_DSN: postgres://twin:twin@timescale:5432/twin
+      # SD kart üzerinde çalışan kiosk için: tag başına en fazla 1 Hz geçmiş
+      # kaydı ve 3 günlük saklama. SSD varsa gevşetilebilir.
+      HISTORY_RETENTION_DAYS: "${HISTORY_RETENTION_DAYS:-3}"
+      STATIONS_DIR: /app/stations
+      TYPES_FILE: /app/common/equipment_types.json
+      # Yayın hızı: 5 Hz bir SCADA ekranı için gereğinden sık. Her yayın
+      # Pi'de JSON ayrıştırma + React yeniden çizimi demek. 2 Hz yeterli.
+      BROADCAST_HZ: "${BROADCAST_HZ:-2}"
+    volumes:
+      - ./stations:/app/stations:ro
+      - ./common:/app/common:ro
+    ports: ["8000:8000"]
+
+  sim:
+    image: su-yapisi-ikiz-sim:latest
+    build: { context: ., dockerfile: sim/Dockerfile }
+    container_name: twin-sim
+    restart: unless-stopped
+    depends_on:
+      mosquitto: { condition: service_started }
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      STATION_FILE: /app/stations/ps-01.json
+      TYPES_FILE: /app/common/equipment_types.json
+      SIM_SPEED: "${SIM_SPEED:-2}"
+      SIM_DT: "${SIM_DT:-0.2}"
+      PUB_HZ: "${PUB_HZ:-2}"
+      SIM_SEED: "7"          # her istasyon farklı davransın
+      DEGRADE_PER_HOUR: "0.4"
+    volumes:
+      - ./stations:/app/stations:ro
+      - ./common:/app/common:ro
+
+  sim-ps02:
+    image: su-yapisi-ikiz-sim:latest
+    build: { context: ., dockerfile: sim/Dockerfile }
+    container_name: twin-sim-ps02
+    restart: unless-stopped
+    depends_on:
+      mosquitto: { condition: service_started }
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      STATION_FILE: /app/stations/ps-02.json
+      TYPES_FILE: /app/common/equipment_types.json
+      SIM_SPEED: "${SIM_SPEED:-2}"
+      SIM_DT: "${SIM_DT:-0.2}"
+      PUB_HZ: "${PUB_HZ:-2}"
+      SIM_SEED: "21"          # her istasyon farklı davransın
+      DEGRADE_PER_HOUR: "0.3"
+    volumes:
+      - ./stations:/app/stations:ro
+      - ./common:/app/common:ro
+
+  sim-ps03:
+    image: su-yapisi-ikiz-sim:latest
+    build: { context: ., dockerfile: sim/Dockerfile }
+    container_name: twin-sim-ps03
+    restart: unless-stopped
+    depends_on:
+      mosquitto: { condition: service_started }
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      STATION_FILE: /app/stations/ps-03.json
+      TYPES_FILE: /app/common/equipment_types.json
+      SIM_SPEED: "${SIM_SPEED:-2}"
+      SIM_DT: "${SIM_DT:-0.2}"
+      PUB_HZ: "${PUB_HZ:-2}"
+      SIM_SEED: "33"          # her istasyon farklı davransın
+      DEGRADE_PER_HOUR: "0.5"
+    volumes:
+      - ./stations:/app/stations:ro
+      - ./common:/app/common:ro
+
+  # Üretim arayüzü (Pi kiosk). Geliştirmede vite kullanılır, bu servis kapalıdır:
+  #   docker compose --profile kiosk up -d --build
+  # Arayüz Pi'de DERLENMEZ. `npm ci` + vite derlemesi Pi 4'te dakikalar sürer ve
+  # RAM yer. Masaüstünde derlenip hazır `web/dist` gönderilir; burada yalnız
+  # nginx onu sunar. İmaj indirmesi 10 MB, derleme süresi sıfır.
+  #   npm --prefix web run build   (masaüstünde, sonra deploy/push-to-pi.sh)
+  web:
+    image: nginx:alpine
+    container_name: twin-web
+    profiles: ["kiosk"]
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["80:80"]
+    volumes:
+      - ./web/dist:/usr/share/nginx/html:ro
+      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # Trend/dashboard — isteğe bağlı:  docker compose --profile trends up -d
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: twin-grafana
+    profiles: ["trends"]
+    restart: unless-stopped
+    depends_on:
+      timescale: { condition: service_started }
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: twin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+    ports: ["3000:3000"]
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  mqtt-data:
+  ts-data:
+  grafana-data:
