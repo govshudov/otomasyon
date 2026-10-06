@@ -15,6 +15,15 @@ $env:JACE_URL = $Url.TrimEnd('/')
 $env:JU = $User
 Write-Host "Hedef istasyon: $env:JACE_URL  (kullanici: $env:JU)"
 
+# Node PATH'te yoksa tasinabilir surum aranir (C:\Users\<ad>\tools\node-v*-win-x64)
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+  $nodeDir = Get-ChildItem (Join-Path $env:USERPROFILE 'tools') -Directory -Filter 'node-v*-win-x64' -ErrorAction SilentlyContinue |
+    Sort-Object Name | Select-Object -Last 1
+  if (-not $nodeDir) { throw 'node bulunamadi: PATH''e ekleyin ya da C:\Users\<ad>\tools altina kurun' }
+  $env:Path = $nodeDir.FullName + ';' + $env:Path
+  Write-Host "node: $($nodeDir.FullName)"
+}
+
 function Test-Cdp {
   try { Invoke-WebRequest http://127.0.0.1:9333/json/version -UseBasicParsing -TimeoutSec 2 | Out-Null; return $true } catch { return $false }
 }
