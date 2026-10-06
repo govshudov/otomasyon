@@ -188,6 +188,13 @@ Nasos kartındaki **Suw derejesi** artık nasosun kendi LT datçiğinden (yoksa 
 `web/src/data/`'yı da dışlıyordu — iki tarafta da GitHub'a gitmemişti; `/data/` yapıldı.
 JACE paketi Dell'in modeliyle (parçalardan birleştirilen `build/ps-01-plain.glb`) yeniden üretildi.
 
+**Kurulum hedefi (6 Ekim akşamı):** Karta (TV_PX/MAPS.px) yalnız aynı istasyondan açılınca
+gömülür; harita bu PC'deki yerel süpervizör istasyonunda (https://localhost). Bu yüzden pano
+yerel istasyona kurulur: `powershell -ExecutionPolicy Bypass -File tools\jace\kur.ps1 -Url https://127.0.0.1`
+(şifreyi sorar; istasyonda Config → Twin → PS-01 yoksa hiçbir şey yazmadan durur — önce
+Workbench'te JACE'ten Twin klasörü kopyalanır). Sayfa: https://localhost/file/twin/index.html.
+JACE (192.168.1.140) o akşam bu ağdan TLS el sıkışmasını tamamlamıyordu (TCP açık, HTTPS yok).
+
 Kullanıcı referans olarak i4 Cortex pompa panosunun iki ekranını verdi (kart düzeni +
 büyük grafik). İstekler ve karşılıkları:
 
