@@ -245,6 +245,12 @@ arayüz Px ile AYNI istasyondan açılınca çalışır. TV_PX/MAPS.px yerel sü
 istasyonlarında (SCADA_ANEW_*) var; JACE'te olup olmadığı bilinmiyor → arayüzün hangi
 istasyondan açılacağı kullanıcıya soruldu.
 
+**Simülasyon servisi (6 Ekim 19:05):** yerel istasyonda `/Twin/TwinSim` Program bileşeni
+çalışıyor (kaynak `tools/jace/sim/TwinSim.body.java`, Niagara'nın JRE'sindeki javac ile
+`build.mjs` derler, `sim-kur.mjs` kurar). Gerçek saate göre her saniye `/Twin/PS-01`
+noktalarının in16'sına yazar; heartbeat güncel olduğu için arayüz "janly". Arıza denemesi
+Workbench'ten `arizaNasos` + `arizaTuru` ile. Ayrıntı: `tools/jace/OKU-BENI.md`.
+
 ## 6.9 Bina, toprak, alçak pompalar — 4 Ekim 2026 (web'de denendi, JACE'e henüz gitmedi)
 
 Ölçüler `1-25-4-Здание насосной станции_TX.dwg`'den (AutoCAD `accoreconsole` ile DXF/PDF'e

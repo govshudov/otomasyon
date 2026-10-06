@@ -78,3 +78,22 @@ engelliyor — komutu kullanıcı kendi terminalinde çalıştırır.
 ```powershell
 node tools\jace\state.mjs
 ```
+
+## Simülasyon — `/Twin/TwinSim` (istasyon içinde, gerçek zamanlı)
+
+İstasyonla birlikte çalışan bir Niagara **Program** bileşeni. Her saniye günün saatine göre
+giriş debisi → howuz seviyesi → seviye kademesi (rotasyonlu) → pompa hidroliği, tok/kW,
+T1–T6 + podşipnik sıcaklıkları, inverter/pano saatleri, turba akymy/basyşy/sayacı, LT
+seviyeleri ve heartbeat (güncel epoch) hesaplanıp `/Twin/PS-01` noktalarının **in16**
+girişine yazılır. Gerçek bir link (in1–in15) gelirse o kazanır; `etkin=false` ya da program
+silinince in16 boşalır, nokta kendi değerine döner.
+
+```powershell
+node tools\jace\sim\build.mjs            # TwinSim.body.java → TwinSim.program.json (Niagara javac'ı)
+$env:JACE_URL = "https://127.0.0.1"; $env:JU = "admin"; $env:JP = "<şifre>"
+node tools\jace\sim-kur.mjs               # kur / yenile (istasyon kaydedilir)
+node tools\jace\sim-kur.mjs --kaldir      # kaldır
+```
+
+Workbench'te `/Twin/TwinSim`: `etkin` (aç/kapa) · `hizCarpani` (1 = gerçek zaman) ·
+`arizaNasos` 1–6 + `arizaTuru` = `sargy` | `podsipnik` | `tok` | `trip` (0 = arıza yok) · `durum`.
