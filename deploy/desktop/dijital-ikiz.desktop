@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Dijital İkiz
+Comment=Su yapısı dijital ikizini aç
+Exec=/home/dovran/otomasyon/deploy/desktop/twin-control.sh baslat
+Icon=/home/dovran/otomasyon/deploy/desktop/twin-icon.svg
+Terminal=false
+Categories=Utility;Monitor;
+StartupNotify=false

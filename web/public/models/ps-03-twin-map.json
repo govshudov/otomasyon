@@ -1,0 +1,2144 @@
+{
+  "station": "PS-03",
+  "schema_version": "0.1.0",
+  "equipment": {
+    "BASIN-01": {
+      "type": "basin",
+      "label": "Sorujy howuz",
+      "node": "BASIN-01",
+      "signals": {
+        "level_m": {
+          "tag": "PS-03.BASIN-01.level_m",
+          "label": "Suw derejesi",
+          "unit": "m",
+          "type": "float",
+          "range": [
+            0,
+            7
+          ],
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": "<",
+              "value": 0.8,
+              "msg": "Howuz derejesi örän pes — nasos goragy"
+            },
+            {
+              "level": "WARN",
+              "op": "<",
+              "value": 1.2,
+              "msg": "Howuz derejesi pes"
+            },
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 5.5,
+              "msg": "Howuz derejesi ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 5.9,
+              "msg": "Howuz derejesi örän ýokary — joşma howpy"
+            }
+          ]
+        },
+        "volume_m3": {
+          "tag": "PS-03.BASIN-01.volume_m3",
+          "label": "Göwrüm",
+          "unit": "m³",
+          "type": "float",
+          "range": [
+            0,
+            6000
+          ],
+          "alarms": []
+        },
+        "inflow_m3h": {
+          "tag": "PS-03.BASIN-01.inflow_m3h",
+          "label": "Girýän akym",
+          "unit": "m³/sag",
+          "type": "float",
+          "range": [
+            0,
+            8000
+          ],
+          "alarms": []
+        },
+        "outflow_m3h": {
+          "tag": "PS-03.BASIN-01.outflow_m3h",
+          "label": "Çykýan akym",
+          "unit": "m³/sag",
+          "type": "float",
+          "range": [
+            0,
+            8000
+          ],
+          "alarms": []
+        },
+        "velocity_ms": {
+          "tag": "PS-03.BASIN-01.velocity_ms",
+          "label": "Akym tizligi",
+          "unit": "m/s",
+          "type": "float",
+          "range": [
+            0,
+            3
+          ],
+          "alarms": []
+        },
+        "temp_c": {
+          "tag": "PS-03.BASIN-01.temp_c",
+          "label": "Suwuň temperaturasy",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            35
+          ],
+          "alarms": []
+        }
+      },
+      "components": {},
+      "camera": {
+        "target": [
+          0.0,
+          3.2,
+          15.0
+        ],
+        "radius": 15.517
+      }
+    },
+    "RACK-01": {
+      "type": "trash_rack",
+      "label": "Giriş panjarasy",
+      "node": "RACK-01",
+      "signals": {
+        "dp_m": {
+          "tag": "PS-03.RACK-01.dp_m",
+          "label": "Panjaradaky tapawut",
+          "unit": "m",
+          "type": "float",
+          "range": [
+            0,
+            1.5
+          ],
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 0.3,
+              "msg": "Panjara dykylýar"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 0.6,
+              "msg": "Panjara dykyldy — arassalamak gerek"
+            }
+          ]
+        },
+        "cleaning_active": {
+          "tag": "PS-03.RACK-01.cleaning_active",
+          "label": "Arassalaýyş işleýär",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        }
+      },
+      "components": {
+        "RACK__CLEANER": {
+          "node": "RACK-01__RACK__CLEANER",
+          "label": "Arassalaýjy darak",
+          "signals": {
+            "motor_current_a": {
+              "tag": "PS-03.RACK-01.RACK__CLEANER.motor_current_a",
+              "label": "Arassalaýjynyň togy",
+              "unit": "A",
+              "type": "float",
+              "range": [
+                0,
+                25
+              ],
+              "alarms": []
+            },
+            "position_pct": {
+              "tag": "PS-03.RACK-01.RACK__CLEANER.position_pct",
+              "label": "Daragyň ýagdaýy",
+              "unit": "%",
+              "type": "float",
+              "range": [
+                0,
+                100
+              ],
+              "alarms": []
+            }
+          },
+          "camera": {
+            "target": [
+              1.09,
+              6.65,
+              22.62
+            ],
+            "radius": 1.078
+          }
+        },
+        "RACK__BARS": {
+          "node": "RACK-01__RACK__BARS",
+          "label": "Panjara çybyklary",
+          "signals": {},
+          "camera": {
+            "target": [
+              1.09,
+              4.8725,
+              22.47
+            ],
+            "radius": 5.005
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          1.09,
+          4.8725,
+          22.5025
+        ],
+        "radius": 5.006
+      }
+    },
+    "GATE-01": {
+      "type": "slide_gate",
+      "label": "Giriş gapagy",
+      "node": "GATE-01",
+      "signals": {
+        "position_pct": {
+          "tag": "PS-03.GATE-01.position_pct",
+          "label": "Açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "alarms": []
+        },
+        "setpoint_pct": {
+          "tag": "PS-03.GATE-01.setpoint_pct",
+          "label": "Maksat açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "alarms": []
+        },
+        "limit_open": {
+          "tag": "PS-03.GATE-01.limit_open",
+          "label": "Açyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "limit_closed": {
+          "tag": "PS-03.GATE-01.limit_closed",
+          "label": "Ýapyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        }
+      },
+      "components": {
+        "GATE__HOIST": {
+          "node": "GATE-01__GATE__HOIST",
+          "label": "Göteriji mehanizm",
+          "signals": {
+            "motor_current_a": {
+              "tag": "PS-03.GATE-01.GATE__HOIST.motor_current_a",
+              "label": "Göteriji motoryň togy",
+              "unit": "A",
+              "type": "float",
+              "range": [
+                0,
+                40
+              ],
+              "alarms": [
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 32,
+                  "msg": "Gapak motorynda aşa tok — mehaniki gysylma"
+                }
+              ]
+            },
+            "thermal_trip": {
+              "tag": "PS-03.GATE-01.GATE__HOIST.thermal_trip",
+              "label": "Motoryň termiki goragy",
+              "unit": null,
+              "type": "bool",
+              "range": null,
+              "alarms": [
+                {
+                  "level": "ALARM",
+                  "op": "==",
+                  "value": true,
+                  "msg": "Gapak motorynyň termiki goragy işledi"
+                }
+              ]
+            },
+            "temp": {
+              "tag": "PS-03.GATE-01.GATE__HOIST.temp",
+              "label": "Göteriji motoryň temperaturasy",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                140
+              ],
+              "alarms": []
+            }
+          },
+          "camera": {
+            "target": [
+              -0.89,
+              6.35,
+              22.47
+            ],
+            "radius": 3.39
+          }
+        },
+        "GATE__FRAME": {
+          "node": "GATE-01__GATE__FRAME",
+          "label": "Gapak çarçuwasy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -1.09,
+              4.7,
+              22.47
+            ],
+            "radius": 4.833
+          }
+        },
+        "GATE__LEAF": {
+          "node": "GATE-01__GATE__LEAF",
+          "label": "Gapak tagtasy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -1.09,
+              1.5,
+              22.495
+            ],
+            "radius": 1.805
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -1.09,
+          4.85,
+          22.47
+        ],
+        "radius": 4.982
+      }
+    },
+    "HDR-01": {
+      "type": "header",
+      "label": "T-1 esasy turba",
+      "node": "HDR-01",
+      "signals": {
+        "flow_m3h": {
+          "tag": "PS-03.HDR-01.flow_m3h",
+          "label": "Akym",
+          "unit": "m³/sag",
+          "type": "float",
+          "range": [
+            0,
+            5000
+          ],
+          "alarms": []
+        },
+        "total_m3": {
+          "tag": "PS-03.HDR-01.total_m3",
+          "label": "Jemi göwrüm",
+          "unit": "m³",
+          "type": "float",
+          "range": [
+            0,
+            1000000000
+          ],
+          "alarms": []
+        },
+        "press_bar": {
+          "tag": "PS-03.HDR-01.press_bar",
+          "label": "Basyş",
+          "unit": "bar",
+          "type": "float",
+          "range": [
+            0,
+            12
+          ],
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 9.5,
+              "msg": "Liniýanyň basyşy örän ýokary"
+            },
+            {
+              "level": "WARN",
+              "op": "<",
+              "value": 1.0,
+              "msg": "Liniýanyň basyşy pes — liniýa boşaýar"
+            }
+          ]
+        },
+        "velocity_ms": {
+          "tag": "PS-03.HDR-01.velocity_ms",
+          "label": "Akym tizligi",
+          "unit": "m/s",
+          "type": "float",
+          "range": [
+            0,
+            5
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "HDR__PIPE": {
+          "node": "HDR-01__HDR__PIPE",
+          "label": "Kollektor we esasy turba",
+          "signals": {},
+          "camera": {
+            "target": [
+              -2.5,
+              7.6581,
+              -24.2191
+            ],
+            "radius": 11.5
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -2.5,
+          7.6581,
+          -24.2191
+        ],
+        "radius": 11.5
+      }
+    },
+    "HDR-02": {
+      "type": "header",
+      "label": "T-2 esasy turba",
+      "node": "HDR-02",
+      "signals": {
+        "flow_m3h": {
+          "tag": "PS-03.HDR-02.flow_m3h",
+          "label": "Akym",
+          "unit": "m³/sag",
+          "type": "float",
+          "range": [
+            0,
+            5000
+          ],
+          "alarms": []
+        },
+        "total_m3": {
+          "tag": "PS-03.HDR-02.total_m3",
+          "label": "Jemi göwrüm",
+          "unit": "m³",
+          "type": "float",
+          "range": [
+            0,
+            1000000000
+          ],
+          "alarms": []
+        },
+        "press_bar": {
+          "tag": "PS-03.HDR-02.press_bar",
+          "label": "Basyş",
+          "unit": "bar",
+          "type": "float",
+          "range": [
+            0,
+            12
+          ],
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 9.5,
+              "msg": "Liniýanyň basyşy örän ýokary"
+            },
+            {
+              "level": "WARN",
+              "op": "<",
+              "value": 1.0,
+              "msg": "Liniýanyň basyşy pes — liniýa boşaýar"
+            }
+          ]
+        },
+        "velocity_ms": {
+          "tag": "PS-03.HDR-02.velocity_ms",
+          "label": "Akym tizligi",
+          "unit": "m/s",
+          "type": "float",
+          "range": [
+            0,
+            5
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "HDR__PIPE": {
+          "node": "HDR-02__HDR__PIPE",
+          "label": "Kollektor we esasy turba",
+          "signals": {},
+          "camera": {
+            "target": [
+              4.4,
+              7.6581,
+              -24.2191
+            ],
+            "radius": 11.295
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          4.4,
+          7.6581,
+          -24.2191
+        ],
+        "radius": 11.295
+      }
+    },
+    "PMP-01": {
+      "type": "pump_hsc",
+      "label": "T-1 N-1",
+      "node": "PMP-01",
+      "signals": {
+        "run_inv": {
+          "tag": "PS-03.PMP-01.run_inv",
+          "label": "Inwertorda işleýär",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "run_pano": {
+          "tag": "PS-03.PMP-01.run_pano",
+          "label": "Panoda işleýär",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "discharge_press_bar": {
+          "tag": "PS-03.PMP-01.discharge_press_bar",
+          "label": "Basyş",
+          "unit": "bar",
+          "type": "float",
+          "range": [
+            0,
+            10
+          ],
+          "alarms": []
+        },
+        "vfd_freq_hz": {
+          "tag": "PS-03.PMP-01.vfd_freq_hz",
+          "label": "Ýygylyk",
+          "unit": "Hz",
+          "type": "float",
+          "range": [
+            0,
+            55
+          ],
+          "alarms": []
+        },
+        "current_a": {
+          "tag": "PS-03.PMP-01.current_a",
+          "label": "Tok",
+          "unit": "A",
+          "type": "float",
+          "range": [
+            0,
+            400
+          ],
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 294,
+              "msg": "Tok ýokary (nominalyň %105-i)"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 322,
+              "msg": "Tok aşa ýokary (nominalyň %115-i)"
+            }
+          ]
+        },
+        "power_kw": {
+          "tag": "PS-03.PMP-01.power_kw",
+          "label": "Kuwwat",
+          "unit": "kW",
+          "type": "float",
+          "range": [
+            0,
+            220
+          ],
+          "alarms": []
+        },
+        "hours_inv": {
+          "tag": "PS-03.PMP-01.hours_inv",
+          "label": "Inwertorda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "alarms": []
+        },
+        "hours_pano": {
+          "tag": "PS-03.PMP-01.hours_pano",
+          "label": "Panoda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "MOTOR": {
+          "node": "PMP-01__MOTOR",
+          "label": "Motor",
+          "signals": {
+            "t1": {
+              "tag": "PS-03.PMP-01.MOTOR.t1",
+              "label": "Nasos T1",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T1 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T1 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t2": {
+              "tag": "PS-03.PMP-01.MOTOR.t2",
+              "label": "Nasos T2",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T2 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T2 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t3": {
+              "tag": "PS-03.PMP-01.MOTOR.t3",
+              "label": "Nasos T3",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T3 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T3 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t4": {
+              "tag": "PS-03.PMP-01.MOTOR.t4",
+              "label": "Nasos T4",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T4 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T4 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t5": {
+              "tag": "PS-03.PMP-01.MOTOR.t5",
+              "label": "Nasos T5",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T5 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T5 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t6": {
+              "tag": "PS-03.PMP-01.MOTOR.t6",
+              "label": "Nasos T6",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T6 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T6 temperaturasy kritiki"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              -2.7825,
+              7.53,
+              -7.8
+            ],
+            "radius": 1.16
+          }
+        },
+        "PUMP": {
+          "node": "PMP-01__PUMP",
+          "label": "Nasosyň korpusy",
+          "signals": {
+            "bearing1": {
+              "tag": "PS-03.PMP-01.PUMP.bearing1",
+              "label": "Podşipnik 1",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 80,
+                  "msg": "Podşipnik 1 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 95,
+                  "msg": "Podşipnik 1 temperaturasy kritiki"
+                }
+              ]
+            },
+            "bearing2": {
+              "tag": "PS-03.PMP-01.PUMP.bearing2",
+              "label": "Podşipnik 2",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 80,
+                  "msg": "Podşipnik 2 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 95,
+                  "msg": "Podşipnik 2 temperaturasy kritiki"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              -4.3,
+              7.485,
+              -7.8
+            ],
+            "radius": 1.191
+          }
+        },
+        "BASE": {
+          "node": "PMP-01__BASE",
+          "label": "Rama",
+          "signals": {},
+          "camera": {
+            "target": [
+              -3.415,
+              6.84,
+              -7.8
+            ],
+            "radius": 1.706
+          }
+        },
+        "COUPLING": {
+          "node": "PMP-01__COUPLING",
+          "label": "Mufta",
+          "signals": {},
+          "camera": {
+            "target": [
+              -3.68,
+              7.51,
+              -7.8
+            ],
+            "radius": 0.264
+          }
+        },
+        "PIPE__DISCHARGE": {
+          "node": "PMP-01__PIPE__DISCHARGE",
+          "label": "Basyş turbasy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -4.4,
+              7.51,
+              -10.9235
+            ],
+            "radius": 2.322
+          }
+        },
+        "PIPE__SUCTION": {
+          "node": "PMP-01__PIPE__SUCTION",
+          "label": "Sorujy turba",
+          "signals": {},
+          "camera": {
+            "target": [
+              -3.52,
+              4.855,
+              -3.685
+            ],
+            "radius": 4.564
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -3.415,
+          5.0214,
+          -6.8085
+        ],
+        "radius": 7.308
+      }
+    },
+    "PMP-02": {
+      "type": "pump_hsc",
+      "label": "T-1 N-2",
+      "node": "PMP-02",
+      "signals": {
+        "run_inv": {
+          "tag": "PS-03.PMP-02.run_inv",
+          "label": "Inwertorda işleýär",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "run_pano": {
+          "tag": "PS-03.PMP-02.run_pano",
+          "label": "Panoda işleýär",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "discharge_press_bar": {
+          "tag": "PS-03.PMP-02.discharge_press_bar",
+          "label": "Basyş",
+          "unit": "bar",
+          "type": "float",
+          "range": [
+            0,
+            10
+          ],
+          "alarms": []
+        },
+        "vfd_freq_hz": {
+          "tag": "PS-03.PMP-02.vfd_freq_hz",
+          "label": "Ýygylyk",
+          "unit": "Hz",
+          "type": "float",
+          "range": [
+            0,
+            55
+          ],
+          "alarms": []
+        },
+        "current_a": {
+          "tag": "PS-03.PMP-02.current_a",
+          "label": "Tok",
+          "unit": "A",
+          "type": "float",
+          "range": [
+            0,
+            400
+          ],
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 294,
+              "msg": "Tok ýokary (nominalyň %105-i)"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 322,
+              "msg": "Tok aşa ýokary (nominalyň %115-i)"
+            }
+          ]
+        },
+        "power_kw": {
+          "tag": "PS-03.PMP-02.power_kw",
+          "label": "Kuwwat",
+          "unit": "kW",
+          "type": "float",
+          "range": [
+            0,
+            220
+          ],
+          "alarms": []
+        },
+        "hours_inv": {
+          "tag": "PS-03.PMP-02.hours_inv",
+          "label": "Inwertorda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "alarms": []
+        },
+        "hours_pano": {
+          "tag": "PS-03.PMP-02.hours_pano",
+          "label": "Panoda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "MOTOR": {
+          "node": "PMP-02__MOTOR",
+          "label": "Motor",
+          "signals": {
+            "t1": {
+              "tag": "PS-03.PMP-02.MOTOR.t1",
+              "label": "Nasos T1",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T1 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T1 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t2": {
+              "tag": "PS-03.PMP-02.MOTOR.t2",
+              "label": "Nasos T2",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T2 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T2 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t3": {
+              "tag": "PS-03.PMP-02.MOTOR.t3",
+              "label": "Nasos T3",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T3 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T3 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t4": {
+              "tag": "PS-03.PMP-02.MOTOR.t4",
+              "label": "Nasos T4",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T4 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T4 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t5": {
+              "tag": "PS-03.PMP-02.MOTOR.t5",
+              "label": "Nasos T5",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T5 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T5 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t6": {
+              "tag": "PS-03.PMP-02.MOTOR.t6",
+              "label": "Nasos T6",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T6 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T6 temperaturasy kritiki"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              -2.2175,
+              7.53,
+              -9.4
+            ],
+            "radius": 1.16
+          }
+        },
+        "PUMP": {
+          "node": "PMP-02__PUMP",
+          "label": "Nasosyň korpusy",
+          "signals": {
+            "bearing1": {
+              "tag": "PS-03.PMP-02.PUMP.bearing1",
+              "label": "Podşipnik 1",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 80,
+                  "msg": "Podşipnik 1 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 95,
+                  "msg": "Podşipnik 1 temperaturasy kritiki"
+                }
+              ]
+            },
+            "bearing2": {
+              "tag": "PS-03.PMP-02.PUMP.bearing2",
+              "label": "Podşipnik 2",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 80,
+                  "msg": "Podşipnik 2 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 95,
+                  "msg": "Podşipnik 2 temperaturasy kritiki"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              -0.7,
+              7.485,
+              -9.4
+            ],
+            "radius": 1.191
+          }
+        },
+        "BASE": {
+          "node": "PMP-02__BASE",
+          "label": "Rama",
+          "signals": {},
+          "camera": {
+            "target": [
+              -1.585,
+              6.84,
+              -9.4
+            ],
+            "radius": 1.706
+          }
+        },
+        "COUPLING": {
+          "node": "PMP-02__COUPLING",
+          "label": "Mufta",
+          "signals": {},
+          "camera": {
+            "target": [
+              -1.32,
+              7.51,
+              -9.4
+            ],
+            "radius": 0.264
+          }
+        },
+        "PIPE__DISCHARGE": {
+          "node": "PMP-02__PIPE__DISCHARGE",
+          "label": "Basyş turbasy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -0.6,
+              7.51,
+              -11.7235
+            ],
+            "radius": 1.536
+          }
+        },
+        "PIPE__SUCTION": {
+          "node": "PMP-02__PIPE__SUCTION",
+          "label": "Sorujy turba",
+          "signals": {},
+          "camera": {
+            "target": [
+              -0.3,
+              4.855,
+              -4.485
+            ],
+            "radius": 5.069
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -1.4627,
+          5.0214,
+          -6.8085
+        ],
+        "radius": 7.336
+      }
+    },
+    "PMP-03": {
+      "type": "pump_hsc",
+      "label": "T-2 N-3",
+      "node": "PMP-03",
+      "signals": {
+        "run_inv": {
+          "tag": "PS-03.PMP-03.run_inv",
+          "label": "Inwertorda işleýär",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "run_pano": {
+          "tag": "PS-03.PMP-03.run_pano",
+          "label": "Panoda işleýär",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "discharge_press_bar": {
+          "tag": "PS-03.PMP-03.discharge_press_bar",
+          "label": "Basyş",
+          "unit": "bar",
+          "type": "float",
+          "range": [
+            0,
+            10
+          ],
+          "alarms": []
+        },
+        "vfd_freq_hz": {
+          "tag": "PS-03.PMP-03.vfd_freq_hz",
+          "label": "Ýygylyk",
+          "unit": "Hz",
+          "type": "float",
+          "range": [
+            0,
+            55
+          ],
+          "alarms": []
+        },
+        "current_a": {
+          "tag": "PS-03.PMP-03.current_a",
+          "label": "Tok",
+          "unit": "A",
+          "type": "float",
+          "range": [
+            0,
+            400
+          ],
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 294,
+              "msg": "Tok ýokary (nominalyň %105-i)"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 322,
+              "msg": "Tok aşa ýokary (nominalyň %115-i)"
+            }
+          ]
+        },
+        "power_kw": {
+          "tag": "PS-03.PMP-03.power_kw",
+          "label": "Kuwwat",
+          "unit": "kW",
+          "type": "float",
+          "range": [
+            0,
+            220
+          ],
+          "alarms": []
+        },
+        "hours_inv": {
+          "tag": "PS-03.PMP-03.hours_inv",
+          "label": "Inwertorda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "alarms": []
+        },
+        "hours_pano": {
+          "tag": "PS-03.PMP-03.hours_pano",
+          "label": "Panoda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "MOTOR": {
+          "node": "PMP-03__MOTOR",
+          "label": "Motor",
+          "signals": {
+            "t1": {
+              "tag": "PS-03.PMP-03.MOTOR.t1",
+              "label": "Nasos T1",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T1 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T1 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t2": {
+              "tag": "PS-03.PMP-03.MOTOR.t2",
+              "label": "Nasos T2",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T2 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T2 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t3": {
+              "tag": "PS-03.PMP-03.MOTOR.t3",
+              "label": "Nasos T3",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T3 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T3 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t4": {
+              "tag": "PS-03.PMP-03.MOTOR.t4",
+              "label": "Nasos T4",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T4 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T4 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t5": {
+              "tag": "PS-03.PMP-03.MOTOR.t5",
+              "label": "Nasos T5",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T5 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T5 temperaturasy kritiki"
+                }
+              ]
+            },
+            "t6": {
+              "tag": "PS-03.PMP-03.MOTOR.t6",
+              "label": "Nasos T6",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 110,
+                  "msg": "Nasos T6 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 130,
+                  "msg": "Nasos T6 temperaturasy kritiki"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              6.0175,
+              7.53,
+              -7.8
+            ],
+            "radius": 1.16
+          }
+        },
+        "PUMP": {
+          "node": "PMP-03__PUMP",
+          "label": "Nasosyň korpusy",
+          "signals": {
+            "bearing1": {
+              "tag": "PS-03.PMP-03.PUMP.bearing1",
+              "label": "Podşipnik 1",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 80,
+                  "msg": "Podşipnik 1 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 95,
+                  "msg": "Podşipnik 1 temperaturasy kritiki"
+                }
+              ]
+            },
+            "bearing2": {
+              "tag": "PS-03.PMP-03.PUMP.bearing2",
+              "label": "Podşipnik 2",
+              "unit": "°C",
+              "type": "float",
+              "range": [
+                0,
+                200
+              ],
+              "alarms": [
+                {
+                  "level": "WARN",
+                  "op": ">",
+                  "value": 80,
+                  "msg": "Podşipnik 2 temperaturasy ýokary"
+                },
+                {
+                  "level": "ALARM",
+                  "op": ">",
+                  "value": 95,
+                  "msg": "Podşipnik 2 temperaturasy kritiki"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              4.5,
+              7.485,
+              -7.8
+            ],
+            "radius": 1.191
+          }
+        },
+        "BASE": {
+          "node": "PMP-03__BASE",
+          "label": "Rama",
+          "signals": {},
+          "camera": {
+            "target": [
+              5.385,
+              6.84,
+              -7.8
+            ],
+            "radius": 1.706
+          }
+        },
+        "COUPLING": {
+          "node": "PMP-03__COUPLING",
+          "label": "Mufta",
+          "signals": {},
+          "camera": {
+            "target": [
+              5.12,
+              7.51,
+              -7.8
+            ],
+            "radius": 0.264
+          }
+        },
+        "PIPE__DISCHARGE": {
+          "node": "PMP-03__PIPE__DISCHARGE",
+          "label": "Basyş turbasy",
+          "signals": {},
+          "camera": {
+            "target": [
+              4.4,
+              7.51,
+              -10.9235
+            ],
+            "radius": 2.322
+          }
+        },
+        "PIPE__SUCTION": {
+          "node": "PMP-03__PIPE__SUCTION",
+          "label": "Sorujy turba",
+          "signals": {},
+          "camera": {
+            "target": [
+              3.52,
+              4.855,
+              -3.685
+            ],
+            "radius": 4.564
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          4.6827,
+          5.0214,
+          -6.8085
+        ],
+        "radius": 7.496
+      }
+    },
+    "VLV-01": {
+      "type": "butterfly_valve",
+      "label": "N-1 basyş klapany",
+      "node": "VLV-01",
+      "signals": {
+        "position_pct": {
+          "tag": "PS-03.VLV-01.position_pct",
+          "label": "Açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "alarms": []
+        },
+        "limit_open": {
+          "tag": "PS-03.VLV-01.limit_open",
+          "label": "Açyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "limit_closed": {
+          "tag": "PS-03.VLV-01.limit_closed",
+          "label": "Ýapyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        }
+      },
+      "components": {
+        "VLV__ACTUATOR": {
+          "node": "VLV-01__VLV__ACTUATOR",
+          "label": "El çarky we reduktor",
+          "signals": {
+            "fault": {
+              "tag": "PS-03.VLV-01.VLV__ACTUATOR.fault",
+              "label": "Dolandyryjy näsazlygy",
+              "unit": null,
+              "type": "bool",
+              "range": null,
+              "alarms": [
+                {
+                  "level": "ALARM",
+                  "op": "==",
+                  "value": true,
+                  "msg": "Klapan dolandyryjysynyň näsazlygy"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              -4.4,
+              8.0199,
+              -10.83
+            ],
+            "radius": 0.391
+          }
+        },
+        "VLV__BODY": {
+          "node": "VLV-01__VLV__BODY",
+          "label": "Klapanyň korpusy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -4.4,
+              7.529,
+              -10.83
+            ],
+            "radius": 0.446
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -4.4,
+          7.73,
+          -10.83
+        ],
+        "radius": 0.609
+      }
+    },
+    "VLV-02": {
+      "type": "butterfly_valve",
+      "label": "N-2 basyş klapany",
+      "node": "VLV-02",
+      "signals": {
+        "position_pct": {
+          "tag": "PS-03.VLV-02.position_pct",
+          "label": "Açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "alarms": []
+        },
+        "limit_open": {
+          "tag": "PS-03.VLV-02.limit_open",
+          "label": "Açyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "limit_closed": {
+          "tag": "PS-03.VLV-02.limit_closed",
+          "label": "Ýapyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        }
+      },
+      "components": {
+        "VLV__ACTUATOR": {
+          "node": "VLV-02__VLV__ACTUATOR",
+          "label": "El çarky we reduktor",
+          "signals": {
+            "fault": {
+              "tag": "PS-03.VLV-02.VLV__ACTUATOR.fault",
+              "label": "Dolandyryjy näsazlygy",
+              "unit": null,
+              "type": "bool",
+              "range": null,
+              "alarms": [
+                {
+                  "level": "ALARM",
+                  "op": "==",
+                  "value": true,
+                  "msg": "Klapan dolandyryjysynyň näsazlygy"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              -0.6,
+              8.0199,
+              -12.43
+            ],
+            "radius": 0.391
+          }
+        },
+        "VLV__BODY": {
+          "node": "VLV-02__VLV__BODY",
+          "label": "Klapanyň korpusy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -0.6,
+              7.529,
+              -12.43
+            ],
+            "radius": 0.446
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -0.6,
+          7.73,
+          -12.43
+        ],
+        "radius": 0.609
+      }
+    },
+    "VLV-03": {
+      "type": "butterfly_valve",
+      "label": "N-3 basyş klapany",
+      "node": "VLV-03",
+      "signals": {
+        "position_pct": {
+          "tag": "PS-03.VLV-03.position_pct",
+          "label": "Açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "alarms": []
+        },
+        "limit_open": {
+          "tag": "PS-03.VLV-03.limit_open",
+          "label": "Açyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "limit_closed": {
+          "tag": "PS-03.VLV-03.limit_closed",
+          "label": "Ýapyk çäk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        }
+      },
+      "components": {
+        "VLV__ACTUATOR": {
+          "node": "VLV-03__VLV__ACTUATOR",
+          "label": "El çarky we reduktor",
+          "signals": {
+            "fault": {
+              "tag": "PS-03.VLV-03.VLV__ACTUATOR.fault",
+              "label": "Dolandyryjy näsazlygy",
+              "unit": null,
+              "type": "bool",
+              "range": null,
+              "alarms": [
+                {
+                  "level": "ALARM",
+                  "op": "==",
+                  "value": true,
+                  "msg": "Klapan dolandyryjysynyň näsazlygy"
+                }
+              ]
+            }
+          },
+          "camera": {
+            "target": [
+              4.4,
+              8.0199,
+              -10.83
+            ],
+            "radius": 0.391
+          }
+        },
+        "VLV__BODY": {
+          "node": "VLV-03__VLV__BODY",
+          "label": "Klapanyň korpusy",
+          "signals": {},
+          "camera": {
+            "target": [
+              4.4,
+              7.529,
+              -10.83
+            ],
+            "radius": 0.446
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          4.4,
+          7.73,
+          -10.83
+        ],
+        "radius": 0.609
+      }
+    },
+    "NRV-01": {
+      "type": "check_valve",
+      "label": "N-1 gaýtarmaýan klapan",
+      "node": "NRV-01",
+      "signals": {
+        "open": {
+          "tag": "PS-03.NRV-01.open",
+          "label": "Açyk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "slam_events": {
+          "tag": "PS-03.NRV-01.slam_events",
+          "label": "Gidrawliki urgy sany",
+          "unit": "sany",
+          "type": "int",
+          "range": [
+            0,
+            10000
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "NRV__BODY": {
+          "node": "NRV-01__NRV__BODY",
+          "label": "Klapanyň korpusy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -4.4,
+              7.5205,
+              -9.98
+            ],
+            "radius": 0.476
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -4.4,
+          7.5205,
+          -9.98
+        ],
+        "radius": 0.476
+      }
+    },
+    "NRV-02": {
+      "type": "check_valve",
+      "label": "N-2 gaýtarmaýan klapan",
+      "node": "NRV-02",
+      "signals": {
+        "open": {
+          "tag": "PS-03.NRV-02.open",
+          "label": "Açyk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "slam_events": {
+          "tag": "PS-03.NRV-02.slam_events",
+          "label": "Gidrawliki urgy sany",
+          "unit": "sany",
+          "type": "int",
+          "range": [
+            0,
+            10000
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "NRV__BODY": {
+          "node": "NRV-02__NRV__BODY",
+          "label": "Klapanyň korpusy",
+          "signals": {},
+          "camera": {
+            "target": [
+              -0.6,
+              7.5205,
+              -11.58
+            ],
+            "radius": 0.476
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          -0.6,
+          7.5205,
+          -11.58
+        ],
+        "radius": 0.476
+      }
+    },
+    "NRV-03": {
+      "type": "check_valve",
+      "label": "N-3 gaýtarmaýan klapan",
+      "node": "NRV-03",
+      "signals": {
+        "open": {
+          "tag": "PS-03.NRV-03.open",
+          "label": "Açyk",
+          "unit": null,
+          "type": "bool",
+          "range": null,
+          "alarms": []
+        },
+        "slam_events": {
+          "tag": "PS-03.NRV-03.slam_events",
+          "label": "Gidrawliki urgy sany",
+          "unit": "sany",
+          "type": "int",
+          "range": [
+            0,
+            10000
+          ],
+          "alarms": []
+        }
+      },
+      "components": {
+        "NRV__BODY": {
+          "node": "NRV-03__NRV__BODY",
+          "label": "Klapanyň korpusy",
+          "signals": {},
+          "camera": {
+            "target": [
+              4.4,
+              7.5205,
+              -9.98
+            ],
+            "radius": 0.476
+          }
+        }
+      },
+      "camera": {
+        "target": [
+          4.4,
+          7.5205,
+          -9.98
+        ],
+        "radius": 0.476
+      }
+    }
+  },
+  "static": [
+    "STATIC__CIVIL"
+  ],
+  "geometry": {
+    "water": {
+      "plan": [
+        [
+          -30.0,
+          4.0,
+          9.5
+        ],
+        [
+          -21.0,
+          4.0,
+          9.5
+        ],
+        [
+          -11.0,
+          4.58,
+          10.08
+        ],
+        [
+          -6.0,
+          5.88,
+          10.08
+        ],
+        [
+          -4.0,
+          7.28,
+          7.28
+        ],
+        [
+          0.0,
+          7.28,
+          7.28
+        ]
+      ],
+      "invert_el": 0.0,
+      "deck_el": 6.5,
+      "y_from": -30.0,
+      "y_to": 0.0,
+      "note": "plan = [y, taban_genişliği, üst_genişlik]; her istasyonda yarı_genişlik = (taban + (üst-taban)*t) / 2, t = (seviye-invert)/(deck-invert); istasyonlar arası doğrusal"
+    },
+    "cells": [
+      [
+        -2.64,
+        -1.15
+      ],
+      [
+        0.0,
+        -1.15
+      ],
+      [
+        2.64,
+        -1.15
+      ]
+    ]
+  },
+  "budget": {
+    "tris": 17754,
+    "objects": 36,
+    "materials": 6
+  }
+}

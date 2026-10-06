@@ -1,0 +1,26 @@
+{
+  "stations": [
+    {
+      "id": "PS-01",
+      "name": "Esasy suw göteriji beket",
+      "description": "6 nasosly, 2 basyş liniýaly suw göteriji beket",
+      "pumps": 6,
+      "headers": 2,
+      "cells": 6,
+      "equipment": 23,
+      "model": "models/ps-01.glb",
+      "twin_map": "models/ps-01-twin-map.json",
+      "config": "models/ps-01-station.json",
+      "source_alive": false,
+      "alarms": 0,
+      "model_parts": [
+        "models/ps-01.part0.bin",
+        "models/ps-01.part1.bin",
+        "models/ps-01.part2.bin",
+        "models/ps-01.part3.bin"
+      ]
+    }
+  ],
+  "default": "PS-01",
+  "niagara_root": "slot:/Twin"
+}

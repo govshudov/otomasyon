@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PS-01 — Veri Omurgası Testi</title>
+<style>
+  :root{
+    --bg:#12151a; --panel:#1a1f27; --line:#2a313c; --text:#dfe4ea; --dim:#8a94a3;
+    --accent:#3b82f6; --ok:#3ba55d; --warn:#f5a524; --alarm:#e5484d; --stale:#6b7280;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{display:flex;align-items:center;gap:16px;padding:12px 20px;
+         border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+  h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.02em}
+  .sub{color:var(--dim);font-size:12px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--stale);display:inline-block;
+       margin-right:6px;vertical-align:middle}
+  .dot.on{background:var(--ok);box-shadow:0 0 8px rgba(59,165,93,.6)}
+  .dot.off{background:var(--alarm)}
+  main{padding:20px;display:grid;gap:20px;max-width:1500px;margin:0 auto}
+  .grid{display:grid;gap:14px}
+  .cards{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);
+     margin:0 0 12px;font-weight:600}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-size:13px}
+  .kv span:first-child{color:var(--dim)}
+  .kv span:last-child{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+  .card{background:#161b22;border:1px solid var(--line);border-radius:8px;padding:13px;
+        border-left:3px solid var(--line)}
+  .card.WARN{border-left-color:var(--warn)}
+  .card.ALARM{border-left-color:var(--alarm)}
+  .card.run{border-left-color:var(--accent)}
+  .card h3{margin:0 0 2px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+  .tag{font-size:10px;padding:2px 7px;border-radius:20px;background:#242b35;color:var(--dim);
+       font-family:var(--mono);letter-spacing:.03em}
+  .tag.RUNNING{background:rgba(59,130,246,.18);color:#7cb0ff}
+  .tag.STARTING,.tag.STOPPING{background:rgba(245,165,36,.18);color:var(--warn)}
+  .tag.FAULT{background:rgba(229,72,77,.2);color:#ff8b8f}
+  .bar{height:6px;border-radius:3px;background:#242b35;overflow:hidden;margin:9px 0 11px}
+  .bar>i{display:block;height:100%;background:var(--accent);transition:width .25s}
+  .level{height:26px;border-radius:5px;background:#242b35;position:relative;overflow:hidden;margin:8px 0}
+  .level>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#1e5a8a,#3b82f6);
+           transition:width .3s}
+  .level>b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+           font-family:var(--mono);font-size:12px;font-weight:600;text-shadow:0 1px 3px #000}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;color:var(--dim);font-weight:500;font-size:11px;text-transform:uppercase;
+     letter-spacing:.05em;padding:6px 8px;border-bottom:1px solid var(--line)}
+  td{padding:7px 8px;border-bottom:1px solid #20262f;font-family:var(--mono);
+     font-variant-numeric:tabular-nums}
+  td.msg{font-family:inherit}
+  tr.ALARM td:first-child{border-left:3px solid var(--alarm)}
+  tr.WARN td:first-child{border-left:3px solid var(--warn)}
+  .lvl{font-weight:700}.lvl.ALARM{color:var(--alarm)}.lvl.WARN{color:var(--warn)}
+  .st{font-size:11px;color:var(--dim)}
+  button{background:#242b35;color:var(--text);border:1px solid var(--line);border-radius:6px;
+         padding:6px 11px;font-size:12px;cursor:pointer;font-family:inherit}
+  button:hover{background:#2d3542;border-color:#3a4350}
+  button.p{background:var(--accent);border-color:var(--accent);color:#fff}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  select{background:#242b35;color:var(--text);border:1px solid var(--line);border-radius:6px;
+         padding:6px 9px;font-size:12px;font-family:inherit}
+  .empty{color:var(--dim);font-style:italic;padding:14px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>PS-01 · Veri Omurgası</h1>
+  <span class="sub"><span class="dot" id="wsdot"></span><span id="wstxt">bağlanıyor…</span></span>
+  <span class="sub"><span class="dot" id="srcdot"></span><span id="srctxt">kaynak?</span></span>
+  <span class="sub" id="stats" style="margin-left:auto"></span>
+</header>
+
+<main>
+  <div class="grid" style="grid-template-columns:minmax(280px,340px) 1fr">
+    <section>
+      <h2>Emme Havuzu</h2>
+      <div class="level"><i id="lvlbar" style="width:0"></i><b id="lvltxt">–</b></div>
+      <div class="kv" id="basin"></div>
+    </section>
+    <section>
+      <h2>Basma Hatları</h2>
+      <div class="grid" style="grid-template-columns:1fr 1fr" id="headers"></div>
+    </section>
+  </div>
+
+  <section>
+    <h2>Pompa Üniteleri</h2>
+    <div class="grid cards" id="pumps"></div>
+  </section>
+
+  <section>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">Alarmlar <span id="alcount" class="tag"></span></h2>
+      <button id="ackall">Tümünü Onayla</button>
+    </div>
+    <table><thead><tr>
+      <th style="width:70px">Seviye</th><th style="width:100px">Ekipman</th>
+      <th style="width:190px">Bileşen</th><th>Mesaj</th>
+      <th style="width:90px">Değer</th><th style="width:110px">Durum</th><th style="width:70px"></th>
+    </tr></thead><tbody id="altbody"></tbody></table>
+  </section>
+
+  <section>
+    <h2>Arıza Enjeksiyonu <span class="sub">(geliştirme aracı — 3D arayüzdeki kırmızı boyamayı test etmek için)</span></h2>
+    <div class="row">
+      <select id="ftarget"></select>
+      <select id="fkind">
+        <option value="overheat">Sargı aşırı ısınma (T1–T6)</option>
+        <option value="bearing">Podşipnik ısınması</option>
+        <option value="overcurrent">Aşırı tok</option>
+        <option value="vfd_trip">Sürücü arızası (trip)</option>
+        <option value="sensor_dropout">Sensör kaybı</option>
+      </select>
+      <select id="fcomp" title="yalnız sensör kaybı için">
+        <option value="MOTOR.t1">MOTOR.t1</option>
+        <option value="PUMP.bearing1">PUMP.bearing1</option>
+      </select>
+      <button class="p" id="finject">Enjekte Et</button>
+      <button id="fclear">Temizle</button>
+      <span class="sub" id="fmsg"></span>
+    </div>
+  </section>
+</main>
+
+<script>
+const S = { values:{}, status:{}, health:{}, comp:{}, alarms:[], station:null, stale:new Set() };
+const $ = id => document.getElementById(id);
+const num = (t,d=1,f='–') => { const s=S.values[t]; return s==null?f:(typeof s.v==='number'?s.v.toFixed(d):String(s.v)); };
+const raw = t => S.values[t]?.v;
+const SID = 'PS-01';
+
+let ws, msgs = 0;
+function connect(){
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen  = () => { $('wsdot').className='dot on'; $('wstxt').textContent='bağlı'; };
+  ws.onclose = () => { $('wsdot').className='dot off'; $('wstxt').textContent='koptu — yeniden…'; setTimeout(connect,1500); };
+  ws.onmessage = e => { msgs++; handle(JSON.parse(e.data)); };
+}
+function handle(m){
+  if(m.type==='snapshot'){
+    S.values = m.values||{}; S.status = m.status||{}; S.alarms = m.alarms||[];
+    S.health = m.health||{}; S.comp = m.component_health||{}; S.station = m.station;
+    const alive = m.sources?.[SID]?.alive;
+    $('srcdot').className = 'dot '+(alive?'on':'off');
+    $('srctxt').textContent = alive ? `kaynak: ${m.sources[SID].source}` : 'KAYNAK YOK';
+    buildPumpSelect(); render();
+  } else if(m.type==='delta'){
+    Object.assign(S.values, m.values||{});
+    Object.assign(S.status, m.status||{});
+    if(m.health) S.health = m.health;
+    if(m.component_health) S.comp = m.component_health;
+    S.stale = new Set(m.stale||[]);
+    render();
+  } else if(m.type==='alarm'){
+    const i = S.alarms.findIndex(a=>a.id===m.alarm.id);
+    if(m.alarm.state==='NORM'){ if(i>=0) S.alarms.splice(i,1); }
+    else if(i>=0) S.alarms[i]=m.alarm; else S.alarms.push(m.alarm);
+    renderAlarms();
+  }
+}
+
+function pumpIds(){ return (S.station?.equipment||[]).filter(e=>e.type==='pump_hsc').map(e=>e.id); }
+function buildPumpSelect(){
+  $('ftarget').innerHTML = pumpIds().map(id=>`<option>${id}</option>`).join('');
+}
+
+function render(){
+  // Havuz
+  const lvl = raw(`${SID}.BASIN-01.level_m`) ?? 0, D = 6.5;
+  $('lvlbar').style.width = Math.min(100, lvl/D*100)+'%';
+  $('lvltxt').textContent = lvl.toFixed(2)+' m';
+  $('basin').innerHTML = [
+    ['Giriş debisi', num(`${SID}.BASIN-01.inflow_m3h`,0)+' m³/h'],
+    ['Çıkış debisi', num(`${SID}.BASIN-01.outflow_m3h`,0)+' m³/h'],
+    ['Hacim',        num(`${SID}.BASIN-01.volume_m3`,0)+' m³'],
+    ['Akış hızı',    num(`${SID}.BASIN-01.velocity_ms`,2)+' m/s'],
+    ['Su sıcaklığı', num(`${SID}.BASIN-01.temp_c`,1)+' °C'],
+    ['Izgara farkı', num(`${SID}.RACK-01.dp_m`,3)+' m'],
+    ['Kapak',        num(`${SID}.GATE-01.position_pct`,0)+' %'],
+  ].map(([k,v])=>`<span>${k}</span><span>${v}</span>`).join('');
+
+  // Kolektörler
+  $('headers').innerHTML = ['HDR-01','HDR-02'].map(h=>`
+    <div class="card"><h3>${h}</h3><div class="kv">
+      <span>Debi</span><span>${num(`${SID}.${h}.flow_m3h`,0)} m³/h</span>
+      <span>Basınç</span><span>${num(`${SID}.${h}.press_bar`,2)} bar</span>
+      <span>Hız</span><span>${num(`${SID}.${h}.velocity_ms`,2)} m/s</span>
+    </div></div>`).join('');
+
+  // Pompalar
+  $('pumps').innerHTML = pumpIds().map(id=>{
+    const st = S.status[`${SID}.${id}`]?.state || 'UNKNOWN';
+    const h  = S.health[id] || '';
+    const cls = h || (st==='RUNNING'?'run':'');
+    const sp = (raw(`${SID}.${id}.vfd_freq_hz`) ?? 0) / 50 * 100;
+    const compHot = Object.keys(S.comp).filter(k=>k.startsWith(id+'/'))
+                    .map(k=>k.split('/')[1]);
+    return `<div class="card ${cls}">
+      <h3>${id}<span class="tag ${st}">${st}</span></h3>
+      <div class="bar"><i style="width:${sp}%"></i></div>
+      <div class="kv">
+        <span>Çalışma yeri</span><span>${raw(`${SID}.${id}.run_inv`)?'inverter':raw(`${SID}.${id}.run_pano`)?'pano':'duruyor'}</span>
+        <span>Basma basıncı</span><span>${num(`${SID}.${id}.discharge_press_bar`,2)} bar</span>
+        <span>Frekans</span><span>${num(`${SID}.${id}.vfd_freq_hz`,1)} Hz</span>
+        <span>Akım</span><span>${num(`${SID}.${id}.current_a`,0)} A</span>
+        <span>Güç</span><span>${num(`${SID}.${id}.power_kw`,0)} kW</span>
+        <span>Sargı T1–T6 maks</span><span>${Math.max(...[1,2,3,4,5,6].map(k=>raw(`${SID}.${id}.MOTOR.t${k}`)??-1)).toFixed(1)} °C</span>
+        <span>Podşipnik maks</span><span>${Math.max(...[1,2].map(k=>raw(`${SID}.${id}.PUMP.bearing${k}`)??-1)).toFixed(1)} °C</span>
+        <span>Saat inv / pano</span><span>${num(`${SID}.${id}.hours_inv`,0)} / ${num(`${SID}.${id}.hours_pano`,0)} h</span>
+      </div>
+      ${compHot.length?`<div class="st" style="margin-top:8px;color:var(--alarm)">⬤ ${compHot.join(', ')}</div>`:''}
+    </div>`;
+  }).join('');
+
+  $('stats').textContent = `${Object.keys(S.values).length} tag · ${msgs} mesaj`;
+  renderAlarms();
+}
+
+function renderAlarms(){
+  const a = S.alarms;
+  $('alcount').textContent = a.length;
+  $('altbody').innerHTML = a.length ? a.map(x=>`
+    <tr class="${x.level}">
+      <td class="lvl ${x.level}">${x.level}</td>
+      <td>${x.equipment}</td>
+      <td>${x.component||'—'}</td>
+      <td class="msg">${x.msg}</td>
+      <td>${typeof x.value==='number'?x.value.toFixed(1):String(x.value)}</td>
+      <td class="st">${x.state}</td>
+      <td>${x.state==='UNACK_ALM'||x.state==='RTN_UNACK'
+            ?`<button onclick="ack('${x.id}')">Onayla</button>`:''}</td>
+    </tr>`).join('') : `<tr><td colspan="7" class="empty">Aktif alarm yok</td></tr>`;
+}
+function ack(id){ ws.send(JSON.stringify({type:'ack',alarm_id:id})); }
+$('ackall').onclick = () => ws.send(JSON.stringify({type:'ack_all'}));
+
+async function fault(kind){
+  const body = { target:$('ftarget').value, component:$('fcomp').value, kind, severity:1.0 };
+  const r = await fetch('/api/dev/fault',{method:'POST',headers:{'Content-Type':'application/json'},
+                                          body:JSON.stringify(body)});
+  $('fmsg').textContent = r.ok ? `gönderildi: ${body.target}/${kind}` : 'hata';
+  setTimeout(()=>$('fmsg').textContent='',3000);
+}
+$('finject').onclick = () => fault($('fkind').value);
+$('fclear').onclick  = () => fault('clear');
+
+connect();
+</script>
+</body>
+</html>

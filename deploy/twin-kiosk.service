@@ -1,0 +1,28 @@
+# Kurulum:
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/twin-kiosk.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now twin-kiosk
+#   sudo loginctl enable-linger $USER
+[Unit]
+Description=Su Yapisi Dijital Ikiz - Chromium kiosk
+# graphical-session.target KULLANILMIYOR: labwc (Raspberry Pi OS varsayilani)
+# bu hedefi aktive etmiyor, yalniz GNOME gibi systemd'ye entegre oturumlar ediyor.
+# Servis hic tetiklenmiyordu. default.target her zaman aktiftir; Wayland'in
+# hazir olmasini asagidaki ExecStartPre bekliyor.
+
+[Service]
+Type=simple
+Environment=TWIN_URL=http://localhost/
+Environment=WAYLAND_DISPLAY=wayland-0
+# 1) Wayland oturumu ayaga kalksin (labwc lightdm otomatik girisiyle baslar)
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 90); do [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ] && exit 0; sleep 1; done; exit 1'
+# 2) API cevap versin — arayuz bos ekranla acilmasin
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 90); do curl -fsS http://localhost/api/health >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1'
+ExecStart=%h/otomasyon/deploy/kiosk.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=10
+KillMode=mixed
+
+[Install]
+WantedBy=default.target

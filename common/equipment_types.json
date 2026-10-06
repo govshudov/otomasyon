@@ -1,0 +1,684 @@
+{
+  "$comment": "Ekipman tipi kataloğu. Her tip: 3D bileşenleri + sinyalleri + alarm kuralları. Model üreticisi, simülatör ve alarm motoru bu tek kaynaktan beslenir.",
+  "version": "0.3.0",
+  "types": {
+    "basin": {
+      "label": "Sorujy howuz",
+      "node": "WATER__BASIN",
+      "components": {},
+      "signals": {
+        "level_m": {
+          "label": "Suw derejesi",
+          "unit": "m",
+          "type": "float",
+          "range": [
+            0,
+            7
+          ],
+          "deadband": 0.01,
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": "<",
+              "value": 0.8,
+              "msg": "Howuz derejesi örän pes — nasos goragy"
+            },
+            {
+              "level": "WARN",
+              "op": "<",
+              "value": 1.2,
+              "msg": "Howuz derejesi pes"
+            },
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 5.5,
+              "msg": "Howuz derejesi ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 5.9,
+              "msg": "Howuz derejesi örän ýokary — joşma howpy"
+            }
+          ]
+        },
+        "volume_m3": {
+          "label": "Göwrüm",
+          "unit": "m³",
+          "type": "float",
+          "range": [
+            0,
+            6000
+          ],
+          "deadband": 5
+        },
+        "inflow_m3h": {
+          "label": "Girýän akym",
+          "unit": "m³/sag",
+          "type": "float",
+          "range": [
+            0,
+            8000
+          ],
+          "deadband": 20
+        },
+        "outflow_m3h": {
+          "label": "Çykýan akym",
+          "unit": "m³/sag",
+          "type": "float",
+          "range": [
+            0,
+            8000
+          ],
+          "deadband": 20
+        },
+        "velocity_ms": {
+          "label": "Akym tizligi",
+          "unit": "m/s",
+          "type": "float",
+          "range": [
+            0,
+            3
+          ],
+          "deadband": 0.02
+        },
+        "temp_c": {
+          "label": "Suwuň temperaturasy",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            35
+          ],
+          "deadband": 0.1
+        }
+      }
+    },
+    "trash_rack": {
+      "label": "Panjara",
+      "node": "RACK",
+      "components": {
+        "RACK__BARS": {
+          "label": "Panjara çybyklary"
+        },
+        "RACK__CLEANER": {
+          "label": "Arassalaýjy darak"
+        }
+      },
+      "signals": {
+        "dp_m": {
+          "label": "Panjaradaky tapawut",
+          "unit": "m",
+          "type": "float",
+          "range": [
+            0,
+            1.5
+          ],
+          "deadband": 0.01,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 0.3,
+              "msg": "Panjara dykylýar"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 0.6,
+              "msg": "Panjara dykyldy — arassalamak gerek"
+            }
+          ]
+        },
+        "cleaning_active": {
+          "label": "Arassalaýyş işleýär",
+          "type": "bool"
+        },
+        "RACK__CLEANER.motor_current_a": {
+          "label": "Arassalaýjynyň togy",
+          "unit": "A",
+          "type": "float",
+          "range": [
+            0,
+            25
+          ],
+          "deadband": 0.3
+        },
+        "RACK__CLEANER.position_pct": {
+          "label": "Daragyň ýagdaýy",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "deadband": 1.0
+        }
+      }
+    },
+    "slide_gate": {
+      "label": "Süýşýän gapak",
+      "node": "GATE",
+      "components": {
+        "GATE__LEAF": {
+          "label": "Gapak tagtasy"
+        },
+        "GATE__FRAME": {
+          "label": "Gapak çarçuwasy"
+        },
+        "GATE__HOIST": {
+          "label": "Göteriji mehanizm"
+        }
+      },
+      "signals": {
+        "position_pct": {
+          "label": "Açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "deadband": 0.5
+        },
+        "setpoint_pct": {
+          "label": "Maksat açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "deadband": 0.5
+        },
+        "limit_open": {
+          "label": "Açyk çäk",
+          "type": "bool"
+        },
+        "limit_closed": {
+          "label": "Ýapyk çäk",
+          "type": "bool"
+        },
+        "GATE__HOIST.motor_current_a": {
+          "label": "Göteriji motoryň togy",
+          "unit": "A",
+          "type": "float",
+          "range": [
+            0,
+            40
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 32,
+              "msg": "Gapak motorynda aşa tok — mehaniki gysylma"
+            }
+          ]
+        },
+        "GATE__HOIST.thermal_trip": {
+          "label": "Motoryň termiki goragy",
+          "type": "bool",
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": "==",
+              "value": true,
+              "msg": "Gapak motorynyň termiki goragy işledi"
+            }
+          ]
+        },
+        "GATE__HOIST.temp": {
+          "label": "Göteriji motoryň temperaturasy",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            140
+          ],
+          "deadband": 0.5
+        }
+      }
+    },
+    "pump_hsc": {
+      "label": "Gorizontal bölünýän korpusly nasos",
+      "node": "PMP",
+      "$comment": "Pompa izleme panosunun veri seti (6 Ekim 2026): çalışma yeri (inverter / pano) + iki ayrı çalışma süresi, basınç, Hz, tok, kW ve 8 sıcaklık (6 nasos + 2 podşipnik). Sıcaklıklar bileşen seviyesinde — alarm 3D'de doğru parçayı boyasın diye (6 sargı → MOTOR, podşipnikler → PUMP).",
+      "components": {
+        "MOTOR": {
+          "label": "Motor"
+        },
+        "COUPLING": {
+          "label": "Mufta"
+        },
+        "PUMP": {
+          "label": "Nasosyň korpusy"
+        },
+        "BASE": {
+          "label": "Rama"
+        },
+        "PIPE__SUCTION": {
+          "label": "Sorujy turba"
+        },
+        "PIPE__DISCHARGE": {
+          "label": "Basyş turbasy"
+        }
+      },
+      "signals": {
+        "run_inv": {
+          "label": "Inwertorda işleýär",
+          "type": "bool"
+        },
+        "run_pano": {
+          "label": "Panoda işleýär",
+          "type": "bool"
+        },
+        "discharge_press_bar": {
+          "label": "Basyş",
+          "unit": "bar",
+          "type": "float",
+          "range": [
+            0,
+            10
+          ],
+          "deadband": 0.02
+        },
+        "vfd_freq_hz": {
+          "label": "Ýygylyk",
+          "unit": "Hz",
+          "type": "float",
+          "range": [
+            0,
+            55
+          ],
+          "deadband": 0.2
+        },
+        "current_a": {
+          "label": "Tok",
+          "unit": "A",
+          "type": "float",
+          "range": [
+            0,
+            400
+          ],
+          "deadband": 1,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 294,
+              "msg": "Tok ýokary (nominalyň %105-i)"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 322,
+              "msg": "Tok aşa ýokary (nominalyň %115-i)"
+            }
+          ]
+        },
+        "power_kw": {
+          "label": "Kuwwat",
+          "unit": "kW",
+          "type": "float",
+          "range": [
+            0,
+            220
+          ],
+          "deadband": 1
+        },
+        "hours_inv": {
+          "label": "Inwertorda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "deadband": 0.05,
+          "counter": true
+        },
+        "hours_pano": {
+          "label": "Panoda işlän wagty",
+          "unit": "sag",
+          "type": "float",
+          "range": [
+            0,
+            200000
+          ],
+          "deadband": 0.05,
+          "counter": true
+        },
+        "MOTOR.t1": {
+          "label": "Nasos T1",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 110,
+              "msg": "Nasos T1 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 130,
+              "msg": "Nasos T1 temperaturasy kritiki"
+            }
+          ]
+        },
+        "MOTOR.t2": {
+          "label": "Nasos T2",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 110,
+              "msg": "Nasos T2 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 130,
+              "msg": "Nasos T2 temperaturasy kritiki"
+            }
+          ]
+        },
+        "MOTOR.t3": {
+          "label": "Nasos T3",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 110,
+              "msg": "Nasos T3 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 130,
+              "msg": "Nasos T3 temperaturasy kritiki"
+            }
+          ]
+        },
+        "MOTOR.t4": {
+          "label": "Nasos T4",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 110,
+              "msg": "Nasos T4 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 130,
+              "msg": "Nasos T4 temperaturasy kritiki"
+            }
+          ]
+        },
+        "MOTOR.t5": {
+          "label": "Nasos T5",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 110,
+              "msg": "Nasos T5 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 130,
+              "msg": "Nasos T5 temperaturasy kritiki"
+            }
+          ]
+        },
+        "MOTOR.t6": {
+          "label": "Nasos T6",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 110,
+              "msg": "Nasos T6 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 130,
+              "msg": "Nasos T6 temperaturasy kritiki"
+            }
+          ]
+        },
+        "PUMP.bearing1": {
+          "label": "Podşipnik 1",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 80,
+              "msg": "Podşipnik 1 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 95,
+              "msg": "Podşipnik 1 temperaturasy kritiki"
+            }
+          ]
+        },
+        "PUMP.bearing2": {
+          "label": "Podşipnik 2",
+          "unit": "°C",
+          "type": "float",
+          "range": [
+            0,
+            200
+          ],
+          "deadband": 0.5,
+          "alarms": [
+            {
+              "level": "WARN",
+              "op": ">",
+              "value": 80,
+              "msg": "Podşipnik 2 temperaturasy ýokary"
+            },
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 95,
+              "msg": "Podşipnik 2 temperaturasy kritiki"
+            }
+          ]
+        }
+      }
+    },
+    "butterfly_valve": {
+      "label": "Basyş klapany",
+      "node": "VLV",
+      "components": {
+        "VLV__BODY": {
+          "label": "Klapanyň korpusy"
+        },
+        "VLV__ACTUATOR": {
+          "label": "El çarky we reduktor"
+        }
+      },
+      "signals": {
+        "position_pct": {
+          "label": "Açyklyk",
+          "unit": "%",
+          "type": "float",
+          "range": [
+            0,
+            100
+          ],
+          "deadband": 1
+        },
+        "limit_open": {
+          "label": "Açyk çäk",
+          "type": "bool"
+        },
+        "limit_closed": {
+          "label": "Ýapyk çäk",
+          "type": "bool"
+        },
+        "VLV__ACTUATOR.fault": {
+          "label": "Dolandyryjy näsazlygy",
+          "type": "bool",
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": "==",
+              "value": true,
+              "msg": "Klapan dolandyryjysynyň näsazlygy"
+            }
+          ]
+        }
+      }
+    },
+    "check_valve": {
+      "label": "Gaýtarmaýan klapan",
+      "node": "NRV",
+      "components": {
+        "NRV__BODY": {
+          "label": "Klapanyň korpusy"
+        }
+      },
+      "signals": {
+        "open": {
+          "label": "Açyk",
+          "type": "bool"
+        },
+        "slam_events": {
+          "label": "Gidrawliki urgy sany",
+          "unit": "sany",
+          "type": "int",
+          "range": [
+            0,
+            10000
+          ],
+          "deadband": 1
+        }
+      }
+    },
+    "header": {
+      "label": "Esasy turba",
+      "node": "HDR",
+      "components": {
+        "HDR__PIPE": {
+          "label": "Kollektor we esasy turba"
+        }
+      },
+      "signals": {
+        "flow_m3h": {
+          "label": "Akym",
+          "unit": "m³/sag",
+          "type": "float",
+          "range": [
+            0,
+            5000
+          ],
+          "deadband": 15
+        },
+        "total_m3": {
+          "label": "Jemi göwrüm",
+          "unit": "m³",
+          "type": "float",
+          "range": [
+            0,
+            1000000000
+          ],
+          "deadband": 1,
+          "counter": true
+        },
+        "press_bar": {
+          "label": "Basyş",
+          "unit": "bar",
+          "type": "float",
+          "range": [
+            0,
+            12
+          ],
+          "deadband": 0.02,
+          "alarms": [
+            {
+              "level": "ALARM",
+              "op": ">",
+              "value": 9.5,
+              "msg": "Liniýanyň basyşy örän ýokary"
+            },
+            {
+              "level": "WARN",
+              "op": "<",
+              "value": 1.0,
+              "msg": "Liniýanyň basyşy pes — liniýa boşaýar"
+            }
+          ]
+        },
+        "velocity_ms": {
+          "label": "Akym tizligi",
+          "unit": "m/s",
+          "type": "float",
+          "range": [
+            0,
+            5
+          ],
+          "deadband": 0.05
+        }
+      }
+    }
+  }
+}
