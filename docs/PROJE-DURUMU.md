@@ -188,12 +188,16 @@ Nasos kartındaki **Suw derejesi** artık nasosun kendi LT datçiğinden (yoksa 
 `web/src/data/`'yı da dışlıyordu — iki tarafta da GitHub'a gitmemişti; `/data/` yapıldı.
 JACE paketi Dell'in modeliyle (parçalardan birleştirilen `build/ps-01-plain.glb`) yeniden üretildi.
 
-**Kurulum hedefi (6 Ekim akşamı):** Karta (TV_PX/MAPS.px) yalnız aynı istasyondan açılınca
-gömülür; harita bu PC'deki yerel süpervizör istasyonunda (https://localhost). Bu yüzden pano
-yerel istasyona kurulur: `powershell -ExecutionPolicy Bypass -File tools\jace\kur.ps1 -Url https://127.0.0.1`
-(şifreyi sorar; istasyonda Config → Twin → PS-01 yoksa hiçbir şey yazmadan durur — önce
-Workbench'te JACE'ten Twin klasörü kopyalanır). Sayfa: https://localhost/file/twin/index.html.
-JACE (192.168.1.140) o akşam bu ağdan TLS el sıkışmasını tamamlamıyordu (TCP açık, HTTPS yok).
+**KURULDU (6 Ekim 18:32) — yerel istasyon `ANEW_MAGTYMGULY_20261006`** (bu PC'de daemon
+altında çalışıyor; JACE istasyonunun kopyası, Twin ağacı ve TV_PX/MAPS.px içinde). Hedef JACE
+DEĞİL (kullanıcı kararı). Sayfa: **https://localhost/file/twin/index.html** — Karta gömülü
+çalışıyor (aynı kaynak). Kurulum: `deploy.mjs` JACE_URL=https://127.0.0.1 (ya da
+`kur.ps1 -Url https://127.0.0.1`); 11 dosya, Dell'in eski paketi silindi, 72 yeni nokta
+(run_inv/run_pano, hours_inv/pano, MOTOR/t1–t6, PUMP/bearing1–2, HDR/total_m3), istasyon
+kaydedildi; yedek `Desktop\twin_yedek_yerel_2026-10-06_1832`. Yeni noktalar boş ("—") —
+gerçek noktalara link'lenene kadar nasosun durumu eski `state` noktasından okunur.
+İstasyon dosyaları `C:\ProgramData\Niagara4.15\...` altında (erişim yok) — kurulum yalnız
+istasyon üzerinden. JACE (192.168.1.140) o akşam bu ağdan HTTPS el sıkışmasını tamamlamıyordu.
 
 Kullanıcı referans olarak i4 Cortex pompa panosunun iki ekranını verdi (kart düzeni +
 büyük grafik). İstekler ve karşılıkları:
