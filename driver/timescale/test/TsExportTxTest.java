@@ -147,6 +147,29 @@ public class TsExportTxTest
       q.stop();
       check("5 kuyruk yazdi", count(c, pid) == 12, "satir " + count(c, pid) + ", kuyruk hata: " + q.lastError());
 
+      // 7) var olan point'e sonradan gelen birim yazilir (1.7.1), bos alan eskisini ezmez
+      com.akyllyoy.timescale.db.TsPointMeta m = new com.akyllyoy.timescale.db.TsPointMeta();
+      m.station = "TX_TEST"; m.historyId = "/TX/p1"; m.name = "p1"; m.displayName = "p1"; m.unit = "m³/h";
+      long rid = new com.akyllyoy.timescale.db.TsPointRegistry("niagara").resolve(c, m);
+      String unit;
+      try (PreparedStatement ps = c.raw().prepareStatement("SELECT unit FROM niagara.point WHERE point_id = ?"))
+      {
+        ps.setLong(1, pid);
+        try (ResultSet rs = ps.executeQuery()) { rs.next(); unit = rs.getString(1); }
+      }
+      c.commit();
+      check("7 ayni point_id", rid == pid, rid + " != " + pid);
+      check("7 birim guncellendi", "m³/h".equals(unit), "unit " + unit);
+      m.unit = null;
+      new com.akyllyoy.timescale.db.TsPointRegistry("niagara").resolve(c, m);
+      try (PreparedStatement ps = c.raw().prepareStatement("SELECT unit FROM niagara.point WHERE point_id = ?"))
+      {
+        ps.setLong(1, pid);
+        try (ResultSet rs = ps.executeQuery()) { rs.next(); unit = rs.getString(1); }
+      }
+      c.commit();
+      check("7 bos birim eskisini korur", "m³/h".equals(unit), "unit " + unit);
+
       try (Statement st = c.raw().createStatement())
       {
         st.execute("DELETE FROM niagara.point WHERE station = 'TX_TEST'");

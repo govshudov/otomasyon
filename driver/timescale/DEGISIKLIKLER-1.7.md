@@ -57,3 +57,21 @@ onun sonunda olması, kuyruğun ortak yazıcıyla yazması.
 Ayrı bir veritabanı ister (`createdb ts_test`); şifre `PGPASSWORD`'dan okunur,
 koda yazılmaz. Mevcut 175 test yeni sınıflarla derleniyor (çalıştırmak için
 `scada` veritabanı ve `niagara_rw` rolü gerekir, bkz. 1.6 notu).
+
+---
+
+# 1.7.0.0 → 1.7.1.0
+
+**Sorun:** 1.7.0.0'da birim okunuyordu ama veritabanına gitmiyordu. Nokta
+kayıt defteri (`TsPointRegistry.resolve`) point veritabanında varsa yalnız
+kimliğini alıyordu; birim, görünen ad, kaynak ORD gibi bilgiler yalnız nokta
+**ilk eklenirken** yazılıyordu. Var olan 676 noktanın birimi hiç dolmazdı.
+
+**Düzeltme:** Her station çalışmasında bir noktayı ilk görüşte metadata upsert
+edilir (`updateMeta`, `RETURNING point_id`); sonrası önbellekten. Boş gelen
+alanlar `COALESCE` ile eski değerini korur. Maliyet: station başına nokta
+başına bir sorgu.
+
+| Dosya | Durum |
+|---|---|
+| `db/TsPointRegistry.java` | `resolve` var olan point'te de metadata'yı günceller |
