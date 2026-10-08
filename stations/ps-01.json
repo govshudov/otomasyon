@@ -3,6 +3,13 @@
   "name": "Esasy suw göteriji beket",
   "description": "6 nasosly, 2 basyş liniýaly suw göteriji beket",
   "schema_version": "0.1.0",
+  "site": {
+    "$comment": "Kurulum (tools/kurulum/kur-istasyon.ps1): Niagara istasyonunun adı sabit olmalı; sürücü veriyi bu adla yazar. Veritabanı aynı PC'de (PostgreSQL + TimescaleDB elle kurulur).",
+    "niagara_station": "MAGTYMGULY",
+    "db": { "host": "localhost", "port": 5432, "name": "Niagara" },
+    "retention_years": 5,
+    "compress_after_days": 7
+  },
   "units": {
     "length": "m",
     "flow": "m3h",

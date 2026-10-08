@@ -38,8 +38,15 @@ def channel_plan(cells_w: float) -> list[list[float]]:
 
 def build(sid: str, name: str, n_pumps: int, per_header: int,
           motor_kw: float = 160.0, rated_flow: float = 900.0,
-          rated_head: float = 45.0) -> dict:
-    n_headers = -(-n_pumps // per_header)          # yukarı yuvarla
+          rated_head: float = 45.0, split: list[int] | None = None,
+          site: dict | None = None) -> dict:
+    # split: kolektör başına pompa sayısı (örn. [4, 3, 3]); verilmezse per_header'a göre eşit
+    if split is None:
+        split = [min(per_header, n_pumps - k) for k in range(0, n_pumps, per_header)]
+    if sum(split) != n_pumps or min(split) < 1:
+        raise SystemExit(f"kolektör dağılımı {split} toplamı {n_pumps} pompa olmalı")
+    n_headers = len(split)
+    header_of = [h for h, k in enumerate(split) for _ in range(k)]
 
     # Her pompaya bir hücre; kanal planı hücre sırasının genişliğinden türer
     cell_w, pier = 2.0, 0.64
@@ -51,10 +58,10 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
 
     for i in range(n_pumps):
         n = i + 1
-        hid = f"HDR-{i // per_header + 1:02d}"
+        hid = f"HDR-{header_of[i] + 1:02d}"
         pumps.append(collections.OrderedDict([
             ("id", f"PMP-{n:02d}"), ("type", "pump_hsc"),
-            ("label", f"T-{i // per_header + 1} N-{n}"), ("header", hid),
+            ("label", f"T-{header_of[i] + 1} N-{n}"), ("header", hid),
             ("layout", {"cell": i, "row": i % 2}),
             ("params", collections.OrderedDict([
                 ("motor_kw", motor_kw), ("rated_flow_m3h", rated_flow),
@@ -78,9 +85,9 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
             ("label", f"N-{n} gaýtarmaýan klapan"), ("source_pump", f"PMP-{n:02d}"),
             ("params", {"dn": 350})]))
 
+    starts = [sum(split[:h]) for h in range(n_headers)]
     for h in range(n_headers):
-        members = [f"PMP-{j+1:02d}" for j in range(h * per_header,
-                                                   min((h + 1) * per_header, n_pumps))]
+        members = [f"PMP-{j+1:02d}" for j in range(starts[h], starts[h] + split[h])]
         headers.append(collections.OrderedDict([
             ("id", f"HDR-{h+1:02d}"), ("type", "header"),
             ("label", f"T-{h+1} esasy turba"),
@@ -91,6 +98,7 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
         ("station_id", sid), ("name", name),
         ("description", f"{n_pumps} nasosly, {n_headers} basyş liniýaly suw göteriji beket"),
         ("schema_version", "0.1.0"),
+        *([("site", site)] if site else []),
         ("units", {"length": "m", "flow": "m3h", "pressure": "bar",
                    "temp": "C", "vib": "mm/s"}),
         ("geometry", collections.OrderedDict([
@@ -134,15 +142,27 @@ def main() -> int:
     ap.add_argument("--name", default=None)
     ap.add_argument("--pumps", type=int, required=True)
     ap.add_argument("--per-header", type=int, default=3)
+    ap.add_argument("--kolektor", default=None,
+                    help="kolektör başına pompa sayısı, virgülle (örn. 4,3,3); --per-header yerine")
+    ap.add_argument("--niagara", default=None,
+                    help="Niagara istasyon adı (sabit, örn. YASYLDEPE); kurulum betiği bunu denetler")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
 
-    cfg = build(a.id, a.name or "Suw göteriji beket", a.pumps, a.per_header)
+    split = [int(x) for x in a.kolektor.split(",")] if a.kolektor else None
+    site = None
+    if a.niagara:
+        site = collections.OrderedDict([
+            ("niagara_station", a.niagara),
+            ("db", {"host": "localhost", "port": 5432, "name": "Niagara"}),
+            ("retention_years", 5), ("compress_after_days", 7)])
+    cfg = build(a.id, a.name or "Suw göteriji beket", a.pumps, a.per_header, split=split, site=site)
     out = Path(a.out or ROOT / f"stations/{a.id.lower()}.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     n = len(cfg["equipment"])
-    print(f"{out}  —  {a.pumps} pompa, {-(-a.pumps//a.per_header)} kolektör, "
+    n_hdr = sum(1 for e in cfg["equipment"] if e["type"] == "header")
+    print(f"{out}  —  {a.pumps} pompa, {n_hdr} kolektör, "
           f"{a.pumps} hücre, {n} ekipman")
     return 0
 
