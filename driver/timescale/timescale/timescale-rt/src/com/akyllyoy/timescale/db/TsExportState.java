@@ -118,16 +118,32 @@ public final class TsExportState
   public void markSuccess(TsConnection c, long pointId, long lastTime, long rowsAdded)
     throws SQLException
   {
+    markSuccess(c, pointId, lastTime, rowsAdded, true);
+  }
+
+  /**
+   * {@link #markSuccess(TsConnection, long, long, long)} ile ayni;
+   * {@code commit=false} ise islemi cagiran kapatir. History export satirlari
+   * ve watermark'i boyle tek islemde yazar (biri olmadan digeri kalici olmaz).
+   * Hata durumunda geri alma da cagirana aittir.
+   */
+  public void markSuccess(TsConnection c, long pointId, long lastTime, long rowsAdded,
+                          boolean commit)
+    throws SQLException
+  {
+    if (!commit)
+    {
+      try (PreparedStatement ps = c.raw().prepareStatement(successSql()))
+      {
+        ps.setLong(1, pointId);
+        ps.setTimestamp(2, new Timestamp(lastTime), UTC);
+        ps.setLong(3, rowsAdded);
+        ps.executeUpdate();
+      }
+      return;
+    }
     c.ensureOpen();
-    try (PreparedStatement ps = c.raw().prepareStatement(
-           "INSERT INTO " + schema + ".export_state "
-         + "(point_id, last_time, last_run, last_status, last_fault, rows_total, updated_at) "
-         + "VALUES (?, ?, now(), 'ok', NULL, ?, now()) "
-         + "ON CONFLICT (point_id) DO UPDATE SET "
-         + "last_time = GREATEST(" + schema + ".export_state.last_time, EXCLUDED.last_time), "
-         + "last_run = now(), last_status = 'ok', last_fault = NULL, "
-         + "rows_total = " + schema + ".export_state.rows_total + EXCLUDED.rows_total, "
-         + "updated_at = now()"))
+    try (PreparedStatement ps = c.raw().prepareStatement(successSql()))
     {
       ps.setLong(1, pointId);
       ps.setTimestamp(2, new Timestamp(lastTime), UTC);
@@ -140,6 +156,18 @@ public final class TsExportState
       c.rollbackQuietly();
       throw e;
     }
+  }
+
+  private String successSql()
+  {
+    return "INSERT INTO " + schema + ".export_state "
+         + "(point_id, last_time, last_run, last_status, last_fault, rows_total, updated_at) "
+         + "VALUES (?, ?, now(), 'ok', NULL, ?, now()) "
+         + "ON CONFLICT (point_id) DO UPDATE SET "
+         + "last_time = GREATEST(" + schema + ".export_state.last_time, EXCLUDED.last_time), "
+         + "last_run = now(), last_status = 'ok', last_fault = NULL, "
+         + "rows_total = " + schema + ".export_state.rows_total + EXCLUDED.rows_total, "
+         + "updated_at = now()";
   }
 
   /**

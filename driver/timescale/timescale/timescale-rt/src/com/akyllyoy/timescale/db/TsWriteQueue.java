@@ -4,15 +4,9 @@
 
 package com.akyllyoy.timescale.db;
 
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,10 +20,10 @@ import java.util.logging.Logger;
  * yalnizca {@link #offer(TsSample)} cagirir, gercek yazma bu sinifin kendi
  * thread'inde toplu (batch) olarak yapilir.
  * <p>
- * <b>Geri basinc:</b> Kuyruk dolarsa {@link OverflowPolicy} devreye girer.
- * History export icin veri kaybi olmaz (kaynak Niagara history'sinde durur,
- * bir sonraki turda watermark'tan devam edilir); canli COV icin ise
- * en eski ornekler dusurulur.
+ * <b>Geri basinc:</b> Kuyruk dolarsa {@link OverflowPolicy} devreye girer ve
+ * ornekler dusurulur. Bu yuzden kuyruk yalniz kaybi kabul edilebilir canli
+ * veriler icindir. 1.7'den beri history export kuyrugu <b>kullanmaz</b>:
+ * satirlari watermark'la ayni islemde kendisi yazar ({@link TsRowWriter}).
  * <p>
  * <b>Dayaniklilik:</b> Yazma hatasinda parti elde tutulur ve ustel geri
  * cekilme ile yeniden denenir; bu sirada kuyruk dolarsa yeni ornekler
@@ -42,8 +36,6 @@ public final class TsWriteQueue
 {
   private static final Logger LOG = Logger.getLogger("timescale.write");
 
-  /** UTC'de baglamak icin paylasilan takvim (setTimestamp yerel TZ'ye kaymasin) */
-  private static final Calendar UTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
   public enum OverflowPolicy
   {
@@ -258,121 +250,7 @@ public final class TsWriteQueue
     throws SQLException
   {
     conn.ensureOpen();
-
-    Map<TsValueType, List<TsSample>> byType = new HashMap<>();
-    for (int i = 0; i < batch.size(); i++)
-    {
-      TsSample s = batch.get(i);
-      List<TsSample> l = byType.get(s.valueType);
-      if (l == null) { l = new ArrayList<>(); byType.put(s.valueType, l); }
-      l.add(s);
-    }
-
-    for (Map.Entry<TsValueType, List<TsSample>> e : byType.entrySet())
-    {
-      insertRows(e.getKey(), e.getValue());
-    }
-
-    if (updateLive)
-    {
-      upsertLive(batch);
-    }
-
+    TsRowWriter.write(conn, schema, batch, updateLive);
     conn.commit();
-  }
-
-  private void insertRows(TsValueType type, List<TsSample> rows)
-    throws SQLException
-  {
-    String sql = "INSERT INTO " + schema + '.' + type.table
-      + " (time, point_id, value, status, trend_flags, src) VALUES (?,?,?,?,?,?)"
-      + " ON CONFLICT (point_id, time) DO NOTHING";
-
-    try (PreparedStatement ps = conn.raw().prepareStatement(sql))
-    {
-      for (int i = 0; i < rows.size(); i++)
-      {
-        TsSample s = rows.get(i);
-        ps.setTimestamp(1, new Timestamp(s.time), UTC);
-        ps.setLong(2, s.pointId);
-        switch (type)
-        {
-          case NUMERIC:
-            if (Double.isNaN(s.numValue) || Double.isInfinite(s.numValue))
-            {
-              ps.setNull(3, java.sql.Types.DOUBLE);
-            }
-            else
-            {
-              ps.setDouble(3, s.numValue);
-            }
-            break;
-          case BOOLEAN: ps.setBoolean(3, s.boolValue); break;
-          case ENUM:    ps.setInt(3, s.enumValue); break;
-          default:
-            if (s.strValue == null) { ps.setNull(3, java.sql.Types.VARCHAR); }
-            else { ps.setString(3, s.strValue); }
-        }
-        ps.setInt(4, s.status);
-        ps.setShort(5, s.trendFlags);
-        ps.setShort(6, s.src);
-        ps.addBatch();
-      }
-      ps.executeBatch();
-    }
-  }
-
-  /**
-   * point_live tablosunu partideki en yeni degerle gunceller.
-   */
-  private void upsertLive(List<TsSample> batch)
-    throws SQLException
-  {
-    Map<Long, TsSample> latest = new HashMap<>();
-    for (int i = 0; i < batch.size(); i++)
-    {
-      TsSample s = batch.get(i);
-      TsSample prev = latest.get(s.pointId);
-      if (prev == null || s.time > prev.time) { latest.put(s.pointId, s); }
-    }
-    if (latest.isEmpty()) { return; }
-
-    String sql = "INSERT INTO " + schema + ".point_live"
-      + " (point_id, time, num_value, bool_value, str_value, enum_value, status, updated_at)"
-      + " VALUES (?,?,?,?,?,?,?, now())"
-      + " ON CONFLICT (point_id) DO UPDATE SET"
-      + " time = EXCLUDED.time, num_value = EXCLUDED.num_value,"
-      + " bool_value = EXCLUDED.bool_value, str_value = EXCLUDED.str_value,"
-      + " enum_value = EXCLUDED.enum_value, status = EXCLUDED.status,"
-      + " updated_at = now()"
-      + " WHERE " + schema + ".point_live.time <= EXCLUDED.time";
-
-    try (PreparedStatement ps = conn.raw().prepareStatement(sql))
-    {
-      for (TsSample s : latest.values())
-      {
-        ps.setLong(1, s.pointId);
-        ps.setTimestamp(2, new Timestamp(s.time), UTC);
-        if (s.valueType == TsValueType.NUMERIC
-            && !Double.isNaN(s.numValue) && !Double.isInfinite(s.numValue))
-        {
-          ps.setDouble(3, s.numValue);
-        }
-        else { ps.setNull(3, java.sql.Types.DOUBLE); }
-
-        if (s.valueType == TsValueType.BOOLEAN) { ps.setBoolean(4, s.boolValue); }
-        else { ps.setNull(4, java.sql.Types.BOOLEAN); }
-
-        if (s.valueType == TsValueType.STRING && s.strValue != null) { ps.setString(5, s.strValue); }
-        else { ps.setNull(5, java.sql.Types.VARCHAR); }
-
-        if (s.valueType == TsValueType.ENUM) { ps.setInt(6, s.enumValue); }
-        else { ps.setNull(6, java.sql.Types.INTEGER); }
-
-        ps.setInt(7, s.status);
-        ps.addBatch();
-      }
-      ps.executeBatch();
-    }
   }
 }

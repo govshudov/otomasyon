@@ -49,6 +49,7 @@ import com.akyllyoy.timescale.db.TsExportState;
 import com.akyllyoy.timescale.db.TsHistoryFilter;
 import com.akyllyoy.timescale.db.TsPolicy;
 import com.akyllyoy.timescale.db.TsPointMeta;
+import com.akyllyoy.timescale.db.TsRowWriter;
 import com.akyllyoy.timescale.db.TsSample;
 import com.akyllyoy.timescale.db.TsValueType;
 import com.akyllyoy.timescale.db.TsWriteQueue;
@@ -66,20 +67,23 @@ import com.akyllyoy.timescale.db.TsWriteQueue;
  *   <li>{@code <sema>.export_state} tablosundan o point'in <b>watermark</b>'i
  *       -- en son aktarilan kaydin zamani -- okunur.</li>
  *   <li>Yalnizca watermark'tan <b>sonraki</b> kayitlar
- *       {@code timeQuery} ile okunur (tum gecmis her turda taranmaz) ve
- *       yazma kuyruguna verilir. Ilk calismada watermark yoktur: tum gecmis
- *       aktarilir, istenirse {@code backfillMaxDays} ile sinirlanir.</li>
- *   <li>Kuyruk toplu (batch) yazar;
+ *       {@code timeQuery} ile okunur (tum gecmis her turda taranmaz).
+ *       Ilk calismada watermark yoktur: tum gecmis aktarilir, istenirse
+ *       {@code backfillMaxDays} ile sinirlanir.</li>
+ *   <li>Kayitlar {@code batchSize}'lik partiler halinde yazilir; her parti
+ *       ve o partinin watermark'i <b>ayni islemde</b> commit edilir.
  *       {@code ON CONFLICT (point_id, time) DO NOTHING} ayni kaydin ikinci
  *       kez yazilmasini engeller.</li>
- *   <li>Tur basarili biterse watermark ilerletilir. Hata olursa watermark
- *       <b>yerinde kalir</b>; bir sonraki tur ayni noktadan devam eder.</li>
+ *   <li>Yazma basarisiz olursa islem geri alinir, watermark <b>yerinde
+ *       kalir</b>; bir sonraki tur ayni noktadan devam eder.</li>
  * </ol>
  *
- * <b>Baglanti kesilirse:</b> Kuyruk kayitlari elde tutar ve ustel geri
- * cekilme ile yeniden dener. Kuyruk dolarsa okuma durur -- veri Niagara
- * history'sinde durmaya devam ettigi icin kaybolmaz; baglanti gelince
- * watermark'tan devam edilir.
+ * <b>Baglanti kesilirse:</b> Yazilamayan kayitlar "aktarildi" sayilmaz; veri
+ * Niagara history'sinde durur, baglanti gelince watermark'tan devam edilir.
+ * 1.6'ya kadar kayitlar once yazma kuyruguna veriliyor ve watermark hemen
+ * ilerletiliyordu: kuyruk tasinca (en eskiyi atan politika) ya da station
+ * kapanirken kuyrukta kalanlar kayboluyordu. 1.7'de history export kuyrugu
+ * kullanmaz.
  * <p>
  * <b>Station yeniden baslarsa:</b> Watermark station'da degil
  * <b>veritabaninda</b> tutuldugu icin kaldigi yerden devam eder.
@@ -445,6 +449,8 @@ public class BTimescaleHistoryExport
     final int maxPerHistory = Math.max(1, getMaxRecordsPerHistory());
     final int maxPerCycle = Math.max(1, getMaxRecordsPerCycle());
     final int backfillDays = Math.max(0, getBackfillMaxDays());
+    final int batchSize = Math.max(100, dev.getBatchSize());
+    final boolean updateLive = dev.getUpdateLiveTable();
 
     final BHistoryDatabase db;
     try
@@ -466,7 +472,7 @@ public class BTimescaleHistoryExport
       try
       {
         Result r = runCycle(dev, db, schema, station, filter,
-                            maxPerHistory, maxPerCycle, backfillDays);
+                            maxPerHistory, maxPerCycle, backfillDays, batchSize, updateLive);
 
         TsWriteQueue q = dev.getWriteQueue();
 
@@ -614,17 +620,11 @@ public class BTimescaleHistoryExport
 
   private Result runCycle(BTimescaleDevice dev, BHistoryDatabase db, String schema,
                           String station, TsHistoryFilter filter,
-                          int maxPerHistory, int maxPerCycle, int backfillDays)
+                          int maxPerHistory, int maxPerCycle, int backfillDays,
+                          int batchSize, boolean updateLive)
     throws Exception
   {
     Result res = new Result();
-
-    TsWriteQueue q = dev.getWriteQueue();
-    if (q == null || !q.isRunning())
-    {
-      throw new IllegalStateException(
-        "Yazma kuyrugu calismiyor. TimescaleDevice enabled ve baglanti kurulu mu?");
-    }
 
     final TsExportState state = new TsExportState(schema);
 
@@ -673,23 +673,53 @@ public class BTimescaleHistoryExport
         // watermark varsa ondan SONRASI; yoksa backfill baslangici
         long fromMs = wm == null ? backfillFrom : wm.longValue() + 1L;
 
-        // 3c) oku + kuyruga ver
+        // 3c) oku
         int limit = (int) Math.min(maxPerHistory, budget);
-        Progress p = pump(db, q, h, pointId, fromMs, now + FUTURE_MARGIN_MS,
+        Progress p = read(db, h, pointId, fromMs, now + FUTURE_MARGIN_MS,
                           limit, meta.valueType);
-
-        budget -= p.count;
-        res.rows += p.count;
         if (p.more) { res.caughtUp = false; }
 
-        // 3d) yalnizca gercekten yazilmis kayit varsa watermark ilerlet
-        if (p.count > 0)
+        // 3d) yaz: her parti ve o partinin watermark'i AYNI islemde.
+        //     Yazma basarisizsa islem geri alinir, watermark yerinde kalir;
+        //     okunmayan kayitlar Niagara history'sinde durur ve bir sonraki
+        //     tur ayni yerden devam eder (veri kaybi yok). Basarili partiler
+        //     kalicidir: hata ortadaki bir partide olsa bile oncekiler tekrar
+        //     okunmaz.
+        final long fpid = pointId;
+        final List<TsSample> rows = p.samples;
+        for (int from = 0; from < rows.size(); from += batchSize)
         {
-          final long fpid = pointId;
-          final long flast = p.lastTime;
-          final long fcount = p.count;
+          final List<TsSample> part = rows.subList(from, Math.min(rows.size(), from + batchSize));
+          long last = 0L;
+          for (int k = 0; k < part.size(); k++) { if (part.get(k).time > last) { last = part.get(k).time; } }
+          final long flast = last;
           dev.withControl((conn, reg) -> {
-            state.markSuccess(conn, fpid, flast, fcount);
+            try
+            {
+              TsRowWriter.write(conn, schema, part, updateLive);
+              state.markSuccess(conn, fpid, flast, part.size(), false);
+              conn.commit();
+            }
+            catch (java.sql.SQLException e)
+            {
+              conn.rollbackQuietly();
+              throw e;
+            }
+            return null;
+          });
+          budget -= part.size();
+          res.rows += part.size();
+        }
+
+        // 3e) Sonda yalniz ornege donusmeyen kayitlar (NaN) kaldiysa watermark
+        //     onlarin da ustune gecer; yoksa her tur ayni kayitlar yeniden okunur.
+        //     Buraya ancak butun partiler yazildiysa gelinir.
+        long written = rows.isEmpty() ? 0L : rows.get(rows.size() - 1).time;
+        if (!p.more && p.lastSeen > written)
+        {
+          final long seen = p.lastSeen;
+          dev.withControl((conn, reg) -> {
+            state.markSuccess(conn, fpid, seen, 0L);
             return null;
           });
         }
@@ -725,24 +755,23 @@ public class BTimescaleHistoryExport
 
   private static final class Progress
   {
-    long count;
-    long lastTime;
-    /** Daha okunacak kayit kaldi mi (limit doldu ya da kuyruk doldu) */
+    /** Yazilacak ornekler, zamana gore sirali */
+    final List<TsSample> samples = new ArrayList<>();
+    /** Okunan (ornege donusmeyenler dahil: NaN) en son kaydin zamani; 0 = yok */
+    long lastSeen;
+    /** Daha okunacak kayit kaldi mi (limit doldu) */
     boolean more;
   }
 
   /**
-   * Tek bir history'nin {@code [fromMs, toMs)} araligindaki kayitlarini
-   * kuyruga verir.
+   * Tek bir history'nin {@code [fromMs, toMs)} araligindaki kayitlarini okur
+   * (en cok {@code limit} ornek). Yazmaz: yazma ve watermark cagiranin
+   * islemindedir.
    * <p>
    * Tum gecmis her turda taranmaz: {@code timeQuery} ile yalnizca gereken
    * aralik okunur.
-   * <p>
-   * Kuyruk dolarsa <b>durulur</b> ve {@code more=true} donulur. Okunmayan
-   * kayitlar Niagara history'sinde durmaya devam eder; bir sonraki turda
-   * watermark'tan alinirlar. Bu yuzden kuyruk tasmasi veri kaybi degildir.
    */
-  private Progress pump(BHistoryDatabase db, TsWriteQueue q, BIHistory h,
+  private Progress read(BHistoryDatabase db, BIHistory h,
                         long pointId, long fromMs, long toMs,
                         int limit, TsValueType vt)
     throws Exception
@@ -772,19 +801,13 @@ public class BTimescaleHistoryExport
           // araligi burada da kendimiz dogruluyoruz.
           if (t < fromMs || t >= toMs) { continue; }
 
+          if (t > p.lastSeen) { p.lastSeen = t; }
+
           TsSample s = toSample(rec, pointId, t, vt);
           if (s == null) { continue; }
 
-          if (!q.offer(s))
-          {
-            p.more = true;   // kuyruk dolu: burada duruyoruz, veri kaybolmuyor
-            break;
-          }
-
-          p.count++;
-          if (t > p.lastTime) { p.lastTime = t; }
-
-          if (p.count >= limit) { p.more = true; break; }
+          p.samples.add(s);
+          if (p.samples.size() >= limit) { p.more = true; break; }
         }
       }
       finally
@@ -797,6 +820,9 @@ public class BTimescaleHistoryExport
       try { hc.close(); } catch (Exception ignore) { }
     }
 
+    // History zaten zamana gore okunur; yine de partilerin watermark'i dogru
+    // ilerlesin diye sira garanti edilir.
+    p.samples.sort((a, b) -> Long.compare(a.time, b.time));
     return p;
   }
 
@@ -904,6 +930,27 @@ public class BTimescaleHistoryExport
         {
           long iv = ci.getInterval().getMillis();
           if (iv > 0L && iv < Integer.MAX_VALUE) { m.intervalMs = Integer.valueOf((int) iv); }
+        }
+
+        // Birim ve hassasiyet: history uzantisi noktanin facet'lerini config'e
+        // "valueFacets" (dinamik ozellik) olarak koyar. 1.6'ya kadar okunmuyordu,
+        // point.unit hep bos kaliyordu.
+        javax.baja.sys.BValue vf = cfg.get("valueFacets");
+        if (vf instanceof javax.baja.sys.BFacets)
+        {
+          javax.baja.sys.BFacets f = (javax.baja.sys.BFacets) vf;
+          BObject u = f.get(javax.baja.sys.BFacets.UNITS);
+          if (u instanceof javax.baja.units.BUnit && !((javax.baja.units.BUnit) u).isNull())
+          {
+            String sym = ((javax.baja.units.BUnit) u).getSymbol();
+            if (sym != null && !sym.isEmpty()) { m.unit = sym; }
+          }
+          BObject pr = f.get(javax.baja.sys.BFacets.PRECISION);
+          if (pr instanceof javax.baja.sys.BNumber)
+          {
+            int n = ((javax.baja.sys.BNumber) pr).getInt();
+            if (n >= 0 && n <= 15) { m.precision = Integer.valueOf(n); }
+          }
         }
       }
     }

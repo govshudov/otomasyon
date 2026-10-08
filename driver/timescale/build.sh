@@ -26,7 +26,7 @@ MODULE_NAME="timescale"
 PROFILE="rt"
 SYMBOL="ts"
 VENDOR="Akyllyoy"
-VENDOR_VERSION="1.6.0.0"
+VENDOR_VERSION="1.7.0.0"
 NIAGARA_DEP_VERSION="4.15"
 DESCRIPTION="Niagara to TimescaleDB history / point / alarm export driver"
 
