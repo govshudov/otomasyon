@@ -1,0 +1,6 @@
+#
+# Lexicon for the timescale module.
+#
+TimescaleNetwork.displayName=Timescale Network
+TimescaleDevice.displayName=Timescale Database
+TimescaleDeviceFolder.displayName=Timescale Device Folder

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2026 Akyllyoy. All Rights Reserved.
+ -->
+<bajaObjectGraph version="1.0">
+  <p m="b=baja" t="b:UnrestrictedFolder">
+    <p n="TimescaleNetwork" m="x=timescale" t="x:TimescaleNetwork"/>
+    <p n="TimescaleDevice" t="x:TimescaleDevice"/>
+    <p n="TimescaleDeviceFolder" t="x:TimescaleDeviceFolder"/>
+    <p n="TimescaleTableWriter" t="x:TimescaleTableWriter"/>
+    <p n="TimescaleHistoryExport" t="x:TimescaleHistoryExport"/>
+  </p>
+</bajaObjectGraph>

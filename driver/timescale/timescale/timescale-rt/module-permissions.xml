@@ -1,0 +1,17 @@
+<permissions>
+  <niagara-permission-groups type="all">
+  </niagara-permission-groups>
+  <niagara-permission-groups type="workbench">
+  </niagara-permission-groups>
+  <niagara-permission-groups type="station">
+    <req-permission>
+      <name>NETWORK_COMMUNICATION</name>
+      <purposeKey>TimescaleDB (PostgreSQL) sunucusuna JDBC baglantisi</purposeKey>
+      <parameters>
+        <parameter name="hosts" value="*"/>
+        <parameter name="ports" value="*"/>
+        <parameter name="type" value="client"/>
+      </parameters>
+    </req-permission>
+  </niagara-permission-groups>
+</permissions>
