@@ -4,6 +4,7 @@
 //
 // Derlenmiş arayüzün yanına JACE'te API olmadığı için gereken iki şeyi koyar:
 //   stations.json            istasyon listesi (göreli model yolları, niagara_root)
+//   sozluk.json              nokta adları sözlüğü (common/sozluk.json)
 //   models/<id>-station.json istasyon konfigürasyonu (2D şemada pompa → kolektör)
 // Çıkan klasör istasyonun dosya alanına (file:^twin) olduğu gibi kopyalanır.
 import fs from 'node:fs'
@@ -71,6 +72,9 @@ for (const [i, s] of stations.entries()) {
   list[i].model_parts = parts
 }
 if (plain === stations.length) fs.rmSync(path.join(OUT, 'draco'), { recursive: true, force: true })
+
+// Nokta adları sözlüğü: arayüz çalışırken okur (değişince yalnız bu dosya yeniden yüklenir)
+fs.copyFileSync(path.join(ROOT, 'common', 'sozluk.json'), path.join(OUT, 'sozluk.json'))
 
 fs.writeFileSync(path.join(OUT, 'stations.json'), JSON.stringify({
   stations: list, default: list[0]?.id, niagara_root: 'slot:/Twin',

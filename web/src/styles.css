@@ -670,6 +670,15 @@ button.small { padding: 3px 10px; min-height: 26px; font-size: 11.5px; }
 .dtbl th small { display: block; text-transform: none; letter-spacing: 0; color: var(--dimmer); font-weight: 400; }
 .dtbl td { padding: 7px 10px; border-top: 1px solid #30353c; vertical-align: middle; }
 .dtbl tbody tr { cursor: pointer; }
+.dtbl tr.grpRow td { background: #2a2f36; border-top: 1px solid #3a4048; }
+.dtbl td.ind { padding-left: 24px; color: var(--dim); }
+.grpTgl { display: inline-flex; align-items: center; gap: 6px; min-height: 0; padding: 0; background: none; border: none; color: var(--text); }
+.grpTgl svg { color: var(--dimmer); transition: transform .15s; }
+.grpTgl.open svg { transform: rotate(90deg); }
+.dtbl tr.grpRow:hover td { background: #303640; }
+.rptH { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; margin: 18px 0 8px; letter-spacing: .02em; }
+.rptH button { margin-left: auto; min-height: 28px; padding: 3px 10px; font-size: 12px; font-weight: 400; }
+.rptH small { font-weight: 400; color: var(--dimmer); margin-left: 8px; }
 .dtbl tbody tr:hover td { background: #2b3036; }
 .dtbl tr.unack td:first-child { box-shadow: inset 3px 0 0 var(--alarm); }
 .dtbl tr.warn.unack td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
@@ -691,6 +700,32 @@ button.small { padding: 3px 10px; min-height: 26px; font-size: 11.5px; }
 .btnLink { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 14px; border-radius: 7px; background: #3a2226; color: #ffb4b4; border: 1px solid #6b2f36; text-decoration: none; font-size: 13px; }
 .pumpPick { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--dim); }
 .pumpPick button { min-height: 30px; padding: 4px 12px; }
+
+/* ---- Grafikler · Ähli nokatlar: veritabanındaki noktalar, sözlük adlarıyla ---- */
+.ptx { flex: 1; min-height: 0; display: flex; gap: 8px; }
+.ptxList { width: 300px; flex-shrink: 0; overflow-y: auto; background: var(--panel-solid); border: 1px solid #343a42; border-radius: 6px; font-size: 12.5px; }
+.ptxSearch { position: sticky; top: 0; z-index: 1; display: flex; gap: 6px; padding: 8px; background: var(--panel-solid); border-bottom: 1px solid var(--line-soft); }
+.ptxSearch input { flex: 1; min-width: 0; min-height: 30px; padding: 4px 9px; background: #1b2130; color: var(--text); border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+.ptxSearch button { min-height: 30px; padding: 4px 8px; display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11.5px; }
+.ptxList .empty { padding: 10px 12px; }
+.ptxGrpHead { width: 100%; display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 5px 10px; background: none; border: none; border-bottom: 1px solid var(--line-soft); border-radius: 0; color: var(--text); text-align: left; }
+.ptxGrpHead svg { flex-shrink: 0; color: var(--dimmer); transition: transform .15s; }
+.ptxGrpHead.open svg { transform: rotate(90deg); }
+.ptxGrpHead span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ptxGrpHead.cur span { color: #8fc1ff; }
+.ptxGrpHead i { font-style: normal; color: var(--dimmer); font-family: var(--mono); font-size: 11px; }
+.ptxPt { width: 100%; display: flex; align-items: center; min-height: 30px; padding: 5px 10px 5px 30px; background: none; border: none; border-radius: 0; color: var(--dim); text-align: left; }
+.ptxPt:hover { background: #2b3036; color: var(--text); }
+.ptxPt.on { background: #233650; color: #fff; box-shadow: inset 3px 0 0 var(--accent); }
+.ptxPt span { flex: 1; min-width: 0; }
+.cbGrid.stack { grid-template-columns: minmax(0, 1fr); grid-auto-rows: minmax(210px, 1fr); }
+.ptxCharts { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ptxCharts .cboard { flex: 1; border: 1px solid #343a42; border-radius: 6px; overflow: hidden; }
+.ptxCharts > .cbEmpty { border: 1px dashed #343a42; border-radius: 6px; }
+@media (max-width: 900px) {
+  .ptx { flex-direction: column; }
+  .ptxList { width: auto; max-height: 40vh; }
+}
 
 /* ---- 3D kartı: nasos özeti ---- */
 .card.pump { width: 268px; }

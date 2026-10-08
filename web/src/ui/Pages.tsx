@@ -4,6 +4,8 @@ import { queryHistory, type Bucket } from '../data/history'
 import { usePumpViews } from '../data/usePumps'
 import { LEVEL_EQ, MODE_TK, OVERALL_TK, fmtN, numOf, sigDef, thresholds, type Group } from '../data/pump'
 import { ChartBoard, type ChartSpec } from './ChartBoard'
+import { PointExplorer } from './PointExplorer'
+import { DbReportTables, dbReportCsvRows, useDbReport } from './DbReport'
 import { combine } from './PumpCharts'
 import { fmtDateTime } from './Chart'
 import { Icon } from './icons'
@@ -122,6 +124,10 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
     return () => { ok = false }
   }, [tags, period])
 
+  // Ähli enjamlar (veritabanından, gruplu): dönem değişince yeniden hesaplanır
+  const range = useMemo(() => ({ from: periodFrom(period), to: Date.now() / 1000 }), [period])
+  const db = useDbReport(range.from, range.to)
+
   const d = (eq: string, k: string) => delta(hist[`${sid}.${eq}.${k}`])
   const exportCsv = () => {
     const rows: (string | number)[][] = [['Toplum', 'Nasos', 'Ýagdaýy', 'Inwertor sag', 'Pano sag', 'Jemi sag',
@@ -138,6 +144,7 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
       rows.push([g.name, g.header, fmtN(n(g.id, 'flow_m3h'), 1), fmtN(n(g.id, 'total_m3'), 0), fmtN(d(g.id, 'total_m3'), 0),
         fmtN(g.pumps.reduce((a, p) => a + (views[p.id]?.kw ?? 0), 0), 1)])
     }
+    rows.push(...dbReportCsvRows(db))
     csvDownload(`${sid}_hasabat_${fmtDateTime(Date.now() / 1000).replace(/[/: ]/g, '')}.csv`, rows)
   }
 
@@ -198,6 +205,8 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
           ))}
         </tbody>
       </table>
+      <DbReportTables data={db} />
+
       <p className="note">“Döwürde” sütunlary taryhy maglumatdan hasaplanýar (sanagyň döwrüň başy bilen soňunyň tapawudy).
         Taryh ýok bolsa “—” görkezilýär.</p>
     </div>
@@ -238,15 +247,31 @@ export function ChartsPage({ sid, groups, onPump }: {
     ]
   }, [sid, groups, twin])
 
+  const [mode, setModeRaw] = useState<'beket' | 'nokat'>(() => {
+    try { return localStorage.getItem('twin.charts.mode') === 'nokat' ? 'nokat' : 'beket' } catch { return 'beket' }
+  })
+  const setMode = (m: 'beket' | 'nokat') => {
+    setModeRaw(m)
+    try { localStorage.setItem('twin.charts.mode', m) } catch { /* depolama kapalı */ }
+  }
+
   return (
     <div className="page full">
       <div className="pumpPick">
-        <span>Nasosyň grafikleri:</span>
-        {groups.flatMap((g) => g.pumps.map((p) => (
-          <button key={p.id} onClick={() => onPump(p.id, p.label)}>{p.label}</button>
-        )))}
+        <div className="seg">
+          <button className={mode === 'beket' ? 'on' : ''} onClick={() => setMode('beket')}>Beket</button>
+          <button className={mode === 'nokat' ? 'on' : ''} onClick={() => setMode('nokat')}>Ähli nokatlar</button>
+        </div>
+        {mode === 'beket' && <>
+          <span>Nasosyň grafikleri:</span>
+          {groups.flatMap((g) => g.pumps.map((p) => (
+            <button key={p.id} onClick={() => onPump(p.id, p.label)}>{p.label}</button>
+          )))}
+        </>}
       </div>
-      <ChartBoard title={`${sid} · beket grafikleri`} tags={tags} build={build} fileName={`${sid}_beket`} />
+      {mode === 'beket'
+        ? <ChartBoard title={`${sid} · beket grafikleri`} tags={tags} build={build} fileName={`${sid}_beket`} />
+        : <PointExplorer sid={sid} />}
     </div>
   )
 }

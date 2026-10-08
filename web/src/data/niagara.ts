@@ -109,27 +109,82 @@ export function loadBaja(): Promise<Baja> {
 // Geçmiş ve oturum bilgisi
 // --------------------------------------------------------------------------- //
 
-/** tag → Niagara geçmiş kimliği ("/PSS21_…/PMP01_t1"), tarama sırasında doldurulur */
+/** tag → Niagara geçmiş kimliği ("/PSS21_…/PMP01_t1"); uzantı kimliği taşıyorsa doldurulur */
 const historyIds = new Map<string, string>()
+/** tag → geçmiş adı = veritabanındaki ad ("TWIN_PMP03_t1"); TsOkuma servisine bu ad gönderilir */
+const historyNames = new Map<string, string>()
 
 export const hasNiagaraHistory = (tag: string) => historyIds.has(tag)
 
-/** Noktanın history uzantısından geçmiş kimliği (uzantı yoksa null). */
-function historyIdOf(comp: any): string | null {
-  let id: string | null = null
+// Grafikler ilk sorgudan önce adların eşlenmesini bekler (abonelik birkaç yüz ms sürer)
+let namesReady: () => void = () => {}
+const namesReadyP = new Promise<void>((ok) => { namesReady = ok })
+export const historyNamesReady = (ms = 20_000) =>
+  Promise.race([namesReadyP, new Promise<void>((ok) => setTimeout(ok, ms))])
+
+/** Noktanın history uzantısı (yoksa null). Alt bileşen olduğu için değerleri ancak abone olunca gelir. */
+function historyExtOf(comp: any): any | null {
+  let ext: any = null
   try {
     comp.getSlots().properties().each((slot: any) => {
-      if (id) return
-      const ext = comp.get(slot)
-      const t = ext?.getType?.()
-      if (!t || !t.isComponent() || !t.is('history:HistoryExt')) return
-      if (ext.get('enabled') === false) return
-      const hid = ext.get('historyConfig')?.get?.('id')
-      const s = hid ? (typeof hid.encodeToString === 'function' ? hid.encodeToString() : String(hid)) : ''
-      if (s && s !== '/' && !s.endsWith('/')) id = s
+      const v = comp.get(slot)
+      const t = v?.getType?.()
+      if (!ext && t && t.isComponent() && t.is('history:HistoryExt')) ext = v
     })
   } catch { /* uzantı okunamadı — oturum tamponu kullanılır */ }
-  return id
+  return ext
+}
+
+const encoded = (v: any) => (v ? (typeof v.encodeToString === 'function' ? v.encodeToString() : String(v)) : '')
+
+/** Abone olunmuş uzantının kayıtlı geçmiş kimliği (çoğu uzantıda boş gelir → null). */
+function historyIdOf(ext: any): string | null {
+  try {
+    const s = encoded(ext.get('historyConfig')?.get?.('id'))
+    return s && s !== '/' && !s.endsWith('/') ? s : null
+  } catch { return null }
+}
+
+/**
+ * Abone olunmuş uzantının geçmiş adı: historyName biçimi çözülür
+ * ("TWIN_PMP03_t1" ya da "%parent.parent.name%_%parent.name%" → "BA4_G9_Toplam").
+ * Sürücü veritabanına bu adla yazar. Uzantı kapalıysa ya da biçim çözülemezse null.
+ */
+function historyNameOf(ext: any): string | null {
+  try {
+    if (ext.get('enabled') === false) return null
+    const id = historyIdOf(ext)
+    if (id) return id.split('/').pop() || null
+    const f = encoded(ext.get('historyName'))
+    if (!f) return null
+    let bad = false
+    const name = f.replace(/%((?:parent\.)*)name%/g, (_m: string, ups: string) => {
+      let c = ext
+      for (let k = ups.length / 'parent.'.length; k > 0 && c; k--) c = c.getParent?.()
+      const n = c?.getName?.()
+      if (!n) bad = true
+      return n ?? ''
+    })
+    return bad || name.includes('%') ? null : name
+  } catch { return null }
+}
+
+/** Noktanın veritabanındaki adı (geçmiş adı); history uzantısı yoksa null. */
+export const dbNameOf = (tag: string) => historyNames.get(tag) ?? null
+
+let tsComp: Promise<any> | null = null
+
+/**
+ * TimescaleDB okuma servisi: istasyondaki /TsOkuma Program'ının "sorgu" eylemi
+ * (tools/jace/okuma). Servis kurulu değilse null; sorgu hatası fırlatılır.
+ */
+export async function tsQuery(req: string): Promise<any | null> {
+  tsComp ??= loadBaja().then((baja) => baja.Ord.make('station:|slot:/TsOkuma').get()).catch(() => null)
+  const comp = await tsComp
+  if (!comp) return null
+  const j = JSON.parse(String(await comp.invoke({ slot: 'sorgu', value: req })))
+  if (j?.error) throw new Error(j.error)
+  return j
 }
 
 /** [epoch_sn, değer] kayıtları; geçmiş yoksa null. */
@@ -443,14 +498,25 @@ export class NiagaraSource {
     if (gen !== this.gen || this.closed) return
     for (const p of points) { this.refs.set(String(p.comp.getHandle()), p); this.apply(p, true) }
     this.dirtyV.clear(); this.dirtyS.clear()
-    // Abone olunan nokta tam yüklenmiş olur: history uzantısı varsa kimliği alınır
-    historyIds.clear()
-    for (const p of points) {
-      if (p.kind !== 'value') continue
-      const id = historyIdOf(p.comp)
-      if (id) historyIds.set(p.key, id)
+    // History uzantıları alt bileşen: değerleri (historyName, enabled) ancak abone olunca gelir.
+    // Tek seferlik toplu abonelik, okunduktan sonra bırakılır (değerler bileşende kalır).
+    historyIds.clear(); historyNames.clear()
+    const withExt = points.filter((p) => p.kind === 'value').map((p) => ({ p, ext: historyExtOf(p.comp) })).filter((x) => x.ext)
+    if (withExt.length) {
+      const hs = new baja.Subscriber()
+      try {
+        await hs.subscribe({ comps: withExt.map((x) => x.ext) })
+        for (const { p, ext } of withExt) {
+          const id = historyIdOf(ext), name = historyNameOf(ext)
+          if (id) historyIds.set(p.key, id)
+          if (name) historyNames.set(p.key, name)
+        }
+        hs.unsubscribe({ comps: withExt.map((x) => x.ext) }).catch(() => {})
+      } catch (e) { console.warn('[niagara] history uzantıları okunamadı', e) }
     }
-    if (historyIds.size) console.info(`[niagara] ${historyIds.size} nokta Niagara geçmişi taşıyor`)
+    namesReady()
+    if (gen !== this.gen || this.closed) return
+    console.info(`[niagara] ${historyNames.size}/${withExt.length} nokta geçmiş adıyla eşlendi`)
     if (!points.length) console.warn(`[niagara] nokta tapylmady: station:|${root}/${sid}`)
 
     this.wasFresh = this.fresh()

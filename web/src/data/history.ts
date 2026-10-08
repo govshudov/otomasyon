@@ -1,8 +1,9 @@
 /**
- * Grafiklerin geçmiş verisi — üç kaynak, tek arayüz:
+ * Grafiklerin geçmiş verisi — dört kaynak, tek arayüz:
  *
- *   api      geliştirme/Pi: Python API'nin /api/history uç noktası
- *   niagara  JACE: noktanın history uzantısı varsa Niagara geçmişi (BajaScript)
+ *   api        geliştirme/Pi: Python API'nin /api/history uç noktası
+ *   timescale  istasyon: TimescaleDB (5 yıl), istasyondaki TsOkuma servisi üzerinden
+ *   niagara    istasyon: servis yoksa noktanın Niagara geçmişi (BajaScript, kapasite kadar)
  *   session  ikisi de yoksa: sayfa açıldığından beri tarayıcının biriktirdiği değerler
  *
  * Hepsi aynı biçime indirgenir: zaman ekseninde eşit genişlikte kovalar,
@@ -10,10 +11,10 @@
  * (COV verisi: değişmeyen değer yeniden gönderilmez).
  */
 import type { Sample } from './store'
-import { NIAGARA, niagaraHistory, hasNiagaraHistory } from './niagara'
+import { NIAGARA, niagaraHistory, hasNiagaraHistory, dbNameOf, historyNamesReady, tsQuery } from './niagara'
 
 export type Bucket = [number, number, number, number]
-export type Source = 'api' | 'niagara' | 'session'
+export type Source = 'api' | 'timescale' | 'niagara' | 'session'
 export interface HistResult { data: Record<string, Bucket[]>; sources: Set<Source> }
 
 // --------------------------------------------------------------------------- //
@@ -124,6 +125,24 @@ export async function queryHistory(tags: string[], from: number, to: number, n =
       for (const t of rest) if (j[t]?.length) { data[t] = rebucket(j[t], from, to, n); sources.add('api') }
       rest = rest.filter((t) => !data[t])
     } catch { apiOk = false }
+  }
+
+  if (NIAGARA) {
+    await historyNamesReady()                        // sayfa yeni açıldıysa adlar eşlenene kadar
+    const byName = new Map<string, string>()
+    // "db:<ad>" doğrudan veritabanındaki ad (Milesight vb.); diğerleri noktanın history adı
+    for (const t of rest) { const nm = t.startsWith('db:') ? t.slice(3) : dbNameOf(t); if (nm) byName.set(nm, t) }
+    if (byName.size) {
+      try {
+        const names = encodeURIComponent([...byName.keys()].join(','))
+        const j = await tsQuery(`op=hist&names=${names}&from=${Math.round(from * 1000)}&to=${Math.round(to * 1000)}&n=${n}`)
+        for (const [nm, b] of Object.entries<Bucket[]>(j?.data ?? {})) {
+          const tag = byName.get(nm)
+          if (tag && b.length) { data[tag] = rebucket(b, from, to, n); sources.add('timescale') }
+        }
+        rest = rest.filter((t) => !data[t])
+      } catch (e) { console.warn('[timescale]', e) }        // Niagara geçmişine düşer
+    }
   }
 
   if (NIAGARA) {

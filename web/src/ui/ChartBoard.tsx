@@ -37,15 +37,17 @@ const toLocalInput = (s: number) => {
 }
 const fromLocalInput = (v: string) => new Date(v).getTime() / 1000
 
-const SRC_TK: Record<Source, string> = { api: 'serwer taryhy', niagara: 'Niagara taryhy', session: 'sahypa açylandan bäri' }
+const SRC_TK: Record<Source, string> = { api: 'serwer taryhy', timescale: 'maglumat binýady', niagara: 'Niagara taryhy', session: 'sahypa açylandan bäri' }
 
-export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileName }: {
+export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileName, stack = false }: {
   title: string
   tags: string[]
   build: (data: Record<string, Bucket[]>) => ChartSpec[]
   onClose?: () => void
   buckets?: number
   fileName: string
+  /** grafikler tek sütunda üst üste (ızgara yerine) */
+  stack?: boolean
 }) {
   const [range, setRange] = useState<Range>(initialRange)
   const [data, setData] = useState<Record<string, Bucket[]> | null>(null)
@@ -143,7 +145,7 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
         <button className="icon" title="CSV ýükle" onClick={exportCsv} disabled={!charts.length}><Icon.save size={17} /></button>
         {onClose && <button className="icon" title="Ýap" onClick={onClose}><Icon.close size={17} /></button>}
       </div>
-      <div className={`cbGrid${big ? ' one' : ''}`}>
+      <div className={`cbGrid${big ? ' one' : stack ? ' stack' : ''}`}>
         {shown.map((c) => {
           const { key, title: ct, series, ...rest } = c
           return (
