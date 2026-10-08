@@ -3,7 +3,7 @@
    *
    * Arayüz istasyonun kendi sayfası olduğu için (CSP: yalnız aynı kaynak) veritabanına
    * doğrudan bağlanamaz; BajaScript ile bu programın "sorgu" eylemini çağırır.
-   *   parametre: "op=hist&names=A,B&from=<ms>&to=<ms>&n=<kova>"   (ya da op=points)
+   *   parametre: "op=hist&names=A,B&from=<ms>&to=<ms>&n=<kova>"   (ya da op=points, op=info)
    *   dönüş    : JSON metni
    * Veritabanı bağlantı bilgisi TimescaleDevice'tan (cihaz özelliği) okunur.
    * İstasyon adı: çalıştığı Niagara istasyonunun adı (sürücü de veriyi bu adla yazar).
@@ -87,6 +87,8 @@
     }
     String station = q.containsKey("station") ? q.get("station") : Sys.getStation().getStationName();
     String op = q.containsKey("op") ? q.get("op") : "";
+    // Kurulum denetimi: istasyonun Niagara adı (sürücü veriyi bu adla yazar); veritabanına gitmez
+    if (op.equals("info")) return "{\"station\":" + js(Sys.getStation().getStationName()) + ",\"url\":" + js(url) + "}";
     if (op.equals("points")) return points(station);
     if (op.equals("hist")) {
       String[] names = q.containsKey("names") ? q.get("names").split(",") : new String[0];

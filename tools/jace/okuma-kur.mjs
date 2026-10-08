@@ -50,6 +50,7 @@ const r = await p.eval(`(async () => {
   const fault = t.get('code').get('faultCause')
   if (fault) out.push('PROGRAM HATASI: ' + fault)
   out.push('durum: ' + t.get('durum'))
+  out.push('info: ' + String(await t.invoke({ slot: 'sorgu', value: 'op=info' })))
   // deneme: nokta listesi + son 1 saat
   const t0 = Date.now()
   const pts = String(await t.invoke({ slot: 'sorgu', value: 'op=points' }))

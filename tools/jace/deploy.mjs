@@ -2,11 +2,14 @@
 //  1) eski twin dosyalarının yerel yedeği
 //  2) geçici FileDrop programı (station:|slot:/Twin/FileDropTmp) ile file:^twin'e yeni dosyalar
 //  3) kullanılmayan eski asset/modellerin silinmesi, programın kaldırılması
-//  4) /Twin/PS-01 altında arayüzün KULLANDIĞI noktalardan eksik olanların eklenmesi
+//  4) /Twin/<istasyon> altında arayüzün KULLANDIĞI noktalardan eksik olanların eklenmesi
 //     (pompa: 16 sinyal; esasy turba: akym, jemi göwrüm, basyş; howuz: suw derejesi;
-//     hücre datçikleri LT-0x: level_m + state). Hedef istasyonda /Twin/PS-01 yoksa hiçbir şey yazılmaz.
+//     hücre datçikleri LT-0x: level_m + state). Hedef istasyonda /Twin/<istasyon> yoksa hiçbir şey
+//     yazılmaz — yalnız --create-twin verilirse (yeni istasyon kurulumu) boş klasörler oluşturulur.
 //     Var olan noktaya ve değerine dokunulmaz; hiçbir nokta silinmez.
 //  5) nokta eklendiyse istasyonun kaydedilmesi
+//
+//   node tools/jace/deploy.mjs <dist> <yedek-klasörü> [--station stations/ps-01.json] [--create-twin] [--plan]
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -14,6 +17,7 @@ import { bajaPage } from './baja-page.mjs'
 import { H } from './auth.mjs'
 
 const [, , DIST, BACKUP] = process.argv
+const opt = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d }
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const FILEDROP = path.join(HERE, 'FileDrop.program.json')
 const P = JSON.parse(fs.readFileSync(FILEDROP, 'utf8').replace(/^[^{]*/, '').replace(/;?\s*$/, ''))
@@ -21,7 +25,9 @@ const P = JSON.parse(fs.readFileSync(FILEDROP, 'utf8').replace(/^[^{]*/, '').rep
 // Eklenecek noktalar katalogdan türetilir (elle liste tutulmaz)
 const ROOT = path.resolve(HERE, '../..')
 const TYPES = JSON.parse(fs.readFileSync(path.join(ROOT, 'common/equipment_types.json'), 'utf8')).types
-const STATION = JSON.parse(fs.readFileSync(path.join(ROOT, 'stations/ps-01.json'), 'utf8'))
+const STATION = JSON.parse(fs.readFileSync(path.resolve(ROOT, opt('--station', 'stations/ps-01.json')), 'utf8'))
+const SID = STATION.station_id
+const CREATE_TWIN = process.argv.includes('--create-twin')
 const USED = { pump_hsc: null, header: ['flow_m3h', 'total_m3', 'press_bar'], basin: ['level_m'], level_sensor: null }
 const SPEC = []
 for (const e of STATION.equipment) {
@@ -50,7 +56,7 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {
-  for (const s of SPEC) console.log(`  /Twin/PS-01/${s.path.join('/')}  ${PT_TYPE[s.kind].split(':')[1]}  ${s.unit}`)
+  for (const s of SPEC) console.log(`  /Twin/${SID}/${s.path.join('/')}  ${PT_TYPE[s.kind].split(':')[1]}  ${s.unit}`)
   console.log(`${SPEC.length} nokta (yalnız EKSİK olanlar eklenir)`)
   process.exit(0)
 }
@@ -66,11 +72,26 @@ const log = (...a) => console.log(...a)
 
 // 0) İkiz nokta ağacı var mı? Dosya yazan geçici program da /Twin altına
 // kurulduğu için ağaç yoksa hiçbir adım çalışmaz — hiçbir şey yazmadan dur.
-const hasTwin = await p.eval(`window.__baja.Ord.make('station:|slot:/Twin/PS$2d01').get().then(() => true, () => false)`)
-if (!hasTwin) {
-  log(`DUR: ${H} istasyonunda Config → Twin → PS-01 yok. Önce Workbench'te JACE'ten`)
+const TWIN_ORD = `station:|slot:/Twin/${SID.replace(/-/g, '$2d')}`
+const hasTwin = await p.eval(`window.__baja.Ord.make(${JSON.stringify(TWIN_ORD)}).get().then(() => true, () => false)`)
+if (!hasTwin && !CREATE_TWIN) {
+  log(`DUR: ${H} istasyonunda Config → Twin → ${SID} yok. Önce Workbench'te JACE'ten`)
   log(`'Twin' klasörünü kopyalayıp bu istasyonun Config'ine yapıştırın ve kaydedin. Hiçbir şey yazılmadı.`)
+  log(`(Yeni istasyon kuruluyorsa --create-twin ile boş Twin klasörü oluşturulur.)`)
   await p.close(); process.exit(2)
+}
+if (!hasTwin) {
+  log(await p.eval(`(async () => {
+    const baja = window.__baja
+    await baja.importTypes({ typeSpecs: ['baja:Folder'] })
+    const root = await baja.Ord.make('station:|slot:/').get(); await root.loadSlots()
+    if (!root.has('Twin')) await root.add({ slot: 'Twin', value: baja.$('baja:Folder') })
+    const tw = await baja.Ord.make('station:|slot:/Twin').get(); await tw.loadSlots()
+    const sid = baja.SlotPath.escape(${JSON.stringify(SID)})
+    if (!tw.has(sid)) await tw.add({ slot: sid, value: baja.$('baja:Folder') })
+    const st = await baja.Ord.make('station:|slot:/').get(); await st.invoke({ slot: 'save' })
+    return 'Twin/' + ${JSON.stringify(SID)} + ' klasörü oluşturuldu (istasyon kaydedildi)'
+  })()`))
 }
 
 // 1) yerel yedek — klasör zaten varsa (ilk kurulumun yedeği) ona dokunulmaz
@@ -123,7 +144,7 @@ await p.eval(`(() => {
   window.__addPoints = async (spec) => {
     await baja.importTypes({ typeSpecs: ['control:NumericWritable', 'control:BooleanWritable', 'control:StringWritable', 'baja:Folder'] })
     const esc = (s) => baja.SlotPath.escape(s)
-    const root = await baja.Ord.make('station:|slot:/Twin/' + esc('PS-01')).get()
+    const root = await baja.Ord.make('station:|slot:/Twin/' + esc(${JSON.stringify(SID)})).get()
     const load = async (c) => { await Promise.resolve(c.loadSlots && c.loadSlots()); return c }
     const find = async (p) => {
       let c = await load(root)
@@ -208,9 +229,11 @@ else log('yeni nokta yok — istasyon kaydı gerekmedi')
 // doğrulama
 const idx = await p.eval(`fetch('/file/twin/index.html?x=' + Date.now(), {credentials:'same-origin', cache:'no-store'}).then(r => r.text())`)
 log('yeni index.html:', /Sanly ekiz/.test(idx) ? 'YENİ sürüm' : 'ESKİ/beklenmeyen', '|', (idx.match(/assets\/index-[\w-]+\.js/) || ['?'])[0])
-const glb = await p.eval(`fetch('/file/twin/models/ps-01.glb?x=' + Date.now(), {credentials:'same-origin', cache:'no-store'}).then(async r => {
-  const b = new Uint8Array(await r.arrayBuffer()); const j = new TextDecoder().decode(b.subarray(20, 20 + new DataView(b.buffer).getUint32(12, true)))
-  return b.length + ' bayt, Draco: ' + (j.includes('KHR_draco_mesh_compression') ? 'VAR (JACE\\'te yüklenmez!)' : 'yok') })`)
+// model: paket parçalı (models/<id>.partN.bin) ya da tek .glb taşır; stations.json'dan okunur
+const glb = await p.eval(`fetch('/file/twin/stations.json?x=' + Date.now(), {credentials:'same-origin', cache:'no-store'}).then((r) => r.json()).then((j) => {
+  const s = (j.stations || []).find((x) => x.id === ${JSON.stringify(SID)})
+  return s ? (s.model_parts ? s.model_parts.length + ' parça (Draco\\'suz)' : s.model + ' (tek dosya — Draco\\'lu olabilir)') : 'stations.json\\'da ${SID} yok!'
+}).catch((e) => 'okunamadı: ' + e.message)`)
 log('model:', glb)
 await p.close()
 process.exit(0)
