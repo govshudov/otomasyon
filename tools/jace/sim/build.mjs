@@ -56,7 +56,9 @@ const out = {
     { name: 'hizCarpani', type: 'baja:Double', value: 1 },
     { name: 'arizaNasos', type: 'baja:Integer', value: 0 },
     { name: 'arizaTuru', type: 'baja:String', value: '' },
+    { name: 'otoAriza', type: 'baja:Boolean', value: true },
     { name: 'durum', type: 'baja:String', value: '' },
+    { name: 'sayaclar', type: 'baja:String', value: '' },
   ],
 }
 fs.writeFileSync(path.join(HERE, 'TwinSim.program.json'), JSON.stringify(out, null, 2) + '\n')

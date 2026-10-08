@@ -9,6 +9,7 @@
 //   etkin       aç/kapa (kapatınca noktalar eski değerine döner)
 //   hizCarpani  1 = gerçek zaman (10 = 10 kat hızlı)
 //   arizaNasos  1..6 → arizaTuru: sargy | podsipnik | tok | trip   (0 = arıza yok)
+//   otoAriza    kendiliğinden olaylar (2–5 dk'da bir, birkaç dakika sürer)
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -32,11 +33,22 @@ const r = await p.eval(`(async () => {
   await baja.importTypes({ typeSpecs: ['program:Program', 'program:ProgramCode', 'baja:Blob'] })
   const tw = await baja.Ord.make('station:|slot:/Twin').get(); await tw.loadSlots()
   const out = []
+  // Sayaçlar (çalışma saatleri, toplam m³) yenilemede kaybolmasın: kaldırmadan önce noktalardan oku
+  const num = async (o) => { try { const x = await baja.Ord.make('station:|slot:/Twin/PS$2d01/' + o).get(); const s = x.get('out'); return s.getStatus().isValid() ? Number(s.getValue()) : null } catch (e) { return null } }
+  let sayaclar = ''
+  if (P && tw.has('TwinSim')) {
+    const h = []
+    for (const k of ['hours_inv', 'hours_pano']) for (let i = 1; i <= 6; i++) h.push(await num('PMP$2d0' + i + '/' + k))
+    h.push(await num('HDR$2d01/total_m3'), await num('HDR$2d02/total_m3'))
+    if (h.every((x) => x !== null && Number.isFinite(x))) sayaclar = h.map((x) => x.toFixed(4)).join(';')
+  }
   if (tw.has('TwinSim')) { await tw.remove('TwinSim'); out.push('eski TwinSim kaldırıldı (noktaların in16 girişi boşaltıldı)') }
+  if (sayaclar) out.push('sayaçlar korundu')
   if (!P) return out
   const prog = baja.$('program:Program')
   for (const q of P.props) {
-    const v = q.type === 'baja:Double' ? baja.Double.make(q.value) : q.type === 'baja:Integer' ? baja.Integer.make(q.value) : q.value
+    const v = q.type === 'baja:Double' ? baja.Double.make(q.value) : q.type === 'baja:Integer' ? baja.Integer.make(q.value)
+      : q.name === 'sayaclar' ? sayaclar : q.value
     prog.add({ slot: q.name, value: v })
   }
   const c = baja.$('program:ProgramCode')

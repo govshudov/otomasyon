@@ -11,7 +11,9 @@
    * fallback değerine döner. Yalnız var olan Writable noktalara yazılır.
    *
    * Özellikler:  etkin (aç/kapa) · hizCarpani (1 = gerçek zaman) ·
-   *   arizaNasos (1..6, 0 = arıza yok) · arizaTuru (sargy | podsipnik | tok | trip) · durum
+   *   arizaNasos (1..6, 0 = arıza yok) · arizaTuru (sargy | podsipnik | tok | trip) ·
+   *   otoAriza (kendiliğinden olaylar: 2–5 dk'da bir çalışan bir nasosta sargı/podşipnik
+   *   ısınması, aşırı tok ya da trip; birkaç dakika sürüp geçer) · durum
    */
 
   static final String ROOT = "station:|slot:/Twin/PS$2d01/";
@@ -31,7 +33,7 @@
   java.util.HashMap<String, Long> lastAt = new java.util.HashMap<String, Long>();
   java.util.Random rnd = new java.util.Random();
   boolean ready = false, active = false;
-  long lastMs = 0;
+  long lastMs = 0, lastSave = 0;
 
   boolean[] run = new boolean[N], latch = new boolean[N], trip = new boolean[N], hot = new boolean[N];
   double[] spd = new double[N], age = new double[N], q = new double[N];
@@ -40,6 +42,13 @@
   double[][] bias = new double[N][6];
   double[] total = new double[2], flow = new double[2], press = new double[2];
   double level = 2.6, integ = 0, drift = 0, qIn = 0;
+  double[] ampNoise = new double[N], tNoise = new double[N];
+  // kendiliğinden olay (otoAriza)
+  int evPump = -1;
+  String evKind = "";
+  double evLeft = 0, evAmp = 0, nextEv = 45;
+  static final String[] EV_KINDS = { "sargy", "podsipnik", "tok", "trip" };
+  static final double[] EV_W = { 0.35, 0.25, 0.25, 0.15 };
 
   public void onStart() throws Throwable {
     ticket = Clock.schedulePeriodically(getComponent(), BRelTime.make(1000L), com.tridium.program.BProgram.execute, null);
@@ -176,6 +185,15 @@
     }
     total[0] = readNum("HDR$2d01/total_m3", 1.5e6 + rnd.nextDouble() * 3e6);
     total[1] = readNum("HDR$2d02/total_m3", 1.5e6 + rnd.nextDouble() * 3e6);
+    // Sayaçlar programın kendi özelliğinde saklanır (yeniden kurulum / istasyon yeniden başlatma):
+    // "hInv1..6;hPano1..6;total1;total2"
+    try {
+      String[] s = getString("sayaclar").split(";");
+      if (s.length == 2 * N + 2) {
+        for (int i = 0; i < N; i++) { hInv[i] = Double.parseDouble(s[i]); hPano[i] = Double.parseDouble(s[N + i]); }
+        total[0] = Double.parseDouble(s[2 * N]); total[1] = Double.parseDouble(s[2 * N + 1]);
+      }
+    } catch (Exception e) { }
     level = readNum("BASIN$2d01/level_m", 2.6);
     if (level < 0.9 || level > 5.8) level = 2.6;
     // Açılışta talebe göre kademe dolu ve çalışan motorlar ısınmış başlasın
@@ -204,17 +222,43 @@
     return o;
   }
 
+  /** Kendiliğinden olay: 2–5 dk'da bir, çalışan bir nasosta birkaç dakika sürer. */
+  void autoEvents(double dt) {
+    if (!getBoolean("otoAriza")) { evPump = -1; evKind = ""; return; }
+    if (evPump >= 0) {
+      evLeft -= dt;
+      if (evLeft <= 0) { evPump = -1; evKind = ""; nextEv = 120 + rnd.nextDouble() * 180; }
+      return;
+    }
+    nextEv -= dt;
+    if (nextEv > 0) return;
+    int[] cand = new int[N];
+    int n = 0;
+    for (int i = 0; i < N; i++) if (spd[i] > 0.5 && !trip[i]) cand[n++] = i;
+    if (n == 0) { nextEv = 30; return; }
+    evPump = cand[rnd.nextInt(n)];
+    double r = rnd.nextDouble(), acc = 0;
+    evKind = EV_KINDS[0];
+    for (int k = 0; k < EV_KINDS.length; k++) { acc += EV_W[k]; if (r < acc) { evKind = EV_KINDS[k]; break; } }
+    evAmp = rnd.nextDouble();
+    evLeft = evKind.equals("sargy") ? 300 + rnd.nextDouble() * 180
+           : evKind.equals("podsipnik") ? 360 + rnd.nextDouble() * 180
+           : evKind.equals("tok") ? 150 + rnd.nextDouble() * 150
+           : 120 + rnd.nextDouble() * 120;
+  }
+
   void step(double dt, long now) {
     // arıza (Workbench'ten): arizaNasos 1..6 + arizaTuru; 0 = temiz
     int fp = getInt("arizaNasos") - 1;
     String fk = getString("arizaTuru");
     if (fk == null) fk = "";
     fk = fk.trim().toLowerCase();
+    autoEvents(dt);
     // Trip: elle verilen (arizaTuru=trip) ya da motor koruması (sargı > 180 °C; 90 °C'de kendiliğinden sıfırlanır)
     for (int i = 0; i < N; i++) {
       if (tMot[i] > 180) hot[i] = true;
       else if (tMot[i] < 90) hot[i] = false;
-      boolean t = hot[i] || (i == fp && fk.equals("trip"));
+      boolean t = hot[i] || (i == fp && fk.equals("trip")) || (i == evPump && evKind.equals("trip"));
       if (t && !trip[i]) { run[i] = false; age[i] = 0; }
       trip[i] = t;
     }
@@ -274,14 +318,23 @@
       double head = (41.0 - level) + 7.0 * Math.pow(flow[HDR[i]] / 2700.0, 2);
       double shaft = on ? (q[i] / 3600.0) * head * 9.81 / 0.84 : 0;
       kw[i] = shaft / 0.95;
-      double boost = (i == fp && fk.equals("tok")) ? 0.36 : 0;
-      amp[i] = kw[i] * 1000.0 / (1.732 * 400 * 0.87) * (1 + boost);
+      boolean evOn = i == evPump;
+      // aşırı tok: nominale göre ~%105–125 (duýduryş, kimi zaman näsazlyk)
+      double boost = Math.max((i == fp && fk.equals("tok")) ? 0.65 : 0,
+                              (evOn && evKind.equals("tok")) ? 0.48 + 0.2 * evAmp : 0);
+      ampNoise[i] = ampNoise[i] * 0.9 + rnd.nextGaussian() * 0.004;     // ölçüm/yük dalgalanması
+      amp[i] = on ? kw[i] * 1000.0 / (1.732 * 400 * 0.87) * (1 + boost) * (1 + ampNoise[i]) : 0;
+      kw[i] = on ? kw[i] * (1 + 0.5 * boost) * (1 + ampNoise[i]) : 0;
       double ir = amp[i] / RATED_A;
-      double tT = 25 + 85 * ir * ir + ((i == fp && fk.equals("sargy")) ? 60 : 0);
-      tMot[i] += (tT - tMot[i]) * (1 - Math.exp(-dt / 300.0));
-      double s2 = spd[i] * spd[i], bf = (i == fp && fk.equals("podsipnik")) ? 45 : 0;
-      tB1[i] += (25 + 28 * s2 + bf - tB1[i]) * (1 - Math.exp(-dt / 600.0));
-      tB2[i] += (25 + 32 * s2 + bf - tB2[i]) * (1 - Math.exp(-dt / 600.0));
+      double heat = Math.max((i == fp && fk.equals("sargy")) ? 60 : 0, (evOn && evKind.equals("sargy")) ? 45 + 30 * evAmp : 0);
+      double tT = 25 + 85 * ir * ir + heat;
+      tMot[i] += (tT - tMot[i]) * (1 - Math.exp(-dt / (heat > 0 ? 150.0 : 300.0)));
+      double s2 = spd[i] * spd[i];
+      double bf = Math.max((i == fp && fk.equals("podsipnik")) ? 45 : 0, (evOn && evKind.equals("podsipnik")) ? 32 + 20 * evAmp : 0);
+      double tauB = bf > 0 ? 200.0 : 600.0;
+      tB1[i] += (25 + 28 * s2 + bf - tB1[i]) * (1 - Math.exp(-dt / tauB));
+      tB2[i] += (25 + 32 * s2 + bf * 1.1 - tB2[i]) * (1 - Math.exp(-dt / tauB));
+      tNoise[i] = tNoise[i] * 0.95 + rnd.nextGaussian() * 0.05;
       if (run[i] && spd[i] > 0.5) { if (PANO[i]) hPano[i] += dt / 3600.0; else hInv[i] += dt / 3600.0; }
       ltNoise[i] = ltNoise[i] * 0.85 + rnd.nextGaussian() * 0.006;
     }
@@ -295,14 +348,14 @@
       wNum(p + "vfd_freq_hz", PANO[i] ? 0 : spd[i] * 50.0, 0.1, now);   // bypass'ta inverter 0 Hz okur
       wNum(p + "current_a", amp[i], 0.5, now);
       wNum(p + "power_kw", kw[i], 0.3, now);
-      wNum(p + "discharge_press_bar", on ? press[HDR[i]] + 0.03 : 0, 0.01, now);
+      wNum(p + "discharge_press_bar", on ? press[HDR[i]] + 0.03 + ampNoise[i] * 2 : 0, 0.01, now);
       wNum(p + "flow_m3h", q[i], 1, now);
       wNum(p + "hours_inv", hInv[i], 0.01, now);
       wNum(p + "hours_pano", hPano[i], 0.01, now);
       double rise = Math.max(0, tMot[i] - 25) / 60.0;
-      for (int k = 0; k < 6; k++) wNum(p + "MOTOR/t" + (k + 1), tMot[i] + bias[i][k] * Math.min(rise, 1.5), 0.1, now);
-      wNum(p + "PUMP/bearing1", tB1[i], 0.1, now);
-      wNum(p + "PUMP/bearing2", tB2[i], 0.1, now);
+      for (int k = 0; k < 6; k++) wNum(p + "MOTOR/t" + (k + 1), tMot[i] + bias[i][k] * Math.min(rise, 1.5) + tNoise[i] * (1 + 0.2 * k), 0.1, now);
+      wNum(p + "PUMP/bearing1", tB1[i] + tNoise[i] * 0.6, 0.1, now);
+      wNum(p + "PUMP/bearing2", tB2[i] - tNoise[i] * 0.5, 0.1, now);
       wStr(p + "state", trip[i] ? "FAULT" : on ? "RUNNING" : "STOPPED", now);
       wStr(p + "mode", "AUTO", now);
       String v = "VLV$2d0" + (i + 1) + "/";
@@ -324,8 +377,18 @@
     wNum("BASIN$2d01/volume_m3", level * AREA, 1, now);
     wNum("heartbeat", now / 1000.0, 0.5, now);                  // epoch sn: arayüz "janly" görür
 
+    if (now - lastSave > 30000L) {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < N; i++) sb.append(String.format(java.util.Locale.US, "%.4f;", hInv[i]));
+      for (int i = 0; i < N; i++) sb.append(String.format(java.util.Locale.US, "%.4f;", hPano[i]));
+      sb.append(String.format(java.util.Locale.US, "%.1f;%.1f", total[0], total[1]));
+      setString("sayaclar", sb.toString());
+      lastSave = now;
+    }
     int nRun = 0;
     for (int i = 0; i < N; i++) if (spd[i] > 0.05) nRun++;
-    setString("durum", String.format("işleýär · %d nasos · %.0f m³/sag · derejesi %.2f m · %tT%s",
-        nRun, qOut, level, new java.util.Date(now), missing.isEmpty() ? "" : " · tapylmadyk nokat: " + missing.size()));
+    String ev = evPump >= 0 ? String.format(" · hadysa: N-%d %s (%.0f s)", evPump + 1, evKind, evLeft)
+              : getBoolean("otoAriza") ? String.format(" · indiki hadysa ~%.0f s", nextEv) : "";
+    setString("durum", String.format("işleýär · %d nasos · %.0f m³/sag · derejesi %.2f m · %tT%s%s",
+        nRun, qOut, level, new java.util.Date(now), ev, missing.isEmpty() ? "" : " · tapylmadyk nokat: " + missing.size()));
   }
