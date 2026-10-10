@@ -53,6 +53,7 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
   if (-not $nodeDir) { throw 'node bulunamadi: PATH''e ekleyin ya da C:\Users\<ad>\tools altina kurun' }
   $env:Path = $nodeDir.FullName + ';' + $env:Path
 }
+$nodeExe = (Get-Command node -CommandType Application | Select-Object -First 1).Source
 $psql = Get-ChildItem 'C:\Program Files\PostgreSQL\*\bin\psql.exe' -ErrorAction SilentlyContinue | Sort-Object FullName | Select-Object -Last 1
 $nh = Get-ChildItem 'C:\Niagara' -Directory -Filter 'Niagara-4*' -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -Last 1
 
@@ -91,9 +92,10 @@ function Ensure-Chrome {
   for ($i = 0; $i -lt 30 -and -not (Test-Cdp); $i++) { Start-Sleep -Milliseconds 500 }
   if (-not (Test-Cdp)) { throw 'Chrome 9333 portunda acilmadi' }
 }
-function Node([string[]]$a) { & node @a; if ($LASTEXITCODE) { throw "basarisiz: node $($a -join ' ')" } }
+# node.exe tam yoluyla: "node" adli bir PowerShell fonksiyonu kendini cagirirdi (sonsuz dongu)
+function Run-Node([string[]]$a) { & $nodeExe @a; if ($LASTEXITCODE) { throw "basarisiz: node $($a -join ' ')" } }
 function TsDurum([string]$mode, [string[]]$extra = @()) {
-  $lines = & node tools\kurulum\timescale-niagara.mjs --station $stFile $mode @extra
+  $lines = & $nodeExe tools\kurulum\timescale-niagara.mjs --station $stFile $mode @extra
   if ($LASTEXITCODE) { throw 'timescale-niagara.mjs basarisiz' }
   $json = $null
   foreach ($l in $lines) { if ($l -like 'SONUC *') { $json = $l.Substring(6) | ConvertFrom-Json } else { Write-Host $l } }
@@ -141,7 +143,7 @@ try {
   # 3 ---------------------------------------------------------------- okuma servisi
   if (Step 3) {
     Need-Niagara
-    Node @('tools\jace\okuma-kur.mjs')
+    Run-Node @('tools\jace\okuma-kur.mjs')
   }
 
   # 4 ---------------------------------------------------------------- surucu
@@ -170,7 +172,7 @@ try {
   # 5 ---------------------------------------------------------------- politika
   if (Step 5) {
     Need-Niagara
-    Node @('tools\jace\ts-export-ayar.mjs', '--yil', "$years", '--sikistir', "$days")
+    Run-Node @('tools\jace\ts-export-ayar.mjs', '--yil', "$years", '--sikistir', "$days")
   }
 
   # 6 ---------------------------------------------------------------- okuma-sql
@@ -199,17 +201,17 @@ try {
     Need-Niagara
     Push-Location web
     try {
-      & node node_modules\vite\bin\vite.js build; if ($LASTEXITCODE) { throw 'web derlemesi basarisiz' }
-      & node scripts\niagara-pack.mjs --stations $sid; if ($LASTEXITCODE) { throw 'paket uretilemedi' }
+      & $nodeExe node_modules\vite\bin\vite.js build; if ($LASTEXITCODE) { throw 'web derlemesi basarisiz' }
+      & $nodeExe scripts\niagara-pack.mjs --stations $sid; if ($LASTEXITCODE) { throw 'paket uretilemedi' }
     } finally { Pop-Location }
     $backup = Join-Path ([Environment]::GetFolderPath('Desktop')) ("twin_yedek_${low}_" + (Get-Date -Format 'yyyy-MM-dd_HHmm'))
-    Node @('tools\jace\deploy.mjs', 'web\dist-niagara', $backup, '--station', $stFile, '--create-twin')
+    Run-Node @('tools\jace\deploy.mjs', 'web\dist-niagara', $backup, '--station', $stFile, '--create-twin')
   }
 
   # 9 ---------------------------------------------------------------- history
   if (Step 9) {
     Need-Niagara
-    Node @('tools\jace\twin-history.mjs', '--station', $stFile)
+    Run-Node @('tools\jace\twin-history.mjs', '--station', $stFile)
   }
 
   # 10 --------------------------------------------------------------- kontrol
