@@ -7,7 +7,9 @@
 # 2) Node.js ve GNU make: C:\Users\<ad>\tools altina acilir, PATH'e (kullanici) eklenir
 # 3) Chrome, PostgreSQL, TimescaleDB: kurulu degilse kurulum programi baslatilir (sorulari siz yanitlarsiniz)
 # Kurulu olana dokunulmaz. Niagara bu klasorde yoktur (lisansli kurulum).
+# -Denetle: yalniz dosyalari dogrular, hicbir sey kurmaz.
 # (Dosya bilerek ASCII.)
+param([switch]$Denetle)
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $dir = Join-Path $root 'gereksinimler'
@@ -27,6 +29,8 @@ foreach ($f in $want.Keys) {
   if ($h -ne $want[$f]) { Write-Host "  BOZUK  $f (SHA256 uyusmuyor)" -ForegroundColor Red; $bad++ } else { Write-Host "  TAMAM  $f" }
 }
 if ($bad) { throw "$bad dosya eksik/bozuk: gereksinimler\LISTE.md'deki adreslerden yeniden indirin" }
+if (-not $want.Count) { throw 'gereksinimler\LISTE.md icinde sha256 listesi bulunamadi' }
+if ($Denetle) { Write-Host "$($want.Count) dosya dogrulandi (kurulum yapilmadi: -Denetle)" -ForegroundColor Green; exit 0 }
 
 function Add-UserPath([string]$p) {
   $cur = [Environment]::GetEnvironmentVariable('Path', 'User')
