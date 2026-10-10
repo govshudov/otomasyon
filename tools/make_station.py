@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -39,14 +40,25 @@ def channel_plan(cells_w: float) -> list[list[float]]:
 def build(sid: str, name: str, n_pumps: int, per_header: int,
           motor_kw: float = 160.0, rated_flow: float = 900.0,
           rated_head: float = 45.0, split: list[int] | None = None,
-          site: dict | None = None) -> dict:
-    # split: kolektör başına pompa sayısı (örn. [4, 3, 3]); verilmezse per_header'a göre eşit
-    if split is None:
-        split = [min(per_header, n_pumps - k) for k in range(0, n_pumps, per_header)]
-    if sum(split) != n_pumps or min(split) < 1:
-        raise SystemExit(f"kolektör dağılımı {split} toplamı {n_pumps} pompa olmalı")
-    n_headers = len(split)
-    header_of = [h for h, k in enumerate(split) for _ in range(k)]
+          site: dict | None = None, members: list[list[int]] | None = None) -> dict:
+    # members: kolektör başına pompa NUMARALARI (1'den), örn. [[1, 3, 5], [2, 4, 6]] — sıralı
+    # olmayan bağlantı için (ayar dosyası). Verilmezse split: kolektör başına pompa SAYISI
+    # (örn. [4, 3, 3]); o da verilmezse per_header'a göre eşit dağılım.
+    if members is None:
+        if split is None:
+            split = [min(per_header, n_pumps - k) for k in range(0, n_pumps, per_header)]
+        if sum(split) != n_pumps or min(split) < 1:
+            raise SystemExit(f"kolektör dağılımı {split} toplamı {n_pumps} pompa olmalı")
+        starts = [sum(split[:h]) for h in range(len(split))]
+        members = [list(range(starts[h] + 1, starts[h] + split[h] + 1)) for h in range(len(split))]
+    flat = sorted(n for m in members for n in m)
+    if flat != list(range(1, n_pumps + 1)) or any(not m for m in members):
+        raise SystemExit(f"kolektörlerdeki nasos numaraları {members}: 1..{n_pumps} her biri tam bir kez olmalı")
+    n_headers = len(members)
+    header_of = [0] * n_pumps
+    for h, m in enumerate(members):
+        for n in m:
+            header_of[n - 1] = h
 
     # Her pompaya bir hücre; kanal planı hücre sırasının genişliğinden türer
     cell_w, pier = 2.0, 0.64
@@ -85,14 +97,13 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
             ("label", f"N-{n} gaýtarmaýan klapan"), ("source_pump", f"PMP-{n:02d}"),
             ("params", {"dn": 350})]))
 
-    starts = [sum(split[:h]) for h in range(n_headers)]
     for h in range(n_headers):
-        members = [f"PMP-{j+1:02d}" for j in range(starts[h], starts[h] + split[h])]
+        ids = [f"PMP-{n:02d}" for n in sorted(members[h])]
         headers.append(collections.OrderedDict([
             ("id", f"HDR-{h+1:02d}"), ("type", "header"),
             ("label", f"T-{h+1} esasy turba"),
             ("params", {"dn": 600, "length_m": 180.0, "static_head_m": 38.0,
-                        "roughness_c": 130, "pumps": members})]))
+                        "roughness_c": 130, "pumps": ids})]))
 
     return collections.OrderedDict([
         ("station_id", sid), ("name", name),
@@ -136,7 +147,62 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
     ])
 
 
+GENERATED = {"basin", "trash_rack", "slide_gate", "header", "pump_hsc", "butterfly_valve", "check_valve"}
+
+
+def from_ayar(path: Path, yeniden: bool) -> int:
+    """Ayar dosyasından (ayarlar/<istasyon>.json) stations/<id>.json.
+
+    Dosya yoksa üretir. Varsa yalnız denetler: nasos/kolektör eşlemesi ayarla aynı mı.
+    --yeniden: ekipman ayardan yeniden üretilir; elle ayarlanmış geometry, hydraulics ve
+    üreticinin bilmediği ekipman (ör. LT seviye datçikleri) korunur.
+    """
+    a = json.loads(path.read_text(encoding="utf-8"))
+    sid = a["id"]
+    members = [sorted(int(n) for n in k["nasoslar"]) for k in a["kolektorler"]]
+    n_pumps = sum(len(m) for m in members)
+    out = ROOT / f"stations/{sid.lower()}.json"
+    want = {f"PMP-{n:02d}": f"HDR-{h + 1:02d}" for h, m in enumerate(members) for n in m}
+
+    old = json.loads(out.read_text(encoding="utf-8"), object_pairs_hook=collections.OrderedDict) if out.exists() else None
+    if old is not None and not yeniden:
+        have = {e["id"]: e.get("header") for e in old["equipment"] if e["type"] == "pump_hsc"}
+        diff = [f"  {p}: dosyada {have.get(p, 'YOK')}, ayarda {h}" for p, h in sorted(want.items()) if have.get(p) != h]
+        diff += [f"  {p}: dosyada var, ayarda YOK" for p in sorted(have) if p not in want]
+        if diff:
+            print(f"{out.relative_to(ROOT)} ayarla UYUŞMUYOR:\n" + "\n".join(diff))
+            print("Ekipmanı ayardan yeniden üretmek için: make istasyon YENIDEN=1 "
+                  "(geometri ve elle eklenen ekipman korunur; 3D modeli de yeniden üretin)")
+            return 1
+        print(f"{out.relative_to(ROOT)} ayarla uyumlu ({n_pumps} nasos, {len(members)} kolektör) — değişiklik yok")
+        return 0
+
+    n = a.get("nasos", {})
+    cfg = build(sid, a.get("ad") or "Suw göteriji beket", n_pumps, 3,
+                motor_kw=float(n.get("motor_kw", 160.0)), rated_flow=float(n.get("debi_m3h", 900.0)),
+                rated_head=float(n.get("basys_m", 45.0)), members=members)
+    for h, k in enumerate(a["kolektorler"]):
+        if k.get("ad"):
+            next(e for e in cfg["equipment"] if e["id"] == f"HDR-{h + 1:02d}")["label"] = k["ad"]
+    if old is not None:
+        for key in ("geometry", "hydraulics"):
+            if key in old:
+                cfg[key] = old[key]
+        extra = [e for e in old["equipment"] if e["type"] not in GENERATED]
+        cfg["equipment"].extend(extra)
+        print(f"korunan: geometry, hydraulics, {len(extra)} ek ekipman")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"{out.relative_to(ROOT)}  —  {n_pumps} nasos, {len(members)} kolektör: "
+          + ", ".join(f"HDR-{h + 1:02d}={m}" for h, m in enumerate(members)))
+    return 0
+
+
 def main() -> int:
+    if "--ayar" in sys.argv:
+        i = sys.argv.index("--ayar")
+        return from_ayar(Path(sys.argv[i + 1]).resolve(), "--yeniden" in sys.argv)
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--id", required=True)
     ap.add_argument("--name", default=None)

@@ -1,0 +1,519 @@
+{
+  "station_id": "PS-01",
+  "name": "Esasy suw göteriji beket",
+  "description": "6 nasosly, 2 basyş liniýaly suw göteriji beket",
+  "schema_version": "0.1.0",
+  "site": {
+    "$comment": "Kurulum (tools/kurulum/kur-istasyon.ps1): Niagara istasyonunun adı sabit olmalı; sürücü veriyi bu adla yazar. Veritabanı aynı PC'de (PostgreSQL + TimescaleDB elle kurulur).",
+    "niagara_station": "MAGTYMGULY",
+    "db": {
+      "host": "localhost",
+      "port": 5432,
+      "name": "Niagara"
+    },
+    "retention_years": 5,
+    "compress_after_days": 7
+  },
+  "units": {
+    "length": "m",
+    "flow": "m3h",
+    "pressure": "bar",
+    "temp": "C",
+    "vib": "mm/s"
+  },
+  "geometry": {
+    "$comment": "plan = [y, taban_genişliği, üst_genişlik] (iç ölçü, m); y = 0 başlık duvarının iç yüzü, pompalar +y'de. Son iki istasyon hücre sırası genişliğinde ve dikey olmalı.",
+    "channel": {
+      "invert_el": 0,
+      "deck_el": 6.5,
+      "wall_t": 0.9,
+      "base_t": 0.9,
+      "plan": [
+        [
+          -30,
+          5,
+          10.5
+        ],
+        [
+          -21,
+          5,
+          10.5
+        ],
+        [
+          -11,
+          12.5,
+          18
+        ],
+        [
+          -6,
+          13.8,
+          18
+        ],
+        [
+          -4,
+          15.2,
+          15.2
+        ],
+        [
+          0,
+          15.2,
+          15.2
+        ]
+      ]
+    },
+    "cells": {
+      "count": 6,
+      "width": 2,
+      "pier": 0.64,
+      "depth": 2.3,
+      "front_beam": 0.6,
+      "slab_t": 0.5,
+      "end_wall": 1
+    },
+    "bridge": {
+      "y": -21.6,
+      "width": 1.3,
+      "thickness": 0.6
+    },
+    "pump_area": {
+      "$comment": "PS-21 TX çizimi (kanal tabanı 0 = mutlak 197,40): makine dairesi tabanı 200,10 → 2,7; kaide 200,70 → +0,6; pompa ekseni ≈ 201,46. suction_el null = emme hattı başlık duvarını pompa ekseni kotunda yatay geçer, hücrede ağza iner.",
+      "ground_el": 2.7,
+      "pad_h": 0.6,
+      "pitch": 3.8,
+      "group_gap": 1.2,
+      "rows": [
+        7.8,
+        9.4
+      ],
+      "riser_y": 1.6,
+      "suction_el": null,
+      "bell_clearance": 0.45
+    },
+    "headers": {
+      "y": 13.4,
+      "run_length": 22
+    },
+    "building": {
+      "$comment": "PS-21 TX: ±0.00 = 203,90 (deck_el); saçak +7,83, mahya +8,78; aks 6 m. Genişlik pompa kaidelerinden, derinlik kolektörden türetilir.",
+      "y0": 1.4,
+      "wall_t": 0.4,
+      "margin_x": 1.8,
+      "front_gap": 2.6,
+      "slab_t": 0.5,
+      "eave_h": 7.83,
+      "ridge_h": 8.78,
+      "bay": 6
+    },
+    "meter_pit": {
+      "$comment": "Ana hatlardaki debimetreler: bina arkasında toprağa gömülü, üstü açık beton kuyu. dist = bina dış yüzünden kuyu merkezine (m).",
+      "dist": 4,
+      "w": 3,
+      "l": 4,
+      "wall_t": 0.3,
+      "floor_gap": 0.6,
+      "kerb": 0.15
+    },
+    "soil": {
+      "depth": 2.5,
+      "margin": 5,
+      "margin_end": 9
+    }
+  },
+  "hydraulics": {
+    "basin": {
+      "invert_el": 0,
+      "llwl": 0.8,
+      "lwl": 1.2,
+      "hwl": 5.5,
+      "hhwl": 5.9,
+      "max_el": 6,
+      "design_level": 3.2
+    },
+    "inflow": {
+      "base_m3h": 3200,
+      "diurnal_amp_m3h": 1400,
+      "diurnal_peak_hour": 9,
+      "noise_m3h": 120,
+      "storm_probability_per_hour": 0.02
+    }
+  },
+  "equipment": [
+    {
+      "id": "BASIN-01",
+      "type": "basin",
+      "label": "Sorujy howuz"
+    },
+    {
+      "id": "RACK-01",
+      "type": "trash_rack",
+      "label": "Giriş panjarasy",
+      "params": {
+        "clean_trigger_dp_m": 0.25,
+        "clean_duration_s": 240
+      }
+    },
+    {
+      "id": "GATE-01",
+      "type": "slide_gate",
+      "label": "Giriş gapagy",
+      "params": {
+        "width": 2,
+        "height": 3,
+        "travel_s": 90,
+        "bay": 1
+      }
+    },
+    {
+      "id": "HDR-01",
+      "type": "header",
+      "label": "T-1 esasy turba",
+      "params": {
+        "dn": 600,
+        "length_m": 180,
+        "static_head_m": 38,
+        "roughness_c": 130,
+        "pumps": [
+          "PMP-01",
+          "PMP-02",
+          "PMP-03"
+        ]
+      }
+    },
+    {
+      "id": "HDR-02",
+      "type": "header",
+      "label": "T-2 esasy turba",
+      "params": {
+        "dn": 600,
+        "length_m": 180,
+        "static_head_m": 38,
+        "roughness_c": 130,
+        "pumps": [
+          "PMP-04",
+          "PMP-05",
+          "PMP-06"
+        ]
+      }
+    },
+    {
+      "id": "PMP-01",
+      "type": "pump_hsc",
+      "label": "T-1 N-1",
+      "header": "HDR-01",
+      "layout": {
+        "cell": 0,
+        "row": 0
+      },
+      "params": {
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 2,
+        "stop_level_m": 1.4,
+        "duty_order": 1
+      }
+    },
+    {
+      "id": "PMP-02",
+      "type": "pump_hsc",
+      "label": "T-1 N-2",
+      "header": "HDR-01",
+      "layout": {
+        "cell": 1,
+        "row": 1
+      },
+      "params": {
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 2.6,
+        "stop_level_m": 1.6,
+        "duty_order": 2
+      }
+    },
+    {
+      "id": "PMP-03",
+      "type": "pump_hsc",
+      "label": "T-1 N-3",
+      "header": "HDR-01",
+      "layout": {
+        "cell": 2,
+        "row": 0
+      },
+      "params": {
+        "drive": "pano",
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 3.2,
+        "stop_level_m": 1.8,
+        "duty_order": 3
+      }
+    },
+    {
+      "id": "PMP-04",
+      "type": "pump_hsc",
+      "label": "T-2 N-4",
+      "header": "HDR-02",
+      "layout": {
+        "cell": 3,
+        "row": 1
+      },
+      "params": {
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 3.8,
+        "stop_level_m": 2,
+        "duty_order": 4
+      }
+    },
+    {
+      "id": "PMP-05",
+      "type": "pump_hsc",
+      "label": "T-2 N-5",
+      "header": "HDR-02",
+      "layout": {
+        "cell": 4,
+        "row": 0
+      },
+      "params": {
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 4.4,
+        "stop_level_m": 2.2,
+        "duty_order": 5
+      }
+    },
+    {
+      "id": "PMP-06",
+      "type": "pump_hsc",
+      "label": "T-2 N-6",
+      "header": "HDR-02",
+      "layout": {
+        "cell": 5,
+        "row": 1
+      },
+      "params": {
+        "drive": "pano",
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 5,
+        "stop_level_m": 2.4,
+        "duty_order": 6
+      }
+    },
+    {
+      "id": "VLV-01",
+      "type": "butterfly_valve",
+      "label": "N-1 basyş klapany",
+      "interlock_pump": "PMP-01",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "VLV-02",
+      "type": "butterfly_valve",
+      "label": "N-2 basyş klapany",
+      "interlock_pump": "PMP-02",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "VLV-03",
+      "type": "butterfly_valve",
+      "label": "N-3 basyş klapany",
+      "interlock_pump": "PMP-03",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "VLV-04",
+      "type": "butterfly_valve",
+      "label": "N-4 basyş klapany",
+      "interlock_pump": "PMP-04",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "VLV-05",
+      "type": "butterfly_valve",
+      "label": "N-5 basyş klapany",
+      "interlock_pump": "PMP-05",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "VLV-06",
+      "type": "butterfly_valve",
+      "label": "N-6 basyş klapany",
+      "interlock_pump": "PMP-06",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "LT-01",
+      "type": "level_sensor",
+      "label": "N-1 suwuň derejesi",
+      "source_pump": "PMP-01"
+    },
+    {
+      "id": "LT-02",
+      "type": "level_sensor",
+      "label": "N-2 suwuň derejesi",
+      "source_pump": "PMP-02"
+    },
+    {
+      "id": "LT-03",
+      "type": "level_sensor",
+      "label": "N-3 suwuň derejesi",
+      "source_pump": "PMP-03"
+    },
+    {
+      "id": "LT-04",
+      "type": "level_sensor",
+      "label": "N-4 suwuň derejesi",
+      "source_pump": "PMP-04"
+    },
+    {
+      "id": "LT-05",
+      "type": "level_sensor",
+      "label": "N-5 suwuň derejesi",
+      "source_pump": "PMP-05"
+    },
+    {
+      "id": "LT-06",
+      "type": "level_sensor",
+      "label": "N-6 suwuň derejesi",
+      "source_pump": "PMP-06"
+    }
+  ]
+}

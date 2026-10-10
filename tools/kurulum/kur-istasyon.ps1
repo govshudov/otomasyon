@@ -1,9 +1,11 @@
 # Istasyon kurulumu - tek komut. Istasyonun calistigi PC'de calistirilir (veritabani localhost'ta).
 #
-#   powershell -ExecutionPolicy Bypass -File tools\kurulum\kur-istasyon.ps1 -Istasyon stations\ps-01.json
+#   powershell -ExecutionPolicy Bypass -File tools\kurulum\kur-istasyon.ps1 -Ayar ayarlar\magtymguly.json
+#   (ya da make kur AYAR=ayarlar/magtymguly.json; ayrintilar KURULUM.md)
 #
-#   -Istasyon  istasyon dosyasi (site bolumu: Niagara adi, veritabani, saklama)
-#   -Url       Niagara istasyonu (varsayilan https://127.0.0.1)
+#   -Ayar      ayar dosyasi (TEK KAYNAK: id, Niagara adi/adresi/kullanicisi, veritabani, saklama)
+#   -Istasyon  eski yol: istasyon dosyasi + site bolumu (-Ayar verilmezse)
+#   -Url       Niagara istasyonu (ayar dosyasindaki niagara.url'yi ezer)
 #   -Basla N   N. adimdan basla (yarida kalan kurulum; adimlar zaten yapilmissa atlar)
 #   -Bitir N   N. adimda dur
 #   -Plan      yalniz adimlari yaz, hicbir sey yapma
@@ -15,17 +17,18 @@
 #   4 surucu       TimescaleNetwork/Device/HistoryExport; veritabani sifresi Workbench'te girilir; tablolar
 #   5 politika     saklama / sikistirma (site bolumunden)
 #   6 okuma-sql    db\timescale\10_okuma.sql (gorunumler, saatlik/gunluk ozetler)
-#   7 model        3D model (build\<id>-plain.glb; yoksa Blender ile uretilir)
-#   8 arayuz       arayuz + sozluk paketi, /Twin/<id> noktalari (yoksa olusturulur)
+#   7 model        3D model (hazir paket paket\<id> varsa atlanir; yoksa build\<id>-plain.glb / Blender)
+#   8 arayuz       arayuz + sozluk (hazir paket paket\<id> varsa o; yoksa derlenir), /Twin/<id> noktalari
 #   9 history      Twin noktalarina history uzantisi (veritabanina aktarilsin)
 #  10 kontrol      ozet: baglanti, aktarim, nokta sayilari
 #
 # Sifreler (Niagara admin, postgres) sorulur, hicbir dosyaya yazilmaz, bitince ortamdan silinir.
 # TwinSim (simulasyon) KURULMAZ. (Dosya bilerek ASCII: Windows PowerShell 5.1 BOM'suz UTF-8'i yanlis okur.)
 param(
-  [Parameter(Mandatory = $true)][string]$Istasyon,
-  [string]$Url = 'https://127.0.0.1',
-  [string]$User = 'admin',
+  [string]$Ayar,
+  [string]$Istasyon,
+  [string]$Url,
+  [string]$User,
   [int]$Basla = 1,
   [int]$Bitir = 10,
   [switch]$Plan
@@ -34,13 +37,36 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)    # node ciktisindaki Turkce harfler
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 Set-Location $root
-$stFile = Resolve-Path $Istasyon
+if ($Ayar) {
+  $ayarFile = Resolve-Path $Ayar
+  $a = Get-Content $ayarFile -Raw -Encoding UTF8 | ConvertFrom-Json
+  $sid = $a.id; $low = $sid.ToLower()
+  $stFile = Join-Path $root "stations\$low.json"
+  if (-not (Test-Path $stFile)) { throw "stations\$low.json yok: hazirlik PC'sinde 'make istasyon AYAR=$Ayar' ile uretin ve bu PC'ye getirin" }
+  $stFile = Resolve-Path $stFile
+  $want = $a.niagara.istasyon
+  if (-not $Url) { $Url = $a.niagara.url }
+  if (-not $User) { $User = $a.niagara.kullanici }
+  $dbName = $a.veritabani.ad; $dbHost = $a.veritabani.host; $dbPort = $a.veritabani.port
+  $years = $a.saklama_yil; $days = $a.sikistirma_gun
+  $tsArg = @('--ayar', "$ayarFile")
+} elseif ($Istasyon) {
+  $stFile = Resolve-Path $Istasyon
+  $st0 = Get-Content $stFile -Raw -Encoding UTF8 | ConvertFrom-Json
+  if (-not $st0.site) { throw "$Istasyon icinde 'site' bolumu yok. Ayar dosyasi kullanin: -Ayar ayarlar\<istasyon>.json" }
+  $sid = $st0.station_id; $low = $sid.ToLower()
+  $want = $st0.site.niagara_station
+  $dbName = $st0.site.db.name; $dbHost = $st0.site.db.host; $dbPort = $st0.site.db.port
+  $years = $st0.site.retention_years; $days = $st0.site.compress_after_days
+  $tsArg = @('--station', "$stFile")
+} else { throw '-Ayar ayarlar\<istasyon>.json verilmeli' }
+if (-not $Url) { $Url = 'https://127.0.0.1' }
+if (-not $User) { $User = 'admin' }
+if (-not $dbHost) { $dbHost = 'localhost' }; if (-not $dbPort) { $dbPort = 5432 }; if (-not $dbName) { $dbName = 'Niagara' }
+if (-not $years) { $years = 5 }; if (-not $days) { $days = 7 }
 $st = Get-Content $stFile -Raw -Encoding UTF8 | ConvertFrom-Json
-if (-not $st.site) { throw "$Istasyon icinde 'site' bolumu yok (Niagara adi, veritabani). make_station.py --niagara AD ile uretin ya da elle ekleyin." }
-$sid = $st.station_id; $low = $sid.ToLower()
-$want = $st.site.niagara_station
-$dbName = $st.site.db.name; $dbHost = $st.site.db.host; $dbPort = $st.site.db.port
-$years = $st.site.retention_years; $days = $st.site.compress_after_days
+$paket = Join-Path $root "paket\$low"
+$hasPaket = Test-Path (Join-Path $paket 'index.html')
 
 $steps = @('', 'veritabani', 'modul', 'okuma', 'surucu', 'politika', 'okuma-sql', 'model', 'arayuz', 'history', 'kontrol')
 Write-Host "Istasyon: $sid ($($st.name))  Niagara adi: $want  Niagara: $Url  veritabani: ${dbHost}:${dbPort}/$dbName"
@@ -96,7 +122,7 @@ function Ensure-Chrome {
 # node.exe tam yoluyla: "node" adli bir PowerShell fonksiyonu kendini cagirirdi (sonsuz dongu)
 function Run-Node([string[]]$a) { & $nodeExe @a; if ($LASTEXITCODE) { throw "basarisiz: node $($a -join ' ')" } }
 function TsDurum([string]$mode, [string[]]$extra = @()) {
-  $lines = & $nodeExe tools\kurulum\timescale-niagara.mjs --station $stFile $mode @extra
+  $lines = & $nodeExe tools\kurulum\timescale-niagara.mjs @tsArg $mode @extra
   if ($LASTEXITCODE) { throw 'timescale-niagara.mjs basarisiz' }
   $json = $null
   foreach ($l in $lines) { if ($l -like 'SONUC *') { $json = $l.Substring(6) | ConvertFrom-Json } else { Write-Host $l } }
@@ -133,9 +159,9 @@ try {
     if ($ver -eq 'YOK' -or [version]$ver -lt [version]'1.7.1.0' -or -not $signed) {
       Write-Host ''
       Write-Host '  Modul kurulmali (1.7.1.0 ya da yenisi, imzali):' -ForegroundColor Yellow
-      Write-Host '   1) driver\timescale\build\imzali\timescale-rt.jar (yoksa: node driver\timescale\build.mjs; imzala.ps1)'
+      Write-Host '   1) Imzali jar: paket\surucu\timescale-rt.jar (repoda hazir; yeni surum: make surucu + make imzala)'
       Write-Host "   2) Istasyonu durdurun, Workbench'i kapatin; jar'i $($nh.FullName)\modules\ altina koyun"
-      Write-Host '   3) Ilk kurulumsa akyllyoy-codesign.pem: Workbench ve Platform -> Certificate Management -> User Trust Store -> Import'
+      Write-Host '   3) Ilk kurulumsa paket\surucu\akyllyoy-codesign.pem: Workbench ve Platform -> Certificate Management -> User Trust Store -> Import'
       Write-Host "   4) Istasyonu baslatin ve bu betigi -Basla 3 ile yeniden calistirin"
       exit 3
     }
@@ -186,7 +212,8 @@ try {
   # 7 ---------------------------------------------------------------- model
   if (Step 7) {
     $plain = "build\$low-plain.glb"; $glb = "web\public\models\$low.glb"; $map = "web\public\models\$low-twin-map.json"
-    if ((Test-Path $plain) -and (Test-Path $glb) -and (Test-Path $map)) { Write-Host "  model var ($plain)" } else {
+    if ($hasPaket) { Write-Host "  hazir paket var (paket\$low): model paketin icinde, atlandi" }
+    elseif ((Test-Path $plain) -and (Test-Path $glb) -and (Test-Path $map)) { Write-Host "  model var ($plain)" } else {
       $blender = Get-ChildItem (Join-Path $env:USERPROFILE 'tools') -Recurse -Filter blender.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -First 1
       if (-not $blender) { throw "3D model yok ($plain) ve Blender bulunamadi. Modeli Blender olan PC'de uretin (bu adim) ve build\$low-plain.glb ile web\public\models\$low*.{glb,json} dosyalarini buraya getirin." }
       Write-Host "  Blender ile uretiliyor ($($blender.FullName))..."
@@ -200,13 +227,21 @@ try {
   # 8 ---------------------------------------------------------------- arayuz + Twin noktalari
   if (Step 8) {
     Need-Niagara
-    Push-Location web
-    try {
-      & $nodeExe node_modules\vite\bin\vite.js build; if ($LASTEXITCODE) { throw 'web derlemesi basarisiz' }
-      & $nodeExe scripts\niagara-pack.mjs --stations $sid; if ($LASTEXITCODE) { throw 'paket uretilemedi' }
-    } finally { Pop-Location }
+    if ($hasPaket) {
+      # Hazir paket (hazirlik PC'sinde 'make paket'): bu PC'de derleme / node_modules gerekmez
+      $dist = $paket
+      Write-Host "  hazir paket: paket\$low"
+    } else {
+      if (-not (Test-Path 'web\node_modules\vite')) { throw "hazir paket (paket\$low) yok ve web\node_modules kurulu degil. Hazirlik PC'sinde 'make paket AYAR=...' calistirip paket\$low klasorunu getirin." }
+      Push-Location web
+      try {
+        & $nodeExe node_modules\vite\bin\vite.js build; if ($LASTEXITCODE) { throw 'web derlemesi basarisiz' }
+        & $nodeExe scripts\niagara-pack.mjs --stations $sid; if ($LASTEXITCODE) { throw 'paket uretilemedi' }
+      } finally { Pop-Location }
+      $dist = 'web\dist-niagara'
+    }
     $backup = Join-Path ([Environment]::GetFolderPath('Desktop')) ("twin_yedek_${low}_" + (Get-Date -Format 'yyyy-MM-dd_HHmm'))
-    Run-Node @('tools\jace\deploy.mjs', 'web\dist-niagara', $backup, '--station', $stFile, '--create-twin')
+    Run-Node @('tools\jace\deploy.mjs', $dist, $backup, '--station', $stFile, '--create-twin')
   }
 
   # 9 ---------------------------------------------------------------- history

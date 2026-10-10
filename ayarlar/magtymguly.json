@@ -1,0 +1,23 @@
+{
+  "_aciklama": "Magtymguly istasyonunun AYAR dosyası. Kurulumla ilgili her şey burada; ne değiştirileceği KURULUM.md'de. Nasos/kolektör değişirse: make istasyon YENIDEN=1 AYAR=ayarlar/magtymguly.json, sonra make model ve make paket.",
+  "id": "PS-01",
+  "ad": "Esasy suw göteriji beket",
+  "niagara": {
+    "istasyon": "MAGTYMGULY",
+    "url": "https://127.0.0.1",
+    "kullanici": "admin"
+  },
+  "veritabani": {
+    "host": "localhost",
+    "port": 5432,
+    "ad": "Niagara",
+    "kullanici": "postgres"
+  },
+  "saklama_yil": 5,
+  "sikistirma_gun": 7,
+  "kolektorler": [
+    { "ad": "T-1 esasy turba", "nasoslar": [1, 2, 3] },
+    { "ad": "T-2 esasy turba", "nasoslar": [4, 5, 6] }
+  ],
+  "nasos": { "motor_kw": 160, "debi_m3h": 900, "basys_m": 45 }
+}

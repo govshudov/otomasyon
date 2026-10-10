@@ -1,0 +1,24 @@
+{
+  "_aciklama": "YENİ İSTASYON İÇİN ŞABLON: bu dosyayı kopyalayın (ör. ayarlar/1-may.json), değerleri değiştirin. Alanların anlamı KURULUM.md → 'Ayar dosyası'. id her istasyonda farklı olmalı (PS-04, PS-05 …); Niagara'daki /Twin/<id> klasörü ve model dosyaları bu adla oluşur.",
+  "id": "PS-04",
+  "ad": "1 Maý suw göteriji beket",
+  "niagara": {
+    "istasyon": "BIRINJI_MAY",
+    "url": "https://127.0.0.1",
+    "kullanici": "admin"
+  },
+  "veritabani": {
+    "host": "localhost",
+    "port": 5432,
+    "ad": "Niagara",
+    "kullanici": "postgres"
+  },
+  "saklama_yil": 5,
+  "sikistirma_gun": 7,
+  "kolektorler": [
+    { "ad": "T-1 esasy turba", "nasoslar": [1, 2, 3, 4] },
+    { "ad": "T-2 esasy turba", "nasoslar": [5, 6, 7] },
+    { "ad": "T-3 esasy turba", "nasoslar": [8, 9, 10] }
+  ],
+  "nasos": { "motor_kw": 160, "debi_m3h": 900, "basys_m": 45 }
+}

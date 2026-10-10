@@ -1,6 +1,7 @@
 // İstasyonda TimescaleNetwork → TimescaleDevice → TimescaleHistoryExport (kurulum ve durum).
 //
 //   $env:JACE_URL = "https://127.0.0.1"; $env:JU = "admin"; $env:JP = "<şifre>"
+//   node tools/kurulum/timescale-niagara.mjs --ayar ayarlar/magtymguly.json --kur   (ya da --station <dosya>)
 //   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --kur      eksik olanları ekler
 //   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --durum    rapor (yazmaz)
 //   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --sema     createSchema eylemi
@@ -18,9 +19,18 @@ import { H } from '../jace/auth.mjs'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d }
 if (!process.env.JACE_URL) { console.error('DUR: $env:JACE_URL verilmedi (yerel istasyon için "https://127.0.0.1")'); process.exit(2) }
-const ST = JSON.parse(fs.readFileSync(path.resolve(ROOT, arg('--station', 'stations/ps-01.json')), 'utf8'))
-const site = ST.site ?? {}
-const db = site.db ?? { host: 'localhost', port: 5432, name: 'Niagara' }
+// Ayarlar: --ayar ayarlar/<istasyon>.json (tek kaynak) ya da eski yol: --station dosyasının site bölümü
+let site, db
+if (arg('--ayar')) {
+  const A = JSON.parse(fs.readFileSync(path.resolve(ROOT, arg('--ayar')), 'utf8'))
+  const v = A.veritabani ?? {}
+  db = { host: v.host ?? 'localhost', port: v.port ?? 5432, name: v.ad ?? 'Niagara', user: v.kullanici ?? 'postgres' }
+  site = { retention_years: A.saklama_yil, compress_after_days: A.sikistirma_gun }
+} else {
+  const ST = JSON.parse(fs.readFileSync(path.resolve(ROOT, arg('--station', 'stations/ps-01.json')), 'utf8'))
+  site = ST.site ?? {}
+  db = site.db ?? { host: 'localhost', port: 5432, name: 'Niagara' }
+}
 const MODE = ['--kur', '--durum', '--sema', '--bekle'].find((m) => process.argv.includes(m)) ?? '--durum'
 
 const CFG = {

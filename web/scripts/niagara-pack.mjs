@@ -1,6 +1,6 @@
 // JACE paketi: web/dist → web/dist-niagara
 //
-//   node scripts/niagara-pack.mjs [--stations PS-01,PS-02]
+//   node scripts/niagara-pack.mjs [--stations PS-01,PS-02] [--out ../paket/ps-01]
 //
 // Derlenmiş arayüzün yanına JACE'te API olmadığı için gereken iki şeyi koyar:
 //   stations.json            istasyon listesi (göreli model yolları, niagara_root)
@@ -14,7 +14,9 @@ import { fileURLToPath } from 'node:url'
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const ROOT = path.resolve(WEB, '..')
 const DIST = path.join(WEB, 'dist')
-const OUT = path.join(WEB, 'dist-niagara')
+// --out <klasör>: istasyona özel hazır paket (ör. paket/ps-04); verilmezse web/dist-niagara
+const outArg = process.argv.indexOf('--out')
+const OUT = outArg > 0 ? path.resolve(process.cwd(), process.argv[outArg + 1]) : path.join(WEB, 'dist-niagara')
 
 const arg = process.argv.indexOf('--stations')
 const only = arg > 0 ? process.argv[arg + 1].split(',').map((s) => s.trim().toUpperCase()) : null
