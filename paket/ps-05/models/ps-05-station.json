@@ -1,0 +1,311 @@
+{
+  "station_id": "PS-05",
+  "name": "Ýaşyldepe suw göteriji beket",
+  "description": "3 nasosly, 1 basyş liniýaly suw göteriji beket",
+  "schema_version": "0.1.0",
+  "units": {
+    "length": "m",
+    "flow": "m3h",
+    "pressure": "bar",
+    "temp": "C",
+    "vib": "mm/s"
+  },
+  "geometry": {
+    "channel": {
+      "invert_el": 0,
+      "deck_el": 6.5,
+      "wall_t": 0.9,
+      "base_t": 0.9,
+      "plan": [
+        [
+          -30,
+          4,
+          9.5
+        ],
+        [
+          -21,
+          4,
+          9.5
+        ],
+        [
+          -11,
+          4.58,
+          10.08
+        ],
+        [
+          -6,
+          5.88,
+          10.08
+        ],
+        [
+          -4,
+          7.28,
+          7.28
+        ],
+        [
+          0,
+          7.28,
+          7.28
+        ]
+      ]
+    },
+    "cells": {
+      "count": 3,
+      "width": 2,
+      "pier": 0.64,
+      "depth": 2.3,
+      "front_beam": 0.6,
+      "slab_t": 0.5,
+      "end_wall": 1
+    },
+    "bridge": {
+      "y": -21.6,
+      "width": 1.3,
+      "thickness": 0.6
+    },
+    "pump_area": {
+      "ground_el": 6.5,
+      "pitch": 3.8,
+      "group_gap": 1.2,
+      "rows": [
+        7.8,
+        9.4
+      ],
+      "riser_y": 1.6,
+      "suction_el": 2.2
+    },
+    "headers": {
+      "y": 13.4,
+      "run_length": 22
+    }
+  },
+  "hydraulics": {
+    "basin": {
+      "invert_el": 0,
+      "llwl": 0.8,
+      "lwl": 1.2,
+      "hwl": 5.5,
+      "hhwl": 5.9,
+      "max_el": 6,
+      "design_level": 3.2
+    },
+    "inflow": {
+      "base_m3h": 1620,
+      "diurnal_amp_m3h": 702,
+      "diurnal_peak_hour": 9,
+      "noise_m3h": 60,
+      "storm_probability_per_hour": 0.02
+    }
+  },
+  "equipment": [
+    {
+      "id": "BASIN-01",
+      "type": "basin",
+      "label": "Sorujy howuz"
+    },
+    {
+      "id": "RACK-01",
+      "type": "trash_rack",
+      "label": "Giriş panjarasy",
+      "params": {
+        "clean_trigger_dp_m": 0.25,
+        "clean_duration_s": 240
+      }
+    },
+    {
+      "id": "GATE-01",
+      "type": "slide_gate",
+      "label": "Giriş gapagy",
+      "params": {
+        "width": 2,
+        "height": 3,
+        "travel_s": 90,
+        "bay": 1
+      }
+    },
+    {
+      "id": "HDR-01",
+      "type": "header",
+      "label": "T-1 esasy turba",
+      "params": {
+        "dn": 600,
+        "length_m": 180,
+        "static_head_m": 38,
+        "roughness_c": 130,
+        "pumps": [
+          "PMP-01",
+          "PMP-02",
+          "PMP-03"
+        ]
+      }
+    },
+    {
+      "id": "PMP-01",
+      "type": "pump_hsc",
+      "label": "T-1 N-1",
+      "header": "HDR-01",
+      "layout": {
+        "cell": 0,
+        "row": 0
+      },
+      "params": {
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58.050000000000004,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 2,
+        "stop_level_m": 1.4,
+        "duty_order": 1
+      }
+    },
+    {
+      "id": "PMP-02",
+      "type": "pump_hsc",
+      "label": "T-1 N-2",
+      "header": "HDR-01",
+      "layout": {
+        "cell": 1,
+        "row": 1
+      },
+      "params": {
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58.050000000000004,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 2.55,
+        "stop_level_m": 1.56,
+        "duty_order": 2
+      }
+    },
+    {
+      "id": "PMP-03",
+      "type": "pump_hsc",
+      "label": "T-1 N-3",
+      "header": "HDR-01",
+      "layout": {
+        "cell": 2,
+        "row": 0
+      },
+      "params": {
+        "motor_kw": 160,
+        "rated_flow_m3h": 900,
+        "rated_head_m": 45,
+        "shutoff_head_m": 58.050000000000004,
+        "rated_rpm": 1480,
+        "rated_current_a": 280,
+        "voltage_v": 400,
+        "cos_phi": 0.87,
+        "vfd": true,
+        "min_speed_pct": 85,
+        "dn_suction": 400,
+        "dn_discharge": 350,
+        "bep_flow_m3h": 900,
+        "bep_efficiency_pct": 84,
+        "min_run_s": 180,
+        "min_stop_s": 120,
+        "start_ramp_s": 12,
+        "stop_ramp_s": 10,
+        "discharge_el_m": 41,
+        "centerline_el_m": 4
+      },
+      "control": {
+        "start_level_m": 3.1,
+        "stop_level_m": 1.72,
+        "duty_order": 3
+      }
+    },
+    {
+      "id": "VLV-01",
+      "type": "butterfly_valve",
+      "label": "N-1 basyş klapany",
+      "interlock_pump": "PMP-01",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "VLV-02",
+      "type": "butterfly_valve",
+      "label": "N-2 basyş klapany",
+      "interlock_pump": "PMP-02",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "VLV-03",
+      "type": "butterfly_valve",
+      "label": "N-3 basyş klapany",
+      "interlock_pump": "PMP-03",
+      "params": {
+        "dn": 350,
+        "travel_s": 25
+      }
+    },
+    {
+      "id": "NRV-01",
+      "type": "check_valve",
+      "label": "N-1 gaýtarmaýan klapan",
+      "source_pump": "PMP-01",
+      "params": {
+        "dn": 350
+      }
+    },
+    {
+      "id": "NRV-02",
+      "type": "check_valve",
+      "label": "N-2 gaýtarmaýan klapan",
+      "source_pump": "PMP-02",
+      "params": {
+        "dn": 350
+      }
+    },
+    {
+      "id": "NRV-03",
+      "type": "check_valve",
+      "label": "N-3 gaýtarmaýan klapan",
+      "source_pump": "PMP-03",
+      "params": {
+        "dn": 350
+      }
+    }
+  ]
+}

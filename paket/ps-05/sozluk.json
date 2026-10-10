@@ -1,0 +1,37 @@
+{
+  "_aciklama": "Nokta adlarının ekranda/raporda görünen karşılığı. Ad '_' ile parçalanır; her parça aşağıdan çevrilir ve ' · ' ile birleşir (BA4_G9_Toplam → Beton akaba 4 · Gatla 9 · jemi). Kısaltma+sayı parçaları 'kisaltmalar'dan, sözcükler 'sozler'den çevrilir. Sözlüğün yanlış ürettiği tek tük ad 'duzeltmeler'e yazılır (tam ad → görünen ad). Arayüz bu dosyayı istasyondan okur (file:^twin/sozluk.json): değişince yalnız bu dosya yeniden yüklenir.",
+  "kisaltmalar": {
+    "BA": "Beton akaba",
+    "MT": "MT",
+    "Saka": "Saka",
+    "G": "Gatla",
+    "B": "Böwetleýji gatla",
+    "BG": "Esasy böwetleýji gatla",
+    "S": "Sazlaýjy",
+    "N": "Nasos"
+  },
+  "sayi": "Liniýa",
+  "sozler": {
+    "Toplam": "jemi",
+    "Jemi": "jemi",
+    "Akym": "akym",
+    "CMD": "buýruk",
+    "Status": "ýagdaýy",
+    "Suw_Tizligi": "suwuň tizligi",
+    "Tizlik": "tizlik",
+    "new": "täze",
+    "Inverter": "inwertor",
+    "Line": "liniýa",
+    "rssi": "signal güýji (RSSI)",
+    "snr": "signal/şowhun (SNR)",
+    "gpio_input": "giriş"
+  },
+  "olcegler": {
+    "_aciklama": "Grafiklerde ve hasabatta gösterilen ölçegler (adın sonu → türü). akym: ortalama/en yüksek; sanag: sayaç, dönemdeki fark; ortaca: ortalama/en düşük/en yüksek. Burada olmayan sonlar (Status, CMD, rssi…) gösterilmez. Alt çizgisiz adlar (Awankamera M-1 Suw Derejesi) tek ölçeg sayılır.",
+    "Akym": "akym",
+    "Toplam": "sanag",
+    "Jemi": "sanag",
+    "Suw_Tizligi": "ortaca"
+  },
+  "duzeltmeler": {}
+}

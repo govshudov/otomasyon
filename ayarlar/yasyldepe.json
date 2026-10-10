@@ -1,0 +1,22 @@
+{
+  "_aciklama": "Ýaşyldepe istasyonunun AYAR dosyası. DİKKAT: kolektorler ve nasos değerleri VARSAYIM — gerçek bağlantıya göre düzeltin. Alanlar: KURULUM.md §3.",
+  "id": "PS-05",
+  "ad": "Ýaşyldepe suw göteriji beket",
+  "niagara": {
+    "istasyon": "YASYLDEPE",
+    "url": "https://127.0.0.1",
+    "kullanici": "admin"
+  },
+  "veritabani": {
+    "host": "localhost",
+    "port": 5432,
+    "ad": "Niagara",
+    "kullanici": "postgres"
+  },
+  "saklama_yil": 5,
+  "sikistirma_gun": 7,
+  "kolektorler": [
+    { "ad": "T-1 esasy turba", "nasoslar": [1, 2, 3] }
+  ],
+  "nasos": { "motor_kw": 160, "debi_m3h": 900, "basys_m": 45 }
+}

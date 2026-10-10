@@ -1,0 +1,24 @@
+{
+  "stations": [
+    {
+      "id": "PS-05",
+      "name": "Ýaşyldepe suw göteriji beket",
+      "description": "3 nasosly, 1 basyş liniýaly suw göteriji beket",
+      "pumps": 3,
+      "headers": 1,
+      "cells": 3,
+      "equipment": 13,
+      "model": "models/ps-05.glb",
+      "twin_map": "models/ps-05-twin-map.json",
+      "config": "models/ps-05-station.json",
+      "source_alive": false,
+      "alarms": 0,
+      "model_parts": [
+        "models/ps-05.part0.bin",
+        "models/ps-05.part1.bin"
+      ]
+    }
+  ],
+  "default": "PS-05",
+  "niagara_root": "slot:/Twin"
+}
