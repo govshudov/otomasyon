@@ -71,13 +71,21 @@ const r = await p.eval(`(async () => {
     await sleep(5000)
   }
 
+  // timescaleVersion yalnız ping'te güncellenir (sürücünün ping'i dakikalar arayla çalışır):
+  // beklerken ping'i kendimiz tetikleriz, yoksa doğru girilen şifreden sonra da eski hata görünür.
+  const ping = async () => { const d = await get(DEV); if (!d) return; try { await d.invoke({ slot: 'ping' }) } catch (e) { /* eylem yoksa geç */ } ; await sleep(3000) }
   if (MODE === '--bekle') {
-    for (let i = 0; i < WAIT; i += 3) {
+    for (let i = 0; i < WAIT; i += 6) {
+      await ping()
       const d = await get(DEV)
       const v = d ? String(d.get('timescaleVersion') || '') : ''
       if (v) break
       await sleep(3000)
     }
+  }
+  if (MODE === '--durum' || MODE === '--kur') {
+    const d = await get(DEV)
+    if (d && !String(d.get('timescaleVersion') || '')) await ping()
   }
 
   // durum (her modda)

@@ -31,6 +31,7 @@ param(
   [switch]$Plan
 )
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)    # node ciktisindaki Turkce harfler
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 Set-Location $root
 $stFile = Resolve-Path $Istasyon
