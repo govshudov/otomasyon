@@ -1,0 +1,20 @@
+# Satır sonu: depoda ve çalışma klasöründe LF (Windows'ta da). PowerShell 5.1, Node,
+# Python ve make LF'yi okur; "LF will be replaced by CRLF" uyarıları bununla biter.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# İkili dosyalar: satır sonu dönüşümü / fark gösterimi yok
+*.jar binary
+*.zip binary
+*.exe binary
+*.msi binary
+*.glb binary
+*.bin binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.blend binary
+*.wasm binary
+*.pdf binary
+*.dwg binary

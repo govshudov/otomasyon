@@ -49,6 +49,27 @@ make gereksinim ROL=hazirlik    (hazırlık PC'si)
 Aşağıdaki sürümler bu projede denenmiş olanlardır. Aynı ana sürüm (ör. PostgreSQL 18.x)
 yeterlidir.
 
+### 2.0 Kurulum dosyaları (internetsiz kurulum)
+
+Niagara dışındaki bütün kurulum dosyaları projenin `gereksinimler/` klasöründedir. Dosya
+adları, sürümleri, indirme adresleri ve SHA256 parmak izleri `gereksinimler/LISTE.md`'de
+yazar. Dosyalar büyük olduğu için (PostgreSQL ~370 MB) **Git'e girmez**: proje klasörüyle
+birlikte USB'ye kopyalanır. Eksikse LISTE.md'deki adreslerden indirilir.
+
+İstasyon PC'sinde, `make`'ten önce:
+
+```
+powershell -ExecutionPolicy Bypass -File tools\kurulum\gereksinim-kur.ps1
+```
+
+Bu komut:
+1. Dosyaların parmak izlerini listeyle karşılaştırır; bozuk ya da yanlış dosyayı kurmaz.
+2. Node.js'i ve GNU make'i `C:\Users\<kullanıcı>\tools` altına açar ve PATH'e ekler. Yeni açılan pencerelerde geçerli olur.
+3. Chrome, PostgreSQL ve TimescaleDB kurulu değilse kurulum programlarını sırayla başlatır. Şifre ve seçenekleri siz girersiniz (aşağıdaki tablodaki notlar). TimescaleDB'den sonra PostgreSQL servisini yeniden başlatmayı önerir.
+
+Kurulu olana dokunmaz; tekrar çalıştırmak güvenlidir. Sonra **yeni bir PowerShell
+penceresinde** `make gereksinim`.
+
 ### 2.1 İstasyon PC'si
 
 | Yazılım | Denenen sürüm | Nereden / nasıl |
@@ -58,8 +79,8 @@ yeterlidir.
 | **TimescaleDB** | 2.23.1 (PostgreSQL 18 için) | github.com/timescale/timescaledb → Releases → **PostgreSQL 18 için Windows** zip dosyası. Zip'i açın, içindeki `setup.exe`'yi **yönetici olarak** çalıştırın; sorduğu `postgresql.conf` ayarlarına "evet" deyin (`shared_preload_libraries = 'timescaledb'` eklenir). Sonra **postgresql-x64-18** Windows servisini yeniden başlatın. |
 | **Node.js** | 24.21.0 (22 ve üstü olur) | nodejs.org → Windows x64. Kurulum (msi) ya da zip: zip'i `C:\Users\<kullanıcı>\tools\node-v24…-win-x64` klasörüne açmak yeterli, betikler orada bulur. |
 | **Google Chrome** | güncel | google.com/chrome. Betikler Niagara'ya görünmeyen (başsız) bir Chrome penceresiyle bağlanır. |
-| **GNU make** | 4.x | İsteğe bağlı. İnternet varsa: `winget install ezwinports.make` (bulunamazsa `winget search make`). Yoksa §7'deki doğrudan komutlar kullanılır. |
-| **Proje klasörü** | — | `git clone` ya da hazırlık PC'sinden USB ile kopya. Klasörde `paket/<id>/`, `paket/surucu/`, `stations/<id>.json`, `ayarlar/<istasyon>.json` bulunmalı. |
+| **GNU make** | 4.4.1 (ezwinports) | `gereksinim-kur.ps1` kurar. Elle: zip'i `C:\Users\<kullanıcı>\tools\make-4.4.1-without-guile-w32-bin` altına açın, içindeki `bin` klasörünü PATH'e ekleyin. Olmasa da olur: §7'deki doğrudan komutlar. |
+| **Proje klasörü** | — | `git clone` ya da hazırlık PC'sinden USB ile kopya. Klasörde `paket/<id>/`, `paket/surucu/`, `stations/<id>.json`, `ayarlar/<istasyon>.json` ve (Git'te olmayan) `gereksinimler/` bulunmalı. |
 
 **TimescaleDB doğrulaması** (pgAdmin ya da `psql -U postgres`):
 

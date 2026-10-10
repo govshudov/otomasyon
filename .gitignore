@@ -1,9 +1,32 @@
+# --- Derleme çıktıları (kaynaktan yeniden üretilir) ---
+# "build/" her seviyede: kök build/ (3D modeller), driver/timescale/build/ (jar)
 build/
+web/dist/
 node_modules/
 __pycache__/
 *.pyc
 .venv/
-.env
 *.blend1
-web/dist/
+
+# İzlenenler (bilerek): paket/<id>/ ve paket/surucu/ — istasyon PC'sinde derleme
+# yapılmadan kurulsun diye hazır paketler repoda durur (KURULUM.md §1).
+
+# --- Kurulum dosyaları: büyük (PostgreSQL ~370 MB), Git'e girmez; USB ile taşınır ---
+# Liste, sürümler ve SHA256: gereksinimler/LISTE.md (izlenir)
+gereksinimler/*
+!gereksinimler/LISTE.md
+
+# --- Gizli: anahtarlar ve şifreler ASLA repoya girmez ---
+.env
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.key
+
+# --- Sistem / araç artıkları ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
 /data/
