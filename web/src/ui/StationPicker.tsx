@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchStations } from '../data/niagara'
+import { beketAdy } from './labels'
 
 export interface StationInfo {
   id: string; name: string; description: string
@@ -54,7 +55,7 @@ export function StationPicker({ current, onSelect }: {
                   <span className={`dot ${s.source_alive ? 'live' : 'dead'}`} />
                 </div>
                 <div className="row2">
-                  {s.id} · {s.pumps} nasos · {s.headers} kollektor · {s.cells} öýjük
+                  {beketAdy(s.id)} · {s.pumps} nasos · {s.headers} kollektor · {s.cells} öýjük
                   {s.alarms > 0 && <em className="bad"> · {s.alarms} duýduryş</em>}
                 </div>
               </button>

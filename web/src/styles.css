@@ -231,7 +231,7 @@ input[type=range] { accent-color: var(--accent); width: 100px; }
 /* ---- zaman çubuğu (geçmiş oynatma) ---- */
 .timeline {
   position: absolute; bottom: var(--gap); z-index: 18;
-  left: calc(var(--sidew) + var(--left-w) + var(--gap) * 2);
+  left: calc(var(--sidew) + var(--gap));
   right: var(--gap);
   display: flex; align-items: center; gap: 10px; padding: 9px 12px;
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
@@ -520,7 +520,10 @@ button.small { padding: 3px 10px; min-height: 26px; font-size: 11.5px; }
 .mode.stop { color: #a3abb5; } .mode.unknown { color: var(--dimmer); }
 .pcRow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .hrsBox { flex: 1; min-width: 0; }
-.hrs { display: flex; flex-direction: column; font-size: 9.5px; color: var(--dim); margin-top: 1px; }
+/* "Transformatorda" / "Transformator" uzun söz: dar kartta kutunun genişliğiyle küçülür, taşmaz */
+.tile.inl { container-type: inline-size; }
+.tBig.mode.pano { font-size: clamp(6.5px, 7cqw, 11.5px); letter-spacing: 0; }
+.hrs { display: flex; flex-direction: column; font-size: clamp(6.5px, 6.8cqw, 9.5px); color: var(--dim); margin-top: 1px; }
 .hrs span { display: flex; justify-content: space-between; gap: 6px; }
 .hrs b { color: #d7dbe0; font-family: var(--mono); font-weight: 500; }
 

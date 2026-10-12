@@ -9,6 +9,7 @@ import { DbReportTables, dbReportCsvRows, useDbReport } from './DbReport'
 import { combine } from './PumpCharts'
 import { fmtDateTime } from './Chart'
 import { Icon } from './icons'
+import { beketAdy } from './labels'
 
 /** Duýduryşlar, Hasabatlar, Grafikler sayfaları. */
 
@@ -130,8 +131,8 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
 
   const d = (eq: string, k: string) => delta(hist[`${sid}.${eq}.${k}`])
   const exportCsv = () => {
-    const rows: (string | number)[][] = [['Toplum', 'Nasos', 'Ýagdaýy', 'Inwertor sag', 'Pano sag', 'Jemi sag',
-      'Döwürde inwertor sag', 'Döwürde pano sag', 'Tok A', 'Kuwwat kW', 'Basyş bar']]
+    const rows: (string | number)[][] = [['Toplum', 'Nasos', 'Ýagdaýy', 'Inwertor sag', 'Transformator sag', 'Jemi sag',
+      'Döwürde inwertor sag', 'Döwürde transformator sag', 'Tok A', 'Kuwwat kW', 'Basyş bar']]
     for (const g of groups) for (const p of g.pumps) {
       const v = views[p.id]
       if (!v) continue
@@ -152,7 +153,7 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
   return (
     <div className="page">
       <div className="pageBar">
-        <h2>Hasabat · {sid}</h2>
+        <h2>Hasabat · {beketAdy(sid)}</h2>
         <div className="seg small">
           {PERIODS.map((p) => <button key={p.k} className={period === p.k ? 'on' : ''} onClick={() => setPeriod(p.k)}>{p.t}</button>)}
         </div>
@@ -164,9 +165,9 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
       <table className="dtbl">
         <thead>
           <tr><th>Toplum</th><th>Nasos</th><th>Ýagdaýy</th>
-            <th className="num">Inwertor<small>jemi sag</small></th><th className="num">Pano<small>jemi sag</small></th>
+            <th className="num">Inwertor<small>jemi sag</small></th><th className="num">Transformator<small>jemi sag</small></th>
             <th className="num">Jemi<small>sag</small></th>
-            <th className="num">Döwürde inw.<small>sag</small></th><th className="num">Döwürde pano<small>sag</small></th>
+            <th className="num">Döwürde inw.<small>sag</small></th><th className="num">Döwürde transf.<small>sag</small></th>
             <th className="num">Tok<small>A</small></th><th className="num">Kuwwat<small>kW</small></th><th className="num">Basyş<small>bar</small></th></tr>
         </thead>
         <tbody>
@@ -275,7 +276,7 @@ export function ChartsPage({ sid, groups, onPump }: {
         </>}
       </div>
       {mode === 'beket'
-        ? <ChartBoard title={`${sid} · beket grafikleri`} tags={tags} build={build} fileName={`${sid}_beket`} />
+        ? <ChartBoard title={`${beketAdy(sid)} · grafikler`} tags={tags} build={build} fileName={`${sid}_beket`} />
         : <PointExplorer sid={sid} />}
     </div>
   )

@@ -13,11 +13,36 @@ from mathutils import Vector
 from prim import Builder
 
 GAP = 0.18            # iki panel arası boşluk
+RACK_W = 2.0          # ızgara panelinin genişliği
 TOWER = 2.3           # kafes kulesinin döşeme üstündeki yüksekliği
 
 
 def _panel_y(br: dict) -> float:
     return br["y"] - br["width"] / 2.0 - 0.22
+
+
+def _gate_x(gw: float) -> float:
+    return -(gw / 2.0 + GAP / 2.0)
+
+
+def panel_opening(gate: dict | None, rack: bool, g: dict) -> tuple[float, float, float] | None:
+    """Kapak ve ızgara panellerinin durduğu açıklık: (x_sol, x_sağ, üst_kot).
+
+    Beton perde (civil.gate_wall) burayı boş bırakır, yalnız yanları kapatır. Paneller tabandan
+    döşemeye kadar durduğu için açıklık da tam yüksekliktedir (üst kot = döşeme).
+    """
+    xs = []
+    if gate:
+        gw = gate["params"]["width"]
+        xs += [_gate_x(gw) - gw / 2.0, _gate_x(gw) + gw / 2.0]
+    if rack:
+        xs += [GAP / 2.0, GAP / 2.0 + RACK_W]
+    return (min(xs), max(xs), g["channel"]["deck_el"]) if xs else None
+
+
+def wall_face_y(br: dict) -> float:
+    """Beton perdenin memba yüzü: panellerin (kanat kalınlığı 0,12) 1 cm arkası."""
+    return _panel_y(br) + 0.07
 
 
 def _tower(b: Builder, x: float, y: float, w: float, z0: float, z1: float,
@@ -40,7 +65,7 @@ def slide_gate(reg, mats, eq: dict, g: dict, br: dict) -> None:
     c = g["channel"]
     p = eq["params"]
     gw, gh = p["width"], p["height"]
-    x = -(gw / 2.0 + GAP / 2.0)
+    x = _gate_x(gw)
     y = _panel_y(br)
     z0, top = c["invert_el"], br["top"] + TOWER
     eid = eq["id"]
@@ -103,7 +128,7 @@ def level_sensor(reg, mats, eq: dict, x: float, g: dict, cg: dict) -> None:
     ob["label_anchor"] = [round(x + 0.18, 3), round(y_s, 3), round(deck - 0.08, 3)]
 
 
-def trash_rack(reg, mats, eq: dict, g: dict, br: dict, w: float = 2.0,
+def trash_rack(reg, mats, eq: dict, g: dict, br: dict, w: float = RACK_W,
                bar_pitch: float = 0.11) -> None:
     """Izgara: düşey çubuklar + kafes çerçeve + düşey hareket eden tarak."""
     c = g["channel"]

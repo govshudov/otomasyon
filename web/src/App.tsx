@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { TwinScene, type PerfStats } from './scene/TwinScene'
+import { TwinScene } from './scene/TwinScene'
 import type { ComponentInfo, MergedScene } from './scene/merge'
 import type { TwinMap } from './scene/types'
 import { useTwin } from './data/store'
-import { Hud } from './ui/Hud'
 import { InfoCard } from './ui/InfoCard'
-import { Alarms } from './ui/Alarms'
 import { Timeline } from './ui/Timeline'
 import { StationPicker, type StationInfo } from './ui/StationPicker'
 import { Schema2D } from './ui/Schema2D'
@@ -18,6 +16,7 @@ import { PumpBoard } from './ui/PumpBoard'
 import { PumpCharts } from './ui/PumpCharts'
 import { AlarmsPage, ChartsPage, ReportsPage } from './ui/Pages'
 import { KartaPage } from './ui/Karta'
+import { beketAdy } from './ui/labels'
 
 type View = '3d' | '2d'
 
@@ -32,15 +31,10 @@ export default function App() {
   const sceneRef = useRef<TwinScene | null>(null)
   const mergedRef = useRef<MergedScene | null>(null)
 
-  const [stats, setStats] = useState<PerfStats | null>(null)
-  const [meshInfo, setMeshInfo] = useState<{ source: number; merged: number; components: number } | null>(null)
   const [twin, setTwin] = useState<TwinMap | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sel, setSel] = useState<{ equipment: string | null; component: string | null }>({ equipment: null, component: null })
   const [explode, setExplode] = useState(0)
-  const [bench, setBench] = useState<string | null>(null)
-  const [benching, setBenching] = useState(false)
-  const [showAlarms, setShowAlarms] = useState(true)
   const [view, setView] = useState<View>(() => saved('twin.view', (v) => v === '2d' || v === '3d', '3d'))
   const [page, setPageRaw] = useState<Page>(() => saved<Page>('twin.page', (v) => /^(map|overview|karta|alarms|reports|charts|group:.+)$/.test(v), 'overview'))
   const [mini, setMini] = useState(() => saved<string>('twin.side', (v) => v === 'mini' || v === 'full', 'full') === 'mini')
@@ -63,16 +57,15 @@ export default function App() {
   const onMap = page === 'map'
   const is3d = onMap && view === '3d'
 
-  // 3D yalnız "3D ekiz" sayfasında çizilir — diğer sayfalarda GPU boşta kalsın
+  // 3D yalnız "Sanly ekiz" sayfasında çizilir — diğer sayfalarda GPU boşta kalsın
   useEffect(() => {
     sceneRef.current?.setPaused(!is3d)
     store('twin.view', view)
   }, [is3d, view, twin])
 
-  // Sol menü + sol sütun 3D'nin üstünde duruyor: sahnenin merkezi görünür alana kaysın
-  const leftRef = useRef<HTMLDivElement>(null)
+  // Sol menü 3D'nin üstünde duruyor: sahnenin merkezi görünür alana kaysın
   useEffect(() => {
-    const el = leftRef.current
+    const el = document.querySelector<HTMLElement>('nav.side')
     // Üst: başlık + 3D araç çubuğu (CSS'teki --hdr + --subbar)
     const apply = () => sceneRef.current?.setViewInset(is3d && el ? el.getBoundingClientRect().right : 0, is3d ? 92 : 0)
     apply()
@@ -80,7 +73,7 @@ export default function App() {
     const ro = new ResizeObserver(apply)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [is3d, twin, mini, showAlarms])
+  }, [is3d, twin, mini])
 
   const [station, setStation] = useState<StationInfo | null>(null)
   const playback = useTwin((s) => s.playback)
@@ -119,7 +112,6 @@ export default function App() {
   useEffect(() => {
     if (!canvasRef.current) return
     const scene = new TwinScene(canvasRef.current, {
-      onStats: setStats,
       // Ekipmana dokunmak onun bilgi kartını açar. Boşluğa dokunmak kartı
       // KAPATMAZ — kart × ile ya da başka ekipman seçilince kapanır.
       onPick: (info: ComponentInfo | null) => {
@@ -130,7 +122,6 @@ export default function App() {
       onReady: (merged, tm) => {
         mergedRef.current = merged
         setTwin(tm); setTwinMap(tm)
-        setMeshInfo({ source: merged.stats.sourceMeshes, merged: merged.stats.drawCalls, components: merged.components.length })
         setHasBuilding(merged.components.some((c) => c.faceN !== null))
       },
     })
@@ -273,24 +264,8 @@ export default function App() {
   // ---- eylemler ---------------------------------------------------------- //
   const frame = useCallback((node: string, margin = 2.4) => sceneRef.current?.frameNode(node, margin), [])
 
-  const selectFromAlarm = useCallback((equipment: string, component: string | null) => {
-    setSel({ equipment, component })
-    setExplode(component ? 0.45 : 0)
-    frame(equipment, component ? 3.1 : 2.4)
-  }, [frame])
-
-  const runBench = useCallback(async () => {
-    const s = sceneRef.current
-    if (!s) return
-    setBenching(true); setBench(null)
-    try {
-      const r = await s.benchmark({ frames: 150, width: 1280, height: 720 })
-      setBench(`1280×720 · ${r.avgMs} ms/kadr · p95 ${r.p95Ms} ms · ${r.fps} fps · ${r.drawCalls} draw call`)
-    } finally { setBenching(false) }
-  }, [])
-
   const crumbs = useMemo(() => {
-    const out: { label: string; node: string | null }[] = [{ label: station?.id ?? 'Beket', node: null }]
+    const out: { label: string; node: string | null }[] = [{ label: station ? beketAdy(station.id) : 'Beket', node: null }]
     if (sel.equipment && twin?.equipment[sel.equipment]) {
       out.push({ label: twin.equipment[sel.equipment].label, node: sel.equipment })
       if (sel.component) out.push({ label: sel.component.replace(/__/g, ' '), node: `${sel.equipment}__${sel.component}` })
@@ -323,7 +298,7 @@ export default function App() {
           {error && <div className="loading main bad">ýükleme ýalňyşlygy: {error}</div>}
           <div className="subbar">
             <div className="seg" role="tablist">
-              <button className={is3d ? 'on' : ''} onClick={() => setView('3d')}>3D ekiz</button>
+              <button className={is3d ? 'on' : ''} onClick={() => setView('3d')}>Sanly ekiz</button>
               <button className={!is3d ? 'on' : ''} onClick={() => setView('2d')}>2D shema</button>
             </div>
             {station && (
@@ -347,7 +322,6 @@ export default function App() {
               </nav>
             )}
             <div className="spacer" />
-            {is3d && bench && <span className="bench">{bench}</span>}
             {is3d && historyEnabled && !playback.active && (
               <button onClick={() => enterPlayback()}>Taryhy oýnat</button>
             )}
@@ -361,26 +335,8 @@ export default function App() {
                 {buildingFull ? 'Bina: doly' : 'Bina: kesik'}
               </button>
             )}
-            {is3d && (
-              <button onClick={() => setShowAlarms((v) => !v)}>{showAlarms ? 'Duýduryşlary gizle' : 'Duýduryşlar'}</button>
-            )}
-            {is3d && (
-              <button onClick={() => { setSel({ equipment: null, component: null }); setExplode(0); sceneRef.current?.frameAll() }}>
-                Esasy görnüş
-              </button>
-            )}
           </div>
 
-          {is3d && (
-            <div className="leftcol" ref={leftRef}>
-              <Hud stats={stats} meshInfo={meshInfo} onBench={runBench} benching={benching} stationId={sid || '—'} />
-              {showAlarms && (
-                <div className="left">
-                  <Alarms onSelect={selectFromAlarm} historical={histHealth?.violations} />
-                </div>
-              )}
-            </div>
-          )}
           {is3d && <Timeline />}
           {is3d && twin && <SensorLabels twin={twin} register={registerLabels} />}
 

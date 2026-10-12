@@ -23,8 +23,17 @@ function Find-Tool([string]$name, [string]$filter, [int]$depth = 4) {
 }
 
 # Niagara
-$nh = Get-ChildItem 'C:\Niagara' -Directory -Filter 'Niagara-4*' -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -Last 1
-Row 'Niagara 4' '4.15.x (C:\Niagara\Niagara-4.15.*)' $(if ($nh) { $nh.Name } else { 'yok' }) ([bool]$nh) 'lisansli kurulum; istasyon Workbench ile olusturulur'
+# Kurulum klasoru: once calisan 'Niagara' servisinin (niagarad.exe) klasoru; servis yoksa <surucu>:\Niagara\Niagara-4*
+# (kur-istasyon.ps1 ile ayni arama)
+function Find-NiagaraHome {
+  $svc = Get-CimInstance Win32_Service -Filter "Name='Niagara'" -ErrorAction SilentlyContinue
+  if ($svc -and $svc.PathName -match '^"?(.+?)\\bin\\niagarad\.exe' -and (Test-Path $Matches[1])) { return Get-Item $Matches[1] }
+  $roots = @([IO.DriveInfo]::GetDrives() | Where-Object { $_.DriveType -eq 'Fixed' -and $_.IsReady } | ForEach-Object { Join-Path $_.Name 'Niagara' } | Where-Object { Test-Path $_ })
+  if (-not $roots) { return $null }
+  return Get-ChildItem $roots -Directory -Filter 'Niagara-4*' -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -Last 1
+}
+$nh = Find-NiagaraHome
+Row 'Niagara 4' '4.15.x (Niagara servisi ya da <surucu>:\Niagara\Niagara-4.*)' $(if ($nh) { $nh.FullName } else { 'yok' }) ([bool]$nh) 'lisansli kurulum; istasyon Workbench ile olusturulur'
 if ($nh) {
   $jar = Join-Path $nh.FullName 'modules\timescale-rt.jar'
   $ver = 'yok'; $signed = $false

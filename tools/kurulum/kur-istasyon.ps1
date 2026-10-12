@@ -82,7 +82,16 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
 }
 $nodeExe = (Get-Command node -CommandType Application | Select-Object -First 1).Source
 $psql = Get-ChildItem 'C:\Program Files\PostgreSQL\*\bin\psql.exe' -ErrorAction SilentlyContinue | Sort-Object FullName | Select-Object -Last 1
-$nh = Get-ChildItem 'C:\Niagara' -Directory -Filter 'Niagara-4*' -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -Last 1
+# Niagara kurulum klasoru: once calisan 'Niagara' servisinin (niagarad.exe) klasoru - istasyonu o calistirir
+# ve modulleri oradan yukler; servis yoksa <surucu>:\Niagara\Niagara-4* (C:, D: ...).
+function Find-NiagaraHome {
+  $svc = Get-CimInstance Win32_Service -Filter "Name='Niagara'" -ErrorAction SilentlyContinue
+  if ($svc -and $svc.PathName -match '^"?(.+?)\\bin\\niagarad\.exe' -and (Test-Path $Matches[1])) { return Get-Item $Matches[1] }
+  $roots = @([IO.DriveInfo]::GetDrives() | Where-Object { $_.DriveType -eq 'Fixed' -and $_.IsReady } | ForEach-Object { Join-Path $_.Name 'Niagara' } | Where-Object { Test-Path $_ })
+  if (-not $roots) { return $null }
+  return Get-ChildItem $roots -Directory -Filter 'Niagara-4*' -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -Last 1
+}
+$nh = Find-NiagaraHome
 
 function Read-Secret([string]$prompt) {
   $s = Read-Host $prompt -AsSecureString
@@ -128,6 +137,23 @@ function TsDurum([string]$mode, [string[]]$extra = @()) {
   foreach ($l in $lines) { if ($l -like 'SONUC *') { $json = $l.Substring(6) | ConvertFrom-Json } else { Write-Host $l } }
   return $json
 }
+# Sema ve tablolar: surucunun kendi kodu (TsSchema) istasyonun disinda calistirilir. TimescaleDevice'in
+# createSchema eylemi tarayicidan cagrilinca sifreyi okuyamiyor (SecurityException), tablolar olusmuyordu.
+function Sema-Kur {
+  $ErrorActionPreference = 'Continue'    # javac/java'nin stderr satirlari betigi durdurmasin
+  if (-not $nh) { throw 'Niagara kurulumu bulunamadi (sema icin jre ve modules\timescale-rt.jar gerekir)' }
+  $jar = Join-Path $nh.FullName 'modules\timescale-rt.jar'
+  $javac = Join-Path $nh.FullName 'jre\bin\javac.exe'; $java = Join-Path $nh.FullName 'jre\bin\java.exe'
+  foreach ($f in $jar, $javac, $java) { if (-not (Test-Path $f)) { throw "bulunamadi: $f" } }
+  $tmp = Join-Path $env:TEMP ('tssema-' + [guid]::NewGuid().ToString('N'))
+  New-Item -ItemType Directory -Force $tmp | Out-Null
+  try {
+    & $javac -nowarn -encoding UTF-8 -cp $jar -d $tmp tools\kurulum\TsSema.java
+    if ($LASTEXITCODE) { throw 'tools\kurulum\TsSema.java derlenemedi' }
+    & $java -cp "$tmp;$jar" TsSema $dbHost $dbPort $dbName niagara postgres
+    if ($LASTEXITCODE) { throw 'sema olusturulamadi (hata yukarida)' }
+  } finally { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
+}
 function Step([int]$n) { if ($n -lt $Basla -or $n -gt $Bitir) { return $false }; Write-Host ''; Write-Host "== $n/10 $($steps[$n]) ==" -ForegroundColor Cyan; return $true }
 
 try {
@@ -145,8 +171,10 @@ try {
 
   # 2 ---------------------------------------------------------------- modul
   if (Step 2) {
-    $jar = if ($nh) { Join-Path $nh.FullName 'modules\timescale-rt.jar' } else { $null }
-    if (-not $jar -or -not (Test-Path $jar)) { $ver = 'YOK'; $signed = $false } else {
+    if (-not $nh) { throw 'Niagara kurulumu bulunamadi: ''Niagara'' servisi yok ve hicbir surucude \Niagara\Niagara-4.x klasoru yok. Niagara kurulu mu?' }
+    Write-Host "  Niagara: $($nh.FullName)"
+    $jar = Join-Path $nh.FullName 'modules\timescale-rt.jar'
+    if (-not (Test-Path $jar)) { $ver = 'YOK'; $signed = $false } else {
       Add-Type -AssemblyName System.IO.Compression.FileSystem
       $z = [IO.Compression.ZipFile]::OpenRead($jar)
       try {
@@ -190,8 +218,9 @@ try {
       if (-not $r.connected) { throw 'TimescaleDevice veritabanina baglanamadi (sifre, host/port, pg_hba.conf?). Duzeltip -Basla 4 ile tekrar calistirin.' }
     }
     if ((Pg $dbName "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'niagara' AND table_name = 'point'") -eq '0') {
-      $r = TsDurum '--sema'
-      if ((Pg $dbName "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'niagara' AND table_name = 'point'") -eq '0') { throw 'surucu tablolari olusturmadi (TimescaleDevice lastWriteError?)' }
+      Write-Host '  tablolar yok: olusturuluyor (surucunun sema kodu)...'
+      Sema-Kur
+      if ((Pg $dbName "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'niagara' AND table_name = 'point'") -eq '0') { throw 'tablolar olusmadi (niagara.point yok)' }
     }
     Write-Host ('  tablolar: ' + (Pg $dbName "SELECT string_agg(hypertable_name, ', ' ORDER BY hypertable_name) FROM timescaledb_information.hypertables WHERE hypertable_schema = 'niagara'"))
   }

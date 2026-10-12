@@ -52,7 +52,7 @@ export function fetchStations(): Promise<StationsDoc> {
 export async function fetchStationConfig(sid: string): Promise<any> {
   if (!NIAGARA) return fetch(`/api/station/${encodeURIComponent(sid)}`).then((r) => r.json())
   const e = (await fetchStations()).stations.find((s) => s.id === sid)
-  if (!e?.config) throw new Error(`istasyon konfigürasyonu yok: ${sid}`)
+  if (!e?.config) throw new Error(`beket konfigurasiýasy ýok: ${sid}`)
   return fetch(asset(`${e.config}?v=${__BUILD_ID__}`)).then((r) => r.json())
 }
 

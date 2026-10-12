@@ -4,7 +4,6 @@ import { Trend } from './Trend'
 import { STATE_TK, stateClass } from './labels'
 import type { EquipmentDef, SignalDef } from '../scene/types'
 import { MODE_TK, OVERALL_TK, SEV_TK, fmtDuration, fmtN, levelSev, pumpView, type Sev } from '../data/pump'
-import { Icon } from './icons'
 
 /**
  * Seçili ekipmanın 3D'de ÜSTÜNDE duran bilgi kartı.
@@ -74,7 +73,7 @@ function PumpSummary({ station, id, label }: { station: string; id: string; labe
         <div className="row"><span>Ýygylyk</span><span>{fmtN(p.hz, 1)} Hz{p.hzGrid ? ' (tor)' : ''}</span></div>
         <div className="row"><span>Tok</span><span className={sevCls(p.warn.tok) === 'good' ? '' : sevCls(p.warn.tok)}>{fmtN(p.amp, 1)} A</span></div>
         <div className="row"><span>Kuwwat</span><span>{fmtN(p.kw, 1)} kW</span></div>
-        <div className="row"><span>Inwertor / Pano</span><span>{fmtN(p.hours.inv, 0)} / {fmtN(p.hours.pano, 0)} sag</span></div>
+        <div className="row"><span>Inwertor / Transformator</span><span>{fmtN(p.hours.inv, 0)} / {fmtN(p.hours.pano, 0)} sag</span></div>
       </div>
       <span className={`miniOverall ${p.overall}`}>{OVERALL_TK[p.overall]}</span>
     </>
@@ -106,16 +105,13 @@ export function InfoCard({ station, id, eq, cardRef, onClose, onCharts }: {
     <div className={`card ${stateClass(st, h)}${isPump ? ' pump' : ''}`} ref={cardRef}>
       <div className="cardHead">
         <div>
-          <b>{station} {eq.label}</b>
+          <b>{eq.label}</b>
           <div className="sub">{id}</div>
         </div>
         {/* Datçikte durum isteğe bağlı: JACE'te LT-0x/state noktası değer
             taşıyorsa rozet görünür; boşsa rozet yerine yalnız değer satırı. */}
         {!isPump && !(STATELESS.has(eq.type) && st === 'UNKNOWN') &&
           <span className={`chip ${stateClass(st, h)}`}>{STATE_TK[st] ?? st}</span>}
-        {isPump && onCharts && (
-          <button className="x" onClick={onCharts} title="Grafikler" aria-label="grafikler"><Icon.chart size={15} /></button>
-        )}
         <button className="x" onClick={onClose} aria-label="ýap">×</button>
       </div>
       {isPump ? <PumpSummary station={station} id={id} label={eq.label} /> : (

@@ -4,7 +4,7 @@ import type { SignalDef, TwinMap } from '../scene/types'
 import type { StationInfo } from './StationPicker'
 import { severity } from './InfoCard'
 import { fetchStationConfig } from '../data/niagara'
-import { ordinal } from './labels'
+import { beketAdy, ordinal } from './labels'
 import { MODE_TK, OVERALL_TK, levelSev, pumpView, toplumlarOf, type Overall, type PumpView } from '../data/pump'
 import { queryHistory, type Bucket } from '../data/history'
 import { Chart } from './Chart'
@@ -112,7 +112,7 @@ export function Schema2D({ twin, station }: {
   const nWarn = alarms.length - nAlarm
 
   const kpis = [
-    { c: 'blue', icon: '◉', t: `${sid} häzirki debi`, v: fmt(outflow, null, 1), u: 'm³/sag', s: 'Bekediň jemi' },
+    { c: 'blue', icon: '◉', t: 'Häzirki akym', v: fmt(outflow, null, 1), u: 'm³/sag', s: 'Bekediň jemi' },
     { c: 'green', icon: '↘', t: 'Girýän akym', v: fmt(n('BASIN-01', 'inflow_m3h'), null, 1), u: 'm³/sag', s: 'Howza girýän suw' },
     { c: 'teal', icon: '≋', t: 'Howuz derejesi', v: fmt(n('BASIN-01', 'level_m'), null, 2), u: 'm',
       s: `Göwrümi ${fmt(n('BASIN-01', 'volume_m3'), 'm³', 0)}` },
@@ -132,8 +132,8 @@ export function Schema2D({ twin, station }: {
     <div className="page2d">
       <div className="pageHead">
         <div>
-          <div className="eyebrow">Suw göteriji beketler / {sid}</div>
-          <h1>{sid} {station.name}</h1>
+          <div className="eyebrow">{beketAdy(sid)}</div>
+          <h1>{station.name}</h1>
         </div>
         <span className={`pill ${pill.c}`}>● {pill.t}</span>
       </div>
@@ -171,7 +171,7 @@ export function Schema2D({ twin, station }: {
                   akym {fmt(hflow, null, 1)} m³/sag{multi ? '' : ` · ${fmt(n(hid, 'press_bar'), null, 2)} bar`} · {gkw.toFixed(1)} kW
                 </span>
               </div>
-              <GroupSchema sid={sid} pumps={g.pumps} header={g.header}
+              <GroupSchema pumps={g.pumps} header={g.header}
                            headerFlow={hflow} press={multi ? null : n(hid, 'press_bar')}
                            info={(id) => {
                              const v = views[id]
@@ -195,7 +195,7 @@ export function Schema2D({ twin, station }: {
                     return (
                       <tr key={p.id}>
                         <td><i className="dot" style={{ background: SERIES[i % SERIES.length] }} />
-                          <b>{sid} {p.label}</b><div className="sub2">{p.id}</div></td>
+                          <b>{p.label ?? p.id}</b><div className="sub2">{p.id}</div></td>
                         <td><span className={`chip ${cls(p.id)}`}>
                           {pv?.running ? MODE_TK[pv.mode] : OVERALL_TK[pv?.overall ?? 'unknown']}</span></td>
                         {COLS.map((c) => {
@@ -234,8 +234,7 @@ export function Schema2D({ twin, station }: {
 
 const ROW = 58
 
-function GroupSchema({ sid, pumps, header, headerFlow, press, info, cls: clsOf }: {
-  sid: string
+function GroupSchema({ pumps, header, headerFlow, press, info, cls: clsOf }: {
   pumps: EqCfg[]
   header: EqCfg
   headerFlow: number | null
@@ -272,7 +271,7 @@ function GroupSchema({ sid, pumps, header, headerFlow, press, info, cls: clsOf }
           <g key={p.id} className={`pumpRow ${cls}`}>
             <line x1={14} y1={y} x2={52} y2={y} className="feed" markerEnd="url(#ah)" />
             <rect x={58} y={y - 21} width={206} height={42} rx={6} className="box" />
-            <text x={68} y={y - 5} className="name">{sid} {p.label}</text>
+            <text x={68} y={y - 5} className="name">{p.label ?? p.id}</text>
             <text x={256} y={y - 5} className="pid" textAnchor="end">{p.id}</text>
             <text x={68} y={y + 13} className="val">{info(p.id)}</text>
             <line x1={264} y1={y} x2={CX - 14} y2={y} className="feed" />
@@ -316,7 +315,7 @@ function LoadChart({ sid, pumps }: { sid: string; pumps: EqCfg[] }) {
     return () => { ok = false; clearInterval(t) }
   }, [tags])
 
-  const series = pumps.map((p, i) => ({ label: `${sid} ${p.label}`, color: SERIES[i % SERIES.length], data: data[tags[i]] ?? [] }))
+  const series = pumps.map((p, i) => ({ label: p.label ?? p.id, color: SERIES[i % SERIES.length], data: data[tags[i]] ?? [] }))
   return (
     <div className="chartBox">
       <div className="tblTitle">

@@ -45,7 +45,7 @@ export function PumpCard({ p, press, ratedA, onOpen }: {
             <div className="tMid">{fmtDuration(p.hours.total)}</div>
             <div className="hrs">
               <span>Inwertor <b>{fmtN(p.hours.inv, 0)}</b></span>
-              <span>Pano <b>{fmtN(p.hours.pano, 0)}</b></span>
+              <span>Transformator <b>{fmtN(p.hours.pano, 0)}</b></span>
             </div>
           </div>
         </div>

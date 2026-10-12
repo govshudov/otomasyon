@@ -52,7 +52,10 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   'assets/index-CFPaVDo4.js', 'assets/index-CRVcrTOC.css',
   'assets/index-BQ10q0hM.js', 'assets/index-DbwbtYDd.js', 'assets/index-CvpPhrAj.js',
   'assets/index-DHC1wxPk.js', 'assets/index-MsweaQ7G.css', 'assets/index-ChJTJYhX.js', 'assets/index-CUVKD536.css',
-  'models/ps-01.part0.bin', 'models/ps-01.part1.bin', 'models/ps-01.part2.bin', 'models/ps-01.part3.bin']
+  'models/ps-01.part0.bin', 'models/ps-01.part1.bin', 'models/ps-01.part2.bin', 'models/ps-01.part3.bin',
+  // 12 Ekim paketleri (Türkmence metin düzeltmesinden önceki derleme)
+  'assets/index-WLq88uWG.js', 'assets/index-B225otsS.css', 'assets/index-B-LlEJqX.js', 'assets/index-CVorqr0Q.js',
+  'assets/index-BKmtqs1C.js', 'assets/index-CZshYfQo.css']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {

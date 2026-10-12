@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactElement } from 'react'
 import { useTwin } from '../data/store'
 import type { Group } from '../data/pump'
 import { Icon, Logo } from './icons'
+import { beketAdy } from './labels'
 
 /**
  * Uygulama çerçevesi: üst başlık (beket · duýduryş sayısı · son duýduryş ·
@@ -44,7 +45,7 @@ export function Header({ sid, user, onMenu, onAlarms }: {
       <button className="icon flat" onClick={onMenu} title="Menýu"><Icon.menu size={20} /></button>
       <button className="hdrStation flat" onClick={onAlarms} title="Duýduryşlar">
         <Icon.pumps size={19} />
-        <b>{sid}</b>
+        <b>{beketAdy(sid)}</b>
         <span className={unack ? 'cnt bad' : 'cnt'}>{unack}/{alarms.length}</span>
         <span className={`bell${unack ? ' ring' : ''}`}><Icon.bell size={17} /></span>
       </button>
@@ -52,7 +53,7 @@ export function Header({ sid, user, onMenu, onAlarms }: {
         {top ? (
           <button className={`hdrAlarm flat ${top.level === 'ALARM' ? 'bad' : 'mid'}${top.state === 'UNACK_ALM' ? ' blink' : ''}`}
                   onClick={onAlarms}>
-            <Icon.bell size={15} /> {sid} / {top.msg}
+            <Icon.bell size={15} /> {beketAdy(sid)} / {top.msg}
           </button>
         ) : <span className="hdrQuiet">Işjeň duýduryş ýok</span>}
       </div>
@@ -80,7 +81,7 @@ export function Sidebar({ page, setPage, groups, collapsed }: {
   const inGroup = page.startsWith('group:')
   return (
     <nav className={`side${collapsed ? ' mini' : ''}`}>
-      {item('map', <Icon.cube />, '3D ekiz')}
+      {item('map', <Icon.cube />, 'Sanly ekiz')}
       {item('overview', <Icon.overview />, 'Umumy syn')}
       <button className={`navItem${inGroup ? ' on' : ''}`} title="Toplumlar"
               onClick={() => (collapsed ? setPage(`group:${groups[0]?.id ?? ''}`) : setOpen((o) => !o))}>

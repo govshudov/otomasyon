@@ -74,7 +74,7 @@ penceresinde** `make gereksinim`.
 
 | Yazılım | Denenen sürüm | Nereden / nasıl |
 |---|---|---|
-| **Niagara 4** | 4.15.5.22 | Lisanslı Tridium kurulumu. Kurulum yolu `C:\Niagara\Niagara-4.15.x` olmalı (betikler orada arar). |
+| **Niagara 4** | 4.15.5.22 (4.15.3.28 de denendi) | Lisanslı Tridium kurulumu. Betikler kurulum klasörünü çalışan **Niagara** Windows servisinden bulur (`niagarad.exe`'nin klasörü); servis yoksa sürücülerde `\Niagara\Niagara-4.x` arar (`C:\Niagara\…`, `D:\Niagara\…`). Hangisini bulduğunu `make gereksinim` gösterir. |
 | **PostgreSQL** | 18.1 | EnterpriseDB Windows kurulumu: enterprisedb.com → Downloads → PostgreSQL 18 Windows x86-64. Kurulumda `postgres` kullanıcısının şifresini belirleyin (unutmayın), port **5432**. Varsayılan yol `C:\Program Files\PostgreSQL\18`. |
 | **TimescaleDB** | 2.23.1 (PostgreSQL 18 için) | github.com/timescale/timescaledb → Releases → **PostgreSQL 18 için Windows** zip dosyası. Zip'i açın, içindeki `setup.exe`'yi **yönetici olarak** çalıştırın; sorduğu `postgresql.conf` ayarlarına "evet" deyin (`shared_preload_libraries = 'timescaledb'` eklenir). Sonra **postgresql-x64-18** Windows servisini yeniden başlatın. |
 | **Node.js** | 24.21.0 (22 ve üstü olur) | nodejs.org → Windows x64. Kurulum (msi) ya da zip: zip'i `C:\Users\<kullanıcı>\tools\node-v24…-win-x64` klasörüne açmak yeterli, betikler orada bulur. |
@@ -118,7 +118,7 @@ SELECT extversion FROM pg_extension WHERE extname = 'timescaledb';
    - Workbench'te Platform'a bağlanın → Certificate Management → **User Trust Store** → Import → aynı dosya.
    - Parmak izi şu olmalı: `9D:25:35:92:5E:73:27:6F:C1:AD:0A:9D:57:D7:3F:C9:D0:D6:C2:98:1E:C2:18:70:76:22:C3:23:86:8D:7F:B4`.
 2. İstasyonu durdurun ve Workbench'i kapatın.
-3. `timescale-rt.jar` dosyasını `C:\Niagara\Niagara-4.15.x\modules\` altına kopyalayın. Eskisi varsa önce yedekleyin.
+3. `timescale-rt.jar` dosyasını Niagara kurulum klasörünün `modules\` altına kopyalayın (ör. `C:\Niagara\Niagara-4.15.x\modules\`; klasörü `make gereksinim` gösterir). Eskisi varsa önce yedekleyin.
 4. İstasyonu ve Workbench'i başlatın.
 
 `moduleVerificationMode`'u `low` yaparak imza denetimini kapatmayın; sertifikayı tanıtmak doğru yoldur.
@@ -206,6 +206,7 @@ Ya da üçü birden: `make hazirla AYAR=ayarlar/1-may.json`.
 - 3D önizleme `build/ps-04.png` olarak çıkar; açıp kontrol edin.
 - Bina, toprak, debimetre kuyusu ve makine dairesi Magtymguly'nin (PS-21 TX çizimi) ölçüleriyle üretilir. Bina genişliği nasos sayısından, derinliği borulardan kendiliğinden hesaplanır.
 - Gerçek ölçüler için `stations/ps-04.json` → `geometry` bölümü çizime göre düzeltilir. Sonra `make model` ve `make paket` tekrarlanır. Ayrıntı: `docs/PROJE-DURUMU.md`.
+- Giriş kapağının yanları beton perde (su yalnız kapak ve ızgara panellerinin durduğu yerden geçer; panellerle şevli duvar arası kapanır): `geometry` → `bridge` → `"gate_wall_t": 0.5` (perde kalınlığı, m). Yazılmazsa panellerin yanları açık kalır (Magtymguly'deki gibi). Ýaşyldepe'de açık.
 - Geometriyi şablondan baştan almak için: `make istasyon AYAR=… GEOMETRI=1`. Elle yapılan geometri düzeltmeleri silinir; havuz seviyeleri ve ek ekipman korunur.
 - Hücre seviye datçikleri (LT-01…) üretilmez. Varsa `stations/ps-04.json`'a elle eklenir; `stations/ps-01.json`'daki `level_sensor` örneklerine bakın.
 
@@ -244,7 +245,7 @@ Adımlar (her adım önce yapılmış mı diye bakar; yapılmışsa atlar):
 | 1 | veritabanı | `Niagara` veritabanı + TimescaleDB eklentisi | postgres şifresi |
 | 2 | modül | `timescale-rt` ≥ 1.7.1.0 ve imzalı mı | Değilse ne yapılacağını yazar ve durur (§2.3) |
 | 3 | okuma | Okuma servisi `Config → TsOkuma` (arayüz geçmiş veriyi buradan okur) | Niagara şifresi |
-| 4 | sürücü | `Drivers → TimescaleNetwork → TimescaleDevice → TimescaleHistoryExport`, istasyon adı denetimi, tablolar | **Workbench'te şifre:** TimescaleDevice → Property Sheet → `password` → postgres şifresi → Save, sonra PowerShell'de Enter |
+| 4 | sürücü | `Drivers → TimescaleNetwork → TimescaleDevice → TimescaleHistoryExport`, istasyon adı denetimi, tablolar (yoksa betik kendisi kurar) | **Workbench'te şifre:** TimescaleDevice → Property Sheet → `password` → postgres şifresi → Save, sonra PowerShell'de Enter |
 | 5 | politika | Saklama ve sıkıştırma süreleri | — |
 | 6 | okuma-sql | Görünümler, saatlik/günlük özetler (`db/timescale/10_okuma.sql`) | — |
 | 7 | model | Hazır paket varsa atlanır | — |
@@ -385,7 +386,7 @@ Komutları `powershell -ExecutionPolicy Bypass -File …` ile çalıştırın (m
 | `common/equipment_types.json` | Ekipman sinyalleri ve birimleri |
 | `db/timescale/10_okuma.sql` | Okuma katmanı (görünümler, özetler) |
 | `driver/timescale/` | Sürücü kaynağı, derleme (`build.mjs`), imza (`imzala.ps1`), testler |
-| `tools/kurulum/` | Kurulum betikleri (`kur-istasyon.ps1`, `hazirla.ps1`, `gereksinim.ps1`, `timescale-niagara.mjs`) |
+| `tools/kurulum/` | Kurulum betikleri (`kur-istasyon.ps1`, `hazirla.ps1`, `gereksinim.ps1`, `timescale-niagara.mjs`); `TsSema.java`: boş veritabanında tabloları sürücünün kendi koduyla kurar (4. adım) |
 | `tools/jace/` | Niagara'ya yazan araçlar (arayüz, Twin noktaları, history, okuma servisi) |
 | `tools/genmodel/` | 3D model üreticisi (Blender) |
 | `tools/make_station.py` | Ayar → istasyon dosyası |

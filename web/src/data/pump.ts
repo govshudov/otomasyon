@@ -19,7 +19,7 @@ export const BEARING_KEYS = ['PUMP.bearing1', 'PUMP.bearing2']
 export const LEVEL_EQ = 'BASIN-01'
 
 export const MODE_TK: Record<Mode, string> = {
-  inv: 'Inwertorda', pano: 'Panoda', run: 'Işleýär', stop: 'Durýar', unknown: 'Maglumat ýok',
+  inv: 'Inwertorda', pano: 'Transformatorda', run: 'Işleýär', stop: 'Durýar', unknown: 'Maglumat ýok',
 }
 export const SEV_TK: Record<Sev, string> = { ok: 'Kadaly', warn: 'Duýduryş', fault: 'Näsazlyk' }
 export const OVERALL_TK: Record<Overall, string> = {

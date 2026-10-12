@@ -304,7 +304,7 @@
           "type": "bool"
         },
         "run_pano": {
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "type": "bool"
         },
         "discharge_press_bar": {
@@ -373,7 +373,7 @@
           "counter": true
         },
         "hours_pano": {
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [

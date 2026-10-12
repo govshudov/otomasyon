@@ -214,9 +214,9 @@ export function Chart(p: ChartProps) {
       g.stroke(); g.setLineDash([]); g.lineWidth = 1
     })
 
-    // MAX / AVG / MIN
+    // iň ýokary / ortaça / iň pes
     if (stats) {
-      const lines: [number, string, string][] = [[stats.max, C.max, 'MAX'], [stats.avg, C.avg, 'AVG'], [stats.min, C.min, 'MIN']]
+      const lines: [number, string, string][] = [[stats.max, C.max, 'MAKS'], [stats.avg, C.avg, 'ORT'], [stats.min, C.min, 'MIN']]
       g.font = 'bold 9.5px system-ui, sans-serif'; g.textAlign = 'left'
       // Etiketler birbirine yakınsa üst üste binmesin: en az 10 px aralık
       const ys = lines.map(([v]) => py(v))

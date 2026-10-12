@@ -128,6 +128,57 @@ def bridge(g: dict, b: Builder) -> dict:
             "inner_w": wt}
 
 
+def gate_wall(g: dict, b: Builder, y_face: float,
+              opening: tuple[float, float, float] | None) -> None:
+    """Köprünün altında kanalı kapatan beton perde (`bridge.gate_wall_t` kalınlığında).
+
+    Su yalnız `opening` = (x_sol, x_sağ, üst_kot) açıklığından geçer; açıklık tabandan başlar
+    (None: dolu perde). Kapak ve ızgara panelleri için açıklık döşemeye kadardır: perde yalnız
+    panellerin iki yanını, şevli duvara kadar kapatır. Memba yüzü `y_face`, panellerin hemen arkası.
+
+    Kesit açıklığın kenarlarından ızgaraya bölünür (altta iki yan parça; açıklık döşemeden
+    alçaksa üstte üç parça): ışık köşe başına pişirildiği için komşu parçaların ortak kenarında
+    köşeler çakışmalı, yoksa düz yüzde renk dikişi çıkar.
+    """
+    c = g["channel"]
+    t = g["bridge"]["gate_wall_t"]
+    inv, deck = c["invert_el"], c["deck_el"]
+    wb, wt = plan_at(c, y_face + t / 2.0)
+    hb, ht = wb / 2.0, wt / 2.0
+
+    def half(z: float) -> float:
+        """O kotta kanalın iç yarı genişliği (şevli duvar)."""
+        return hb + (ht - hb) * (z - inv) / (deck - inv)
+
+    def solid(profile: list[tuple[float, float]]) -> None:
+        """(x, z) profilini perde kalınlığınca uzatır. Profil saat yönünde (x sağa, z yukarı):
+        loft'un yüz yönleri buna bağlı. Çakışan ardışık köşeler atılır (üçgene inen parça)."""
+        pts = [p for i, p in enumerate(profile) if p != profile[i - 1]]
+        if len(pts) >= 3:
+            b.loft([[Vector((x, y, z)) for x, z in pts] for y in (y_face, y_face + t)])
+
+    if opening is None:
+        solid([(-hb, inv), (-ht, deck), (ht, deck), (hb, inv)])
+        return
+    x0, x1, top = opening
+    if not (-half(top) < x0 < x1 < half(top) and inv < top <= deck):
+        raise ValueError(f"açıklık x {x0:.2f}…{x1:.2f}, üst kot {top:.2f} kanal kesitine sığmıyor "
+                         f"(o kotta iç genişlik ±{half(top):.2f}, üst kot {deck:.2f})")
+
+    if top < deck:
+        # Açıklığın üstü: şevden şeve tam kuşak
+        solid([(-half(top), top), (-ht, deck), (x0, deck), (x0, top)])
+        solid([(x0, top), (x0, deck), (x1, deck), (x1, top)])
+        solid([(x1, top), (x1, deck), (ht, deck), (half(top), top)])
+    # Açıklığın yanları: şev ile açıklık kenarı arası. Paneller tabanda kanaldan genişse (kenar
+    # şevin içinde kalır) parça, şevin o kenarı kestiği kottan başlar.
+    for side, xv in ((-1, x0), (1, x1)):
+        inside = side * xv <= hb                         # kenar tabanda kanalın içinde mi
+        z0 = inv if inside else inv + (side * xv - hb) * (deck - inv) / (ht - hb)
+        prof = [(side * hb if inside else xv, z0), (side * half(top), top), (xv, top), (xv, z0)]
+        solid(prof if side < 0 else prof[::-1])
+
+
 def pump_pads(b: Builder, pads: list[tuple[tuple[float, float, float], tuple[float, float, float]]]) -> None:
     """Pompa kaideleri — (boyut, merkez) listesi pompa üreticisinden gelir."""
     for size, loc in pads:

@@ -148,6 +148,14 @@ def main() -> int:
     civil.channel(g, b)
     civil.cells(g, b, cg)
     br = civil.bridge(g, b)
+    if g["bridge"].get("gate_wall_t"):
+        # Köprünün altı beton perde: kapak ve ızgara panellerinin yeri açık, yanları kapalı
+        # (panel yoksa dolu perde)
+        gates = by_type.get("slide_gate", [])
+        op = intake.panel_opening(gates[0] if gates else None, bool(by_type.get("trash_rack")), g)
+        civil.gate_wall(g, b, intake.wall_face_y(br), op)
+        print(f"  giriş perdesi: {g['bridge']['gate_wall_t']:.2f} m beton, "
+              + (f"açıklık x {op[0]:+.2f} … {op[1]:+.2f} (paneller), yanlar kapalı" if op else "açıklıksız"))
     civil.pump_pads(b, pads)
     ob = b.finish("STATIC__CIVIL")
     reg.structural(ob, "CIVIL")

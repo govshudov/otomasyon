@@ -12,7 +12,7 @@ import { ChartBoard, type ChartSpec } from './ChartBoard'
  */
 
 export const TEMP_COLORS = ['#60a5fa', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#22d3ee', '#f87171', '#fb923c']
-export const MODE_LABELS = ['Durýar', 'Inwertor', 'Pano']
+export const MODE_LABELS = ['Durýar', 'Inwertor', 'Transformator']
 export const SEV_LABELS = ['Kadaly', 'Duýduryş', 'Näsazlyk']
 
 /** Aynı ızgaradaki birkaç seriyi zamana göre hizalayıp tek değere indirger. */
@@ -72,7 +72,7 @@ export function buildPumpCharts(sid: string, id: string, twin: TwinMap | null, d
     },
     {
       key: 'hours', title: 'Işlän wagty', unit: 'sag', digits: 1, fill: false,
-      series: [line('hours_inv', 'Inwertor', '#60a5fa'), line('hours_pano', 'Pano', '#a78bfa'),
+      series: [line('hours_inv', 'Inwertor', '#60a5fa'), line('hours_pano', 'Transformator', '#a78bfa'),
                { label: 'Jemi', color: '#e5e7eb', data: hTotal }],
     },
     { key: 'press', title: 'Basyş', unit: 'bar', digits: 2, stats: true, series: [line('discharge_press_bar', 'Basyş', '#38bdf8')] },
@@ -92,7 +92,7 @@ export function PumpCharts({ sid, id, label, onClose }: { sid: string; id: strin
   return (
     <div className="modal" onClick={onClose}>
       <div className="modalBox" onClick={(e) => e.stopPropagation()}>
-        <ChartBoard title={`${sid} ${label} · grafikler`} tags={tags} build={build} onClose={onClose}
+        <ChartBoard title={`${label} · grafikler`} tags={tags} build={build} onClose={onClose}
                     fileName={`${sid}_${id}`} />
       </div>
     </div>

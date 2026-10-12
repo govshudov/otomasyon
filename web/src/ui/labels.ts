@@ -24,5 +24,11 @@ export function stateClass(state: string, health?: string): string {
   return state.toLowerCase()
 }
 
+/**
+ * İstasyonun ekranda görünen adı: "PS-05" kodu yerine yalnız "Suw bekedi" (numarasız).
+ * Kod (sid) nokta yollarında ve dosya adlarında aynen kalır; yalnız yazı değişir.
+ */
+export const beketAdy = (sid: string) => (/^PS(-?\d+)?$/i.test(sid) ? 'Suw bekedi' : sid)
+
 /** Sıra sayısı eki: 1-nji, 2-nji, 3-nji, 4-nji… (Türkmencede hep "-nji") */
 export const ordinal = (n: number) => `${n}-nji`

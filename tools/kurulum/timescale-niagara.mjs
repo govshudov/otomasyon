@@ -4,7 +4,9 @@
 //   node tools/kurulum/timescale-niagara.mjs --ayar ayarlar/magtymguly.json --kur   (ya da --station <dosya>)
 //   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --kur      eksik olanları ekler
 //   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --durum    rapor (yazmaz)
-//   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --sema     createSchema eylemi
+//   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --sema     createSchema eylemi (buradan
+//       çağrılınca sürücü şifreyi okuyamıyor: "Sifre okunamadi (SecurityException)". Kurulum bunu kullanmaz,
+//       tabloları TsSema.java ile kurar.)
 //   node tools/kurulum/timescale-niagara.mjs --station stations/ps-01.json --bekle 180  bağlantıyı bekler
 //
 // Var olan bileşene dokunulmaz (ayarı farklıysa yalnız raporlanır). Veritabanı şifresi buradan

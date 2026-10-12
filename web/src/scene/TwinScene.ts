@@ -215,7 +215,7 @@ export class TwinScene {
     const loadModel = async () => {
       if (!parts?.length) return loader.loadAsync(glbUrl)
       const bufs = await Promise.all(parts.map((u) => fetch(u).then((r) => {
-        if (!r.ok) throw new Error(`model parçası alınamadı: ${u} (${r.status})`)
+        if (!r.ok) throw new Error(`modeliň bölegi alynmady: ${u} (${r.status})`)
         return r.arrayBuffer()
       })))
       const all = new Uint8Array(bufs.reduce((n, b) => n + b.byteLength, 0))

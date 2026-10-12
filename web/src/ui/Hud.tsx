@@ -1,9 +1,7 @@
-import type { PerfStats } from '../scene/TwinScene'
 import { useTwin } from '../data/store'
+import { beketAdy } from './labels'
 
-export function Hud({ stats, meshInfo, onBench, benching, stationId }: {
-  stats: PerfStats | null
-  meshInfo: { source: number; merged: number; components: number } | null
+export function Hud({ onBench, benching, stationId }: {
   onBench: () => void
   benching: boolean
   stationId: string
@@ -25,17 +23,11 @@ export function Hud({ stats, meshInfo, onBench, benching, stationId }: {
 
   return (
     <div className="hud">
-      <h1>{stationId} · Sanly ekiz</h1>
+      <h1>{beketAdy(stationId)} · Sanly ekiz</h1>
       <div className="kv">
         <span>aragatnaşyk</span><span className={link.c}>{link.t}</span>
         <span>{pb.active ? 'janly duýduryş' : 'işjeň duýduryş'}</span>
         <span className={nAlarm ? 'bad' : 'good'}>{nAlarm}</span>
-      </div>
-      <div className="kv sep">
-        <span>draw call</span><span>{stats?.drawCalls ?? '–'}</span>
-        <span>üçburçluk</span><span>{stats ? stats.triangles.toLocaleString('en-US') : '–'}</span>
-        {meshInfo && <><span>mesh</span><span>{meshInfo.source} → {meshInfo.merged}</span></>}
-        {meshInfo && <><span>bölek</span><span>{meshInfo.components}</span></>}
       </div>
       <button className="wide" onClick={onBench} disabled={benching}>
         {benching ? 'ölçülýär…' : 'Öndürijiligi ölç'}

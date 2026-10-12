@@ -448,7 +448,7 @@
         },
         "run_pano": {
           "tag": "PS-05.PMP-01.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -524,7 +524,7 @@
         },
         "hours_pano": {
           "tag": "PS-05.PMP-01.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -832,7 +832,7 @@
         },
         "run_pano": {
           "tag": "PS-05.PMP-02.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -908,7 +908,7 @@
         },
         "hours_pano": {
           "tag": "PS-05.PMP-02.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -1216,7 +1216,7 @@
         },
         "run_pano": {
           "tag": "PS-05.PMP-03.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -1292,7 +1292,7 @@
         },
         "hours_pano": {
           "tag": "PS-05.PMP-03.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -2035,7 +2035,7 @@
     ]
   },
   "budget": {
-    "tris": 13998,
+    "tris": 14014,
     "objects": 47,
     "materials": 6
   }
