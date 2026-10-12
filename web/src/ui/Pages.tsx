@@ -114,7 +114,7 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
 
   const tags = useMemo(() => [
     ...groups.flatMap((g) => g.pumps.flatMap((p) => [`${sid}.${p.id}.hours_inv`, `${sid}.${p.id}.hours_pano`])),
-    ...groups.map((g) => `${sid}.${g.id}.total_m3`),
+    ...groups.flatMap((g) => g.headers.map((h) => `${sid}.${h.id}.total_m3`)),
   ], [sid, groups])
 
   useEffect(() => {
@@ -140,10 +140,11 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
     }
     rows.push([])
     rows.push(['Toplum', 'Esasy turba', 'Akym m³/sag', 'Jemi göwrüm m³', 'Döwürde geçen suw m³', 'Kuwwat kW'])
-    for (const g of groups) {
-      rows.push([g.name, g.header, fmtN(n(g.id, 'flow_m3h'), 1), fmtN(n(g.id, 'total_m3'), 0), fmtN(d(g.id, 'total_m3'), 0),
-        fmtN(g.pumps.reduce((a, p) => a + (views[p.id]?.kw ?? 0), 0), 1)])
-    }
+    // Her çıkış borusu bir satır; kuwwat toplumun (nasoslar ortak) — yalnız ilk satırda
+    for (const g of groups) g.headers.forEach((h, i) => {
+      rows.push([g.name, h.label, fmtN(n(h.id, 'flow_m3h'), 1), fmtN(n(h.id, 'total_m3'), 0), fmtN(d(h.id, 'total_m3'), 0),
+        i === 0 ? fmtN(g.pumps.reduce((a, p) => a + (views[p.id]?.kw ?? 0), 0), 1) : ''])
+    })
     rows.push(...dbReportCsvRows(db))
     csvDownload(`${sid}_hasabat_${fmtDateTime(Date.now() / 1000).replace(/[/: ]/g, '')}.csv`, rows)
   }
@@ -193,16 +194,17 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
             <th className="num">Kuwwat<small>kW</small></th><th className="num">Basyş<small>bar</small></th></tr>
         </thead>
         <tbody>
-          {groups.map((g) => (
-            <tr key={g.id}>
-              <td><b>{g.name}</b></td><td>{g.header}</td>
-              <td className="num">{fmtN(n(g.id, 'flow_m3h'), 1)}</td>
-              <td className="num">{fmtN(n(g.id, 'total_m3'), 0)}</td>
-              <td className="num"><b>{fmtN(d(g.id, 'total_m3'), 0)}</b></td>
-              <td className="num">{fmtN(g.pumps.reduce((a, p) => a + (views[p.id]?.kw ?? 0), 0), 1)}</td>
-              <td className="num">{fmtN(n(g.id, 'press_bar'), 2)}</td>
+          {/* Her çıkış borusu bir satır; ortak hatlı toplumda kuwwat (nasoslar ortak) ilk satırda */}
+          {groups.flatMap((g) => g.headers.map((h, i) => (
+            <tr key={h.id}>
+              <td>{i === 0 && <b>{g.name}</b>}</td><td>{h.label}</td>
+              <td className="num">{fmtN(n(h.id, 'flow_m3h'), 1)}</td>
+              <td className="num">{fmtN(n(h.id, 'total_m3'), 0)}</td>
+              <td className="num"><b>{fmtN(d(h.id, 'total_m3'), 0)}</b></td>
+              <td className="num">{i === 0 ? fmtN(g.pumps.reduce((a, p) => a + (views[p.id]?.kw ?? 0), 0), 1) : ''}</td>
+              <td className="num">{fmtN(n(h.id, 'press_bar'), 2)}</td>
             </tr>
-          ))}
+          )))}
         </tbody>
       </table>
       <DbReportTables data={db} />
@@ -215,22 +217,25 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
 
 // --------------------------------------------------------------------------- //
 
-const GROUP_COLORS = ['#38bdf8', '#a78bfa', '#34d399', '#fbbf24']
+const GROUP_COLORS = ['#38bdf8', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#fb923c', '#22d3ee', '#a3e635']
 
 export function ChartsPage({ sid, groups, onPump }: {
   sid: string; groups: Group[]; onPump: (id: string, label: string) => void
 }) {
   const twin = useTwin((s) => s.twinMap)
   const tags = useMemo(() => [
-    ...groups.flatMap((g) => [`${sid}.${g.id}.flow_m3h`, `${sid}.${g.id}.press_bar`, `${sid}.${g.id}.total_m3`,
+    ...groups.flatMap((g) => [
+      ...g.headers.flatMap((h) => [`${sid}.${h.id}.flow_m3h`, `${sid}.${h.id}.press_bar`, `${sid}.${h.id}.total_m3`]),
       ...g.pumps.map((p) => `${sid}.${p.id}.power_kw`)]),
     `${sid}.${LEVEL_EQ}.level_m`,
   ], [sid, groups])
 
   const build = useCallback((d: Record<string, Bucket[]>): ChartSpec[] => {
-    const per = (k: string) => groups.map((g, i) => ({ label: g.name, color: GROUP_COLORS[i % 4], data: d[`${sid}.${g.id}.${k}`] ?? [] }))
+    // Boru başına bir çizgi; tek borulu toplumda adı toplumun adı (eskisi gibi)
+    const pipes = groups.flatMap((g) => g.headers.map((h) => ({ h, label: g.headers.length > 1 ? `${g.name} · ${h.label}` : g.name })))
+    const per = (k: string) => pipes.map((x, i) => ({ label: x.label, color: GROUP_COLORS[i % GROUP_COLORS.length], data: d[`${sid}.${x.h.id}.${k}`] ?? [] }))
     const power = groups.map((g, i) => ({
-      label: g.name, color: GROUP_COLORS[i % 4],
+      label: g.name, color: GROUP_COLORS[i % GROUP_COLORS.length],
       data: combine(g.pumps.map((p) => d[`${sid}.${p.id}.power_kw`]),
         (rows) => rows.every((r) => !r) ? null : rows.reduce((a, r) => a + (r?.[1] ?? 0), 0)),
     }))

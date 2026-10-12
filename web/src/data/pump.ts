@@ -27,12 +27,42 @@ export const OVERALL_TK: Record<Overall, string> = {
 }
 
 // --------------------------------------------------------------------------- //
-// İstasyon yapısı: toplumlar (her biri bir çıkış borusuna basan pompalar)
+// İstasyon yapısı: toplumlar = birbirine bağlı nasoslar + çıkış boruları
 // --------------------------------------------------------------------------- //
 
 export interface EqCfg {
   id: string; type: string; label?: string; header?: string; source_pump?: string
+  /** nasosun basabildiği bütün borular (ortak hatlı istasyon); yoksa yalnız `header` */
+  headers?: string[]
   params?: Record<string, number | string | boolean | string[]>
+}
+
+/**
+ * Toplumlar: aynı borulara basabilen nasoslar ve o borular tek grup (bağlı bileşen).
+ * Magtymguly gibi her borunun kendi nasosları olan istasyonda toplum = bir boru.
+ * 1 Maý'da N-1…N-7 T-1, T-2, T-3'ün hepsine basabilir: bir toplum, üç boru.
+ * Sıra: konfigürasyondaki ilk borunun sırası.
+ */
+export function toplumlarOf(equipment: EqCfg[]): { headers: EqCfg[]; pumps: EqCfg[] }[] {
+  const headers = equipment.filter((e) => e.type === 'header')
+  const pumps = equipment.filter((e) => e.type === 'pump_hsc')
+  const parent = new Map<string, string>()
+  const find = (x: string): string => { const p = parent.get(x) ?? x; if (p === x) return x; const r = find(p); parent.set(x, r); return r }
+  const join = (a: string, b: string) => { const ra = find(a), rb = find(b); if (ra !== rb) parent.set(rb, ra) }
+  for (const e of [...headers, ...pumps]) parent.set(e.id, e.id)
+  const linksOf = (p: EqCfg) => [...new Set([...(p.headers ?? []), ...(p.header ? [p.header] : [])])]
+  for (const p of pumps) for (const h of linksOf(p)) if (parent.has(h)) join(h, p.id)
+  for (const h of headers) for (const pid of (h.params?.pumps as string[] | undefined) ?? []) if (parent.has(pid)) join(h.id, pid)
+  const out: { headers: EqCfg[]; pumps: EqCfg[] }[] = []
+  const byRoot = new Map<string, { headers: EqCfg[]; pumps: EqCfg[] }>()
+  for (const h of headers) {
+    const r = find(h.id)
+    let g = byRoot.get(r)
+    if (!g) { g = { headers: [], pumps: [] }; byRoot.set(r, g); out.push(g) }
+    g.headers.push(h)
+  }
+  for (const p of pumps) byRoot.get(find(p.id))?.pumps.push(p)
+  return out
 }
 
 /** Nasos → kendi emme hücresinin seviye datçiği (PMP-01 → LT-01); konfigürasyondan */
@@ -41,16 +71,22 @@ export const levelIdOf = (pumpId: string) => pumpLevel.get(pumpId)
 export interface StationCfg { station_id: string; name: string; equipment: EqCfg[] }
 
 export interface PumpRef { id: string; label: string; motorKw: number; ratedA: number; ratedQ: number }
-export interface Group { id: string; no: number; name: string; header: string; pumps: PumpRef[] }
+export interface HeaderRef { id: string; label: string }
+/**
+ * id: toplumun ilk borusu (sayfa anahtarı, eski yapıyla aynı). header: boruların adları.
+ * headers: toplumun bütün boruları — boru noktaları (akym, basyş, jemi) bunlardan okunur.
+ */
+export interface Group { id: string; no: number; name: string; header: string; headers: HeaderRef[]; pumps: PumpRef[] }
 
 export function groupsOf(cfg: StationCfg | null): Group[] {
   if (!cfg) return []
   pumpLevel.clear()
   for (const e of cfg.equipment) if (e.type === 'level_sensor' && e.source_pump) pumpLevel.set(e.source_pump, e.id)
-  const pumps = cfg.equipment.filter((e) => e.type === 'pump_hsc')
-  return cfg.equipment.filter((e) => e.type === 'header').map((h, i) => ({
-    id: h.id, no: i + 1, name: `Toplum ${i + 1}`, header: h.label ?? h.id,
-    pumps: pumps.filter((p) => p.header === h.id).map((p) => ({
+  return toplumlarOf(cfg.equipment).map((t, i) => ({
+    id: t.headers[0].id, no: i + 1, name: `Toplum ${i + 1}`,
+    header: t.headers.map((h) => h.label ?? h.id).join(' · '),
+    headers: t.headers.map((h) => ({ id: h.id, label: h.label ?? h.id })),
+    pumps: t.pumps.map((p) => ({
       id: p.id, label: p.label ?? p.id,
       motorKw: Number(p.params?.motor_kw ?? 160),
       ratedA: Number(p.params?.rated_current_a ?? 280),

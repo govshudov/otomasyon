@@ -5,7 +5,7 @@ import type { StationInfo } from './StationPicker'
 import { severity } from './InfoCard'
 import { fetchStationConfig } from '../data/niagara'
 import { ordinal } from './labels'
-import { MODE_TK, OVERALL_TK, levelSev, pumpView, type Overall, type PumpView } from '../data/pump'
+import { MODE_TK, OVERALL_TK, levelSev, pumpView, toplumlarOf, type Overall, type PumpView } from '../data/pump'
 import { queryHistory, type Bucket } from '../data/history'
 import { Chart } from './Chart'
 
@@ -83,11 +83,17 @@ export function Schema2D({ twin, station }: {
     return () => { ok = false }
   }, [sid])
 
+  // Toplum = birbirine bağlı nasoslar + borular (pump.ts toplumlarOf). Ortak hatlı toplumda
+  // (1 Maý: N-1…N-7 → T-1/T-2/T-3) şema tek boru çizer: adı boruların adları, akım toplamı.
   const groups = useMemo(() => {
     if (!cfg) return []
-    const pumps = cfg.equipment.filter((e) => e.type === 'pump_hsc')
-    return cfg.equipment.filter((e) => e.type === 'header').map((h) => ({
-      header: h, pumps: pumps.filter((p) => p.header === h.id),
+    return toplumlarOf(cfg.equipment).map((t) => ({
+      headers: t.headers,
+      // ortak boru kutusunda kısa ad: "T-1 · T-2 · T-3 esasy turba"
+      header: t.headers.length > 1
+        ? { ...t.headers[0], label: t.headers.map((h) => (h.label ?? h.id).split(' ')[0]).join(' · ') + ' esasy turba' }
+        : t.headers[0],
+      pumps: t.pumps,
     }))
   }, [cfg])
 
@@ -101,7 +107,7 @@ export function Schema2D({ twin, station }: {
   const running = pumps.filter((p) => views[p.id]?.running).length
   const sum = (key: string, ids: string[]) =>
     ids.reduce((a, id) => a + (n(id, key) ?? 0), 0)
-  const outflow = sum('flow_m3h', groups.map((g) => g.header.id))
+  const outflow = sum('flow_m3h', groups.flatMap((g) => g.headers.map((h) => h.id)))
   const nAlarm = alarms.filter((a) => a.level === 'ALARM').length
   const nWarn = alarms.length - nAlarm
 
@@ -146,21 +152,27 @@ export function Schema2D({ twin, station }: {
       <div className="groups">
         {groups.map((g, gi) => {
           const hid = g.header.id
-          const hflow = n(hid, 'flow_m3h')
+          const multi = g.headers.length > 1
+          const hflow = multi ? sum('flow_m3h', g.headers.map((h) => h.id)) : n(hid, 'flow_m3h')
           const gkw = sum('power_kw', g.pumps.map((p) => p.id))
           return (
             <section key={hid} className="panel2d grp">
               <div className="grpHead">
                 <div>
                   <b>{ordinal(gi + 1)} toplum ({g.pumps.length} nasos)</b>
-                  <div className="sub2">{g.header.label} · rotasiýaly iş tertibi</div>
+                  <div className="sub2">{g.header.label} · {multi ? 'umumy kollektor' : 'rotasiýaly iş tertibi'}</div>
+                  {multi && g.headers.map((h) => (
+                    <div key={h.id} className="sub2 mono">
+                      {h.label ?? h.id}: {fmt(n(h.id, 'flow_m3h'), null, 1)} m³/sag · {fmt(n(h.id, 'press_bar'), null, 2)} bar
+                    </div>
+                  ))}
                 </div>
                 <span className="mono good">
-                  akym {fmt(hflow, null, 1)} m³/sag · {fmt(n(hid, 'press_bar'), null, 2)} bar · {gkw.toFixed(1)} kW
+                  akym {fmt(hflow, null, 1)} m³/sag{multi ? '' : ` · ${fmt(n(hid, 'press_bar'), null, 2)} bar`} · {gkw.toFixed(1)} kW
                 </span>
               </div>
               <GroupSchema sid={sid} pumps={g.pumps} header={g.header}
-                           headerFlow={hflow} press={n(hid, 'press_bar')}
+                           headerFlow={hflow} press={multi ? null : n(hid, 'press_bar')}
                            info={(id) => {
                              const v = views[id]
                              return v ? `${MODE_TK[v.mode]} · ${v.press === null ? '—' : v.press.toFixed(2)} bar` : '—'

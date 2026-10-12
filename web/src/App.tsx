@@ -194,11 +194,16 @@ export default function App() {
     const lvl = levelSev(sid, values, stale, twin)
     const q: Record<string, number> = {}
     for (const g of groups) {
-      const hq = values[`${sid}.${g.id}.flow_m3h`]?.v
-      if (typeof hq !== 'number') continue
-      q[g.id] = hq
+      // Her borunun akımı kendi debimetresinden; toplumun toplamı çalışan nasoslara bölünür
+      let total = 0, any = false
+      for (const h of g.headers) {
+        const hq = values[`${sid}.${h.id}.flow_m3h`]?.v
+        if (typeof hq !== 'number') continue
+        q[h.id] = hq; total += hq; any = true
+      }
+      if (!any) continue
       const run = g.pumps.filter((p) => pumpView(sid, p, values, stale, twin, status[`${sid}.${p.id}`]?.state, lvl).running)
-      for (const p of g.pumps) q[p.id] = run.some((r) => r.id === p.id) ? hq / run.length : 0
+      for (const p of g.pumps) q[p.id] = run.some((r) => r.id === p.id) ? total / run.length : 0
     }
     const vel: Record<string, number> = {}
     for (const c of m.components) {

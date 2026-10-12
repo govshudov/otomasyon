@@ -1,0 +1,28 @@
+{
+  "stations": [
+    {
+      "id": "PS-04",
+      "name": "1 Maý suw göteriji beket",
+      "description": "10 nasosly, 4 basyş liniýaly suw göteriji beket",
+      "pumps": 10,
+      "headers": 4,
+      "cells": 10,
+      "equipment": 37,
+      "model": "models/ps-04.glb",
+      "twin_map": "models/ps-04-twin-map.json",
+      "config": "models/ps-04-station.json",
+      "source_alive": false,
+      "alarms": 0,
+      "model_parts": [
+        "models/ps-04.part0.bin",
+        "models/ps-04.part1.bin",
+        "models/ps-04.part2.bin",
+        "models/ps-04.part3.bin",
+        "models/ps-04.part4.bin",
+        "models/ps-04.part5.bin"
+      ]
+    }
+  ],
+  "default": "PS-04",
+  "niagara_root": "slot:/Twin"
+}

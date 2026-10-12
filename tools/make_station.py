@@ -51,14 +51,21 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
             raise SystemExit(f"kolektör dağılımı {split} toplamı {n_pumps} pompa olmalı")
         starts = [sum(split[:h]) for h in range(len(split))]
         members = [list(range(starts[h] + 1, starts[h] + split[h] + 1)) for h in range(len(split))]
-    flat = sorted(n for m in members for n in m)
-    if flat != list(range(1, n_pumps + 1)) or any(not m for m in members):
-        raise SystemExit(f"kolektörlerdeki nasos numaraları {members}: 1..{n_pumps} her biri tam bir kez olmalı")
+    # Bir nasos birden çok kolektörde olabilir (ortak hat, ör. 1 Maý: N-1…N-7 → T-1/T-2/T-3).
+    # Ana kolektör = nasosun geçtiği İLK liste (3D model, etiket "T-1 N-3"); hepsi "headers"a yazılır.
+    flat = sorted(set(n for m in members for n in m))
+    if flat != list(range(1, n_pumps + 1)) or any(not m for m in members) \
+            or any(len(set(m)) != len(m) for m in members):
+        raise SystemExit(f"kolektörlerdeki nasos numaraları {members}: 1..{n_pumps} her biri en az bir "
+                         "kolektörde olmalı (bir kolektörde iki kez yazılmamalı)")
     n_headers = len(members)
-    header_of = [0] * n_pumps
+    header_of = [None] * n_pumps
+    headers_of: list[list[int]] = [[] for _ in range(n_pumps)]
     for h, m in enumerate(members):
         for n in m:
-            header_of[n - 1] = h
+            if header_of[n - 1] is None:
+                header_of[n - 1] = h
+            headers_of[n - 1].append(h)
 
     # Her pompaya bir hücre; kanal planı hücre sırasının genişliğinden türer
     cell_w, pier = 2.0, 0.64
@@ -74,6 +81,8 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
         pumps.append(collections.OrderedDict([
             ("id", f"PMP-{n:02d}"), ("type", "pump_hsc"),
             ("label", f"T-{header_of[i] + 1} N-{n}"), ("header", hid),
+            # birden çok kolektöre basabiliyorsa hepsi (tek kolektörlüde alan yazılmaz: dosya eskisiyle aynı)
+            *([("headers", [f"HDR-{h + 1:02d}" for h in headers_of[i]])] if len(headers_of[i]) > 1 else []),
             ("layout", {"cell": i, "row": i % 2}),
             ("params", collections.OrderedDict([
                 ("motor_kw", motor_kw), ("rated_flow_m3h", rated_flow),
@@ -160,14 +169,19 @@ def from_ayar(path: Path, yeniden: bool) -> int:
     a = json.loads(path.read_text(encoding="utf-8"))
     sid = a["id"]
     members = [sorted(int(n) for n in k["nasoslar"]) for k in a["kolektorler"]]
-    n_pumps = sum(len(m) for m in members)
+    n_pumps = len({n for m in members for n in m})       # bir nasos birden çok kolektörde olabilir
     out = ROOT / f"stations/{sid.lower()}.json"
-    want = {f"PMP-{n:02d}": f"HDR-{h + 1:02d}" for h, m in enumerate(members) for n in m}
+    # nasos → bağlanabildiği kolektörler (ayardaki sırayla; ilki ana kolektör)
+    want: dict[str, list[str]] = {}
+    for h, m in enumerate(members):
+        for n in m:
+            want.setdefault(f"PMP-{n:02d}", []).append(f"HDR-{h + 1:02d}")
 
     old = json.loads(out.read_text(encoding="utf-8"), object_pairs_hook=collections.OrderedDict) if out.exists() else None
     if old is not None and not yeniden:
-        have = {e["id"]: e.get("header") for e in old["equipment"] if e["type"] == "pump_hsc"}
-        diff = [f"  {p}: dosyada {have.get(p, 'YOK')}, ayarda {h}" for p, h in sorted(want.items()) if have.get(p) != h]
+        have = {e["id"]: e.get("headers") or [e.get("header")] for e in old["equipment"] if e["type"] == "pump_hsc"}
+        diff = [f"  {p}: dosyada {','.join(have.get(p) or ['YOK'])}, ayarda {','.join(h)}"
+                for p, h in sorted(want.items()) if have.get(p) != h]
         diff += [f"  {p}: dosyada var, ayarda YOK" for p in sorted(have) if p not in want]
         if diff:
             print(f"{out.relative_to(ROOT)} ayarla UYUŞMUYOR:\n" + "\n".join(diff))

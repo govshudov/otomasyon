@@ -66,22 +66,28 @@ export function StationBar({ sid, groups }: { sid: string; groups: Group[] }) {
         const kwMax = g.pumps.reduce((a, p) => a + p.motorKw, 0)
         const qMax = g.pumps.reduce((a, p) => a + p.ratedQ, 0)
         return (
-          <div key={g.id} className="sbGroup">
+          <div key={g.id} className="sbGroup" style={g.headers.length > 1 ? { flex: g.headers.length } : undefined}>
             <div className="sbHead"><b>{g.name}</b><span>{g.header}</span></div>
-            <div className="sbBody">
+            <div className={`sbBody${g.headers.length > 1 ? ' multi' : ''}`}>
               <div className="sbCell">
                 <div className="sbLab">Kuwwat sarp edişi</div>
                 <PowerGauge value={kw} max={kwMax} unit="kW" />
               </div>
-              <div className="sbCell">
-                <FlowCircle id={g.id} value={n(g.id, 'flow_m3h')} max={qMax} unit="m³/sag" label="Akym" />
-              </div>
-              <div className="sbCell stack">
-                <div className="sbLab">Jemi göwrüm</div>
-                <div className="sbVal">{fmtN(n(g.id, 'total_m3'), 0)}<small>m³</small></div>
-                <div className="sbLab">Basyş</div>
-                <div className="sbVal">{fmtN(n(g.id, 'press_bar'), 2)}<small>bar</small></div>
-              </div>
+              {/* Her çıkış borusu ayrı: ortak hatlı toplumda (1 Maý) birden çok */}
+              {g.headers.map((h) => (
+                <div key={h.id} className="sbPipe">
+                  <div className="sbCell">
+                    <FlowCircle id={h.id} value={n(h.id, 'flow_m3h')} max={qMax} unit="m³/sag"
+                                label={g.headers.length > 1 ? h.label : 'Akym'} />
+                  </div>
+                  <div className="sbCell stack">
+                    <div className="sbLab">Jemi göwrüm</div>
+                    <div className="sbVal">{fmtN(n(h.id, 'total_m3'), 0)}<small>m³</small></div>
+                    <div className="sbLab">Basyş</div>
+                    <div className="sbVal">{fmtN(n(h.id, 'press_bar'), 2)}<small>bar</small></div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )

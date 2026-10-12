@@ -4,7 +4,7 @@
   "ad": "Ýaşyldepe suw göteriji beket",
   "niagara": {
     "istasyon": "YASYLDEPE",
-    "url": "https://127.0.0.1",
+    "url": "https://127.0.0.1:8444",
     "kullanici": "admin"
   },
   "veritabani": {

@@ -191,11 +191,13 @@ def butterfly_valve(reg, mats, eq: dict, point: Vector, r: float, seg: int = 14)
 # --------------------------------------------------------------------------- #
 
 def header(reg, mats, eq: dict, xs: list[float], y: float, z: float,
-           run_length: float, seg: int = 16, fm_offset: float | None = None) -> float:
+           run_length: float, seg: int = 16, fm_offset: float | None = None,
+           xm: float | None = None) -> float:
     """Kolektör: pompaları toplayan enine hat + ortasından uzağa giden ana hat.
 
     `fm_offset`: debimetrenin kolektörden uzaklığı (m). Bina varsa debimetre
     bina içinde kalmalı — ana hat duvardan çıkınca toprağa girer.
+    `xm`: ana hattın x'i (ortak hatlı kolektörlerde yan yana dağıtılır); yoksa pompaların ortası.
     Dönen: ana hattın x konumu.
     """
     eid = eq["id"]
@@ -203,7 +205,9 @@ def header(reg, mats, eq: dict, xs: list[float], y: float, z: float,
     x0, x1 = min(xs) - 0.45, max(xs) + 0.45
     if x1 - x0 < 2.0:                                   # tek pompalı kolektör
         x0, x1 = (x0 + x1) / 2.0 - 1.0, (x0 + x1) / 2.0 + 1.0
-    xm = sum(xs) / len(xs)
+    if xm is None:
+        xm = sum(xs) / len(xs)
+    x0, x1 = min(x0, xm - 0.6), max(x1, xm + 0.6)     # ana hat enine hattın üzerinde kalsın
 
     b = Builder()
     b.cylinder(r, x1 - x0, seg=seg, loc=((x0 + x1) / 2.0, y, z), axis='X')

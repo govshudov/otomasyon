@@ -580,6 +580,9 @@ button.small { padding: 3px 10px; min-height: 26px; font-size: 11.5px; }
 .sbHead span { font-size: 10px; color: var(--dim); }
 .sbBody { display: flex; align-items: center; gap: 14px; justify-content: space-around; }
 .sbCell { display: flex; flex-direction: column; align-items: center; }
+/* Çıkış borusu bölmesi: tek borulu toplumda düzeni değiştirmez; ortak hatlı toplumda (1 Maý) her boru ayrı */
+.sbPipe { display: contents; }
+.sbBody.multi .sbPipe { display: flex; align-items: center; gap: 10px; padding-left: 12px; border-left: 1px solid #30353c; }
 .sbCell.stack { align-items: flex-start; gap: 0; }
 .sbLab { font-size: 10px; color: var(--dim); font-weight: 600; }
 .sbVal { font: 600 17px system-ui, sans-serif; color: var(--val); font-variant-numeric: tabular-nums; line-height: 1.2; }

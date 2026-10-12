@@ -157,14 +157,36 @@ kopyalayıp değiştirin.
 | `veritabani` | PostgreSQL bağlantısı. Aynı PC'de: `localhost`, 5432, veritabanı `Niagara`, kullanıcı `postgres`. |
 | `saklama_yil` | Ham veri kaç yıl tutulsun (özetler 10 yıl). |
 | `sikistirma_gun` | Kaç günden eski veri sıkıştırılsın. |
-| `kolektorler` | **Borular (esasy turba) ve onlara bağlı nasosların numaraları.** Her nasos 1'den başlayarak numaralanır ve tam bir boruda yer alır. Sıralı olmak zorunda değildir: `[1, 3, 5]` ve `[2, 4, 6]` de olur, ama §8.6'daki 3D sınırına bakın. Nasos sayısı buradan çıkar. |
+| `kolektorler` | **Borular (esasy turba) ve onlara bağlı nasosların numaraları.** Nasoslar 1'den başlayarak numaralanır; her nasos en az bir boruda yer alır. Nasos sayısı buradan çıkar. Sıralı olmak zorunda değildir (`[1, 3, 5]` ve `[2, 4, 6]`), ama §8.6'daki 3D sınırına bakın. **Ortak hat:** bir nasos birden fazla boruya basabiliyorsa birden fazla listeye yazılır; nasosun ilk geçtiği boru ana borusudur. Örnek aşağıda. |
 | `nasos` | Nasos değerleri (motor gücü kW, debi m³/sag, basınç m). Simülasyon ve 3D model ölçüsü için. |
+
+**Ortak hat örneği (1 Maý).** N-1…N-7 vanalarla T-1, T-2 ve T-3'ün hepsine basabiliyor, N-8…N-10 yalnız T-4'e:
+
+```json
+"kolektorler": [
+  { "ad": "T-1 esasy turba", "nasoslar": [1, 2, 3, 4, 5, 6, 7] },
+  { "ad": "T-2 esasy turba", "nasoslar": [1, 2, 3, 4, 5, 6, 7] },
+  { "ad": "T-3 esasy turba", "nasoslar": [1, 2, 3, 4, 5, 6, 7] },
+  { "ad": "T-4 esasy turba", "nasoslar": [8, 9, 10] }
+]
+```
+
+Arayüzde **toplum** = birbirine bağlı nasoslar ve borular. Burada Toplum 1, N-1…N-7 nasosları ve T-1, T-2, T-3 borularıdır; Toplum 2, N-8…N-10 ve T-4'tür.
+- **Ekranlar:** borular ayrı ayrı gösterilir. Akym, basyş ve jemi her borunun kendi debimetresinden gelir. Kuwwat toplum başına toplanır, ortak nasos iki kez sayılmaz.
+- **3D model:** ortak hattaki borular arka arkaya çizilir; nasosların basma hattı hepsini keser.
+- **Tek borulu toplumlar:** Magtymguly ve Ýaşyldepe gibi her borunun kendi nasosları olan istasyonlarda toplum = bir borudur, bir şey değişmez.
 
 Mevcut istasyonlar:
 
 | Ayar | id | Niagara adı | Nasos / boru |
 |---|---|---|---|
 | `ayarlar/magtymguly.json` | PS-01 | MAGTYMGULY | 6 nasos; [1,2,3], [4,5,6] |
+| `ayarlar/yasyldepe.json` | PS-05 | YASYLDEPE | 3 nasos; [1,2,3] |
+| `ayarlar/1-may.json` | PS-04 | BIRINJI_MAY | 10 nasos; ortak hat [1–7] → T-1/T-2/T-3, [8,9,10] → T-4 |
+
+Bir PC'de birden çok istasyon (deneme) çalışacaksa her istasyonun portları farklı olmalı
+(Workbench → istasyon → `Services → FoxService` / `WebService`) ve ayardaki `niagara.url`
+o HTTPS portunu içermeli; ör. `https://127.0.0.1:8444`.
 
 ---
 

@@ -60,6 +60,59 @@ def reset_scene() -> None:
             block.remove(item)
 
 
+HDR_STEP = 1.4      # ortak hatlı kolektörler arası (m), arka arkaya
+
+
+def links_of(pump: dict) -> list[str]:
+    """Nasosun basabildiği kolektörler: "headers" (ortak hat) ya da yalnız "header"."""
+    return list(pump.get("headers") or [pump["header"]])
+
+
+def header_layout(headers: list[dict], units: list[dict], base_y: float) -> dict[str, dict]:
+    """Kolektör yerleşimi: {id: {y, xm, xs}} (konfigürasyon sırasıyla; nasossuz kolektör çizilmez).
+
+    Kolektörler ortak nasoslar üzerinden gruplanır (bağlı bileşen). Grupta tek kolektör varsa
+    eskisi gibi: y = base_y, ana hat beslediği nasosların ortasında. Ortak hatta (ör. 1 Maý:
+    N-1…N-7 → T-1, T-2, T-3) k. kolektör y = base_y + k·HDR_STEP'te durur; ana hatları nasos
+    sırası boyunca eşit aralıkla yan yana dağılır (üst üste binmesin).
+    """
+    xs_of: dict[str, list[float]] = {h["id"]: [] for h in headers}
+    for u in units:
+        for h in links_of(u["eq"]):
+            if h in xs_of:
+                xs_of[h].append(u["x"])
+    order = [h["id"] for h in headers if xs_of[h["id"]]]
+    parent = {h: h for h in order}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            x = parent[x]
+        return x
+    for u in units:
+        ls = [h for h in links_of(u["eq"]) if h in parent]
+        for h in ls[1:]:
+            ra, rb = find(ls[0]), find(h)
+            if ra != rb:
+                parent[rb] = ra
+    comps: dict[str, list[str]] = {}
+    for h in order:
+        comps.setdefault(find(h), []).append(h)
+
+    out: dict[str, dict] = {}
+    for h in order:
+        comp = comps[find(h)]
+        k, n = comp.index(h), len(comp)
+        xs = xs_of[h]
+        if n == 1:
+            xm = sum(xs) / len(xs)
+        else:
+            allx = [x for c in comp for x in xs_of[c]]
+            x0, x1 = min(allx) - 0.45, max(allx) + 0.45
+            xm = x0 + (k + 0.5) * (x1 - x0) / n
+        out[h] = {"y": base_y + k * HDR_STEP, "xm": xm, "xs": xs}
+    return out
+
+
 def main() -> int:
     a = parse_args()
     station = json.loads(Path(a.config).read_text(encoding="utf-8"))
@@ -88,6 +141,8 @@ def main() -> int:
         raise ValueError(f"{len(units)} pompa var ama {cg['n']} hücre — her pompanın hücresi olmalı")
     pads = [pumpmod.footprint(u["eq"]["params"], u["x"], u["y"], u["side"], ground) for u in units]
     hdr_cfg = dict(g["headers"], y=g["headers"]["y"] + y_shift)
+    hdr_lay = header_layout(by_type.get("header", []), units, hdr_cfg["y"])
+    hdr_y_max = max((v["y"] for v in hdr_lay.values()), default=hdr_cfg["y"])
 
     # ---------------- Beton yapı (tek mesh) ---------------- #
     b = prim.Builder()
@@ -102,7 +157,7 @@ def main() -> int:
     # ---------------- Bina + toprak ---------------- #
     bp = None
     if "building" in g:
-        bp = bldmod.plan(g["building"], pa, g["channel"]["deck_el"], pads, hdr_cfg["y"])
+        bp = bldmod.plan(g["building"], pa, g["channel"]["deck_el"], pads, hdr_y_max)
         bldmod.build(reg, mats, bp)
         print(f"  bina: {2 * bp['xo']:.1f} × {bp['y1'] - bp['y0']:.1f} m, taban {bp['floor']:.2f}, "
               f"saçak {bp['eave']:.2f}, mahya {bp['ridge']:.2f}")
@@ -113,15 +168,12 @@ def main() -> int:
     if bp and "meter_pit" in g:
         # Ana hatlar binadan çıkınca toprağa girer; debimetreler binanın
         # arkasında toprağa gömülü, üstü açık beton kuyularda durur.
-        # Ana hat x'i kolektörün ortası = beslediği pompaların ortalaması.
-        hx: dict[str, list[float]] = {}
-        for u in units:
-            hx.setdefault(u["eq"]["header"], []).append(u["x"])
+        # Ana hat x'i: kolektör yerleşiminden (tek kolektörde beslediği pompaların ortası).
         mp = g["meter_pit"]
         cy = bp["y1"] + mp["dist"]
-        pits = bldmod.meter_pits(reg, mats, mp, [sum(v) / len(v) for v in hx.values()], cy,
+        pits = bldmod.meter_pits(reg, mats, mp, [v["xm"] for v in hdr_lay.values()], cy,
                                  g["channel"]["deck_el"], z_pipe,
-                                 max(piping.radius(by_id[h]["params"]["dn"]) for h in hx))
+                                 max(piping.radius(by_id[h]["params"]["dn"]) for h in hdr_lay))
         fm_offset = cy - hdr_cfg["y"]
         print(f"  debimetre kuyusu: {len(pits)} adet, bina arkasından {mp['dist']:.1f} m")
     if "soil" in g:
@@ -140,7 +192,6 @@ def main() -> int:
     # ---------------- Pompa üniteleri + emme/basma hatları ---------------- #
     nrv_of = {e["source_pump"]: e for e in by_type.get("check_valve", [])}
     vlv_of = {e["interlock_pump"]: e for e in by_type.get("butterfly_valve", [])}
-    header_xs: dict[str, list[float]] = {}
     built = {}
     for u in units:
         eq = u["eq"]
@@ -152,20 +203,25 @@ def main() -> int:
                             pa.get("suction_el"), parts["_suction_point"],
                             drop_y=-cg["depth"] / 2.0,
                             bell_z=g["channel"]["invert_el"] + pa.get("bell_clearance", 0.45))
+        # Birden çok kolektöre basan nasosun (ortak hat) basma hattı en arkadaki kolektöre kadar
+        # uzanır ve aradakileri keser; tek kolektörlüde kendi kolektörü (eskisi gibi).
+        links = links_of(eq)
+        y_dis = max(hdr_lay[h]["y"] for h in links if h in hdr_lay)
         r_hdr = piping.radius(by_id[eq["header"]]["params"]["dn"])
         p_nrv, p_vlv, r = piping.discharge_line(reg, mats, eq, parts["_discharge_point"],
-                                                hdr_cfg["y"], r_hdr, with_nrv=eq["id"] in nrv_of)
+                                                y_dis, r_hdr, with_nrv=eq["id"] in nrv_of)
         if eq["id"] in nrv_of:
             piping.check_valve(reg, mats, nrv_of[eq["id"]], p_nrv, r)
         if eq["id"] in vlv_of:
             piping.butterfly_valve(reg, mats, vlv_of[eq["id"]], p_vlv, r)
-        header_xs.setdefault(eq["header"], []).append(u["x"])
     print(f"  pompa üniteleri: {len(built)} adet")
 
-    for hid, xs in header_xs.items():
-        xm = piping.header(reg, mats, by_id[hid], xs, hdr_cfg["y"], z_pipe, hdr_cfg["run_length"],
-                           fm_offset=fm_offset)
-        print(f"  {hid}: {len(xs)} pompa, ana hat x={xm:+.2f}")
+    for hid, lay in hdr_lay.items():
+        dy = lay["y"] - hdr_cfg["y"]                    # arka sıradaki kolektör: ana hat o kadar kısa
+        xm = piping.header(reg, mats, by_id[hid], lay["xs"], lay["y"], z_pipe, hdr_cfg["run_length"] - dy,
+                           fm_offset=None if fm_offset is None else fm_offset - dy,
+                           xm=lay["xm"])
+        print(f"  {hid}: {len(lay['xs'])} pompa, y={lay['y']:.2f}, ana hat x={xm:+.2f}")
     print(f"  armatür: {len(nrv_of)} çekvalf, {len(vlv_of)} vana")
 
     # ---------------- Kapak, ızgara, su ---------------- #
