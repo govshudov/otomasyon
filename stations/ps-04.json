@@ -64,7 +64,8 @@
       "thickness": 0.6
     },
     "pump_area": {
-      "ground_el": 6.5,
+      "ground_el": 2.7,
+      "pad_h": 0.6,
       "pitch": 3.8,
       "group_gap": 1.2,
       "rows": [
@@ -72,11 +73,35 @@
         9.4
       ],
       "riser_y": 1.6,
-      "suction_el": 2.2
+      "suction_el": null,
+      "bell_clearance": 0.45
     },
     "headers": {
       "y": 13.4,
       "run_length": 22.0
+    },
+    "building": {
+      "y0": 1.4,
+      "wall_t": 0.4,
+      "margin_x": 1.8,
+      "front_gap": 2.6,
+      "slab_t": 0.5,
+      "eave_h": 7.83,
+      "ridge_h": 8.78,
+      "bay": 6.0
+    },
+    "meter_pit": {
+      "dist": 4.0,
+      "w": 3.0,
+      "l": 4.0,
+      "wall_t": 0.3,
+      "floor_gap": 0.6,
+      "kerb": 0.15
+    },
+    "soil": {
+      "depth": 2.5,
+      "margin": 5.0,
+      "margin_end": 9.0
     }
   },
   "hydraulics": {

@@ -1,13 +1,14 @@
 # Hazirlik PC'si islemleri (Blender / Python / web derlemesi olan PC). make hedefleri bunu cagirir.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\kurulum\hazirla.ps1 -Ayar ayarlar\1-may.json -Hedef istasyon [-Yeniden]
-#   -Hedef istasyon   ayar -> stations\<id>.json (varsa yalniz denetler; -Yeniden: ekipmani yeniden uret)
+#   -Hedef istasyon   ayar -> stations\<id>.json (varsa yalniz denetler; -Yeniden: ekipmani yeniden uret;
+#                     -Geometri: geometriyi de sablondan al - bina, toprak, debimetre kuyusu)
 #   -Hedef model      stations\<id>.json -> 3D model (Blender): build\<id>*.glb, web\public\models\<id>*
 #   -Hedef paket      arayuz + model + sozluk -> paket\<id>\ (istasyon PC'sine giden hazir paket)
 #   -Hedef surucu     timescale-rt.jar derlemesi (driver\timescale\build.mjs)
 #   -Hedef imzala     jar imzasi (p12 sifresini jarsigner sorar) -> paket\surucu\timescale-rt.jar
 # (Dosya bilerek ASCII.)
-param([string]$Ayar, [Parameter(Mandatory = $true)][string]$Hedef, [switch]$Yeniden)
+param([string]$Ayar, [Parameter(Mandatory = $true)][string]$Hedef, [switch]$Yeniden, [switch]$Geometri)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
@@ -36,6 +37,7 @@ switch ($Hedef) {
     if (-not $py) { throw 'Python bulunamadi (PATH ya da C:\Users\<ad>\tools\blender-*\...\python\bin\python.exe)' }
     $args2 = @('tools\make_station.py', '--ayar', (Resolve-Path $Ayar).Path)
     if ($Yeniden) { $args2 += '--yeniden' }
+    if ($Geometri) { $args2 += '--geometri' }
     & $py @args2
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
   }

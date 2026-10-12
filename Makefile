@@ -4,7 +4,7 @@
 #   make gereksinim [ROL=hazirlik]  bu PC'de gerekenler var mi
 #
 # Hazirlik PC'si (Blender / Python / web derlemesi):
-#   make istasyon AYAR=ayarlar/1-may.json [YENIDEN=1]   ayar -> stations/<id>.json
+#   make istasyon AYAR=ayarlar/1-may.json [YENIDEN=1] [GEOMETRI=1]   ayar -> stations/<id>.json
 #   make model    AYAR=...                              3D model (Blender)
 #   make paket    AYAR=...                              paket/<id>/ (istasyon PC'sine giden hazir paket)
 #   make hazirla  AYAR=...                              ucu birden
@@ -40,7 +40,7 @@ gereksinim:
 	$(PS) tools/kurulum/gereksinim.ps1 -Rol $(ROL)
 
 istasyon:
-	$(PS) tools/kurulum/hazirla.ps1 -Ayar $(AYAR) -Hedef istasyon $(if $(YENIDEN),-Yeniden,)
+	$(PS) tools/kurulum/hazirla.ps1 -Ayar $(AYAR) -Hedef istasyon $(if $(YENIDEN),-Yeniden,) $(if $(GEOMETRI),-Geometri,)
 
 model:
 	$(PS) tools/kurulum/hazirla.ps1 -Ayar $(AYAR) -Hedef model

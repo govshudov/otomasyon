@@ -127,9 +127,19 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
             ("cells", {"count": n_pumps, "width": cell_w, "pier": pier, "depth": 2.3,
                        "front_beam": 0.6, "slab_t": 0.5, "end_wall": 1.0}),
             ("bridge", {"y": -21.6, "width": 1.3, "thickness": 0.6}),
-            ("pump_area", {"ground_el": 6.5, "pitch": 3.8, "group_gap": 1.2,
-                           "rows": [7.8, 9.4], "riser_y": 1.6, "suction_el": 2.2}),
+            # Nasos alanı, bina, debimetre kuyusu, toprak: PS-01 Magtymguly'nin (PS-21 TX çizimi)
+            # değerleri — makine dairesi kanal üst kotunun altında; bina genişliği nasos
+            # kaidelerinden, derinliği kolektörlerden türer. Gerçek çizim varsa bu sayılar düzeltilir.
+            ("pump_area", collections.OrderedDict([
+                ("ground_el", 2.7), ("pad_h", 0.6), ("pitch", 3.8), ("group_gap", 1.2),
+                ("rows", [7.8, 9.4]), ("riser_y", 1.6), ("suction_el", None), ("bell_clearance", 0.45)])),
             ("headers", {"y": 13.4, "run_length": 22.0}),
+            ("building", collections.OrderedDict([
+                ("y0", 1.4), ("wall_t", 0.4), ("margin_x", 1.8), ("front_gap", 2.6), ("slab_t", 0.5),
+                ("eave_h", 7.83), ("ridge_h", 8.78), ("bay", 6.0)])),
+            ("meter_pit", collections.OrderedDict([
+                ("dist", 4.0), ("w", 3.0), ("l", 4.0), ("wall_t", 0.3), ("floor_gap", 0.6), ("kerb", 0.15)])),
+            ("soil", {"depth": 2.5, "margin": 5.0, "margin_end": 9.0}),
         ])),
         ("hydraulics", collections.OrderedDict([
             ("basin", {"invert_el": 0.0, "llwl": 0.8, "lwl": 1.2, "hwl": 5.5,
@@ -159,13 +169,17 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
 GENERATED = {"basin", "trash_rack", "slide_gate", "header", "pump_hsc", "butterfly_valve", "check_valve"}
 
 
-def from_ayar(path: Path, yeniden: bool) -> int:
+def from_ayar(path: Path, yeniden: bool, geometri: bool = False) -> int:
     """Ayar dosyasından (ayarlar/<istasyon>.json) stations/<id>.json.
 
     Dosya yoksa üretir. Varsa yalnız denetler: nasos/kolektör eşlemesi ayarla aynı mı.
     --yeniden: ekipman ayardan yeniden üretilir; elle ayarlanmış geometry, hydraulics ve
     üreticinin bilmediği ekipman (ör. LT seviye datçikleri) korunur.
+    --geometri: --yeniden gibi, ama geometry de şablondan yeniden alınır (bina, toprak,
+    debimetre kuyusu, makine dairesi — PS-01 değerleri); hydraulics ve ek ekipman korunur.
     """
+    if geometri:
+        yeniden = True
     a = json.loads(path.read_text(encoding="utf-8"))
     sid = a["id"]
     members = [sorted(int(n) for n in k["nasoslar"]) for k in a["kolektorler"]]
@@ -199,12 +213,14 @@ def from_ayar(path: Path, yeniden: bool) -> int:
         if k.get("ad"):
             next(e for e in cfg["equipment"] if e["id"] == f"HDR-{h + 1:02d}")["label"] = k["ad"]
     if old is not None:
-        for key in ("geometry", "hydraulics"):
+        keep = ("hydraulics",) if geometri else ("geometry", "hydraulics")
+        for key in keep:
             if key in old:
                 cfg[key] = old[key]
         extra = [e for e in old["equipment"] if e["type"] not in GENERATED]
         cfg["equipment"].extend(extra)
-        print(f"korunan: geometry, hydraulics, {len(extra)} ek ekipman")
+        print(f"korunan: {', '.join(keep)}, {len(extra)} ek ekipman"
+              + ("; geometry şablondan (bina, toprak, debimetre kuyusu)" if geometri else ""))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"{out.relative_to(ROOT)}  —  {n_pumps} nasos, {len(members)} kolektör: "
@@ -215,7 +231,7 @@ def from_ayar(path: Path, yeniden: bool) -> int:
 def main() -> int:
     if "--ayar" in sys.argv:
         i = sys.argv.index("--ayar")
-        return from_ayar(Path(sys.argv[i + 1]).resolve(), "--yeniden" in sys.argv)
+        return from_ayar(Path(sys.argv[i + 1]).resolve(), "--yeniden" in sys.argv, "--geometri" in sys.argv)
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--id", required=True)
