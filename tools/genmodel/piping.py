@@ -192,12 +192,14 @@ def butterfly_valve(reg, mats, eq: dict, point: Vector, r: float, seg: int = 14)
 
 def header(reg, mats, eq: dict, xs: list[float], y: float, z: float,
            run_length: float, seg: int = 16, fm_offset: float | None = None,
-           xm: float | None = None) -> float:
+           xm: float | None = None, transverse: bool = True) -> float:
     """Kolektör: pompaları toplayan enine hat + ortasından uzağa giden ana hat.
 
     `fm_offset`: debimetrenin kolektörden uzaklığı (m). Bina varsa debimetre
     bina içinde kalmalı — ana hat duvardan çıkınca toprağa girer.
     `xm`: ana hattın x'i (ortak hatlı kolektörlerde yan yana dağıtılır); yoksa pompaların ortası.
+    `transverse=False`: enine hat çizilmez, yalnız ana hat (ortak kolektörden T ile çıkan
+    ikinci/üçüncü ana hat; enine hattı grubun ilk kolektörü çizer).
     Dönen: ana hattın x konumu.
     """
     eid = eq["id"]
@@ -210,11 +212,12 @@ def header(reg, mats, eq: dict, xs: list[float], y: float, z: float,
     x0, x1 = min(x0, xm - 0.6), max(x1, xm + 0.6)     # ana hat enine hattın üzerinde kalsın
 
     b = Builder()
-    b.cylinder(r, x1 - x0, seg=seg, loc=((x0 + x1) / 2.0, y, z), axis='X')
-    for xe in (x0, x1):                                 # kör flanşlı uçlar
-        b.cylinder(r * 1.12, 0.10, seg=seg, loc=(xe, y, z), axis='X')
-    for x in xs:                                        # branş bağlantı yakaları
-        b.tube(r * 0.85, r * 0.5, r * 1.6, seg=seg, loc=(x, y - r * 0.55, z), axis='Y')
+    if transverse:
+        b.cylinder(r, x1 - x0, seg=seg, loc=((x0 + x1) / 2.0, y, z), axis='X')
+        for xe in (x0, x1):                             # kör flanşlı uçlar
+            b.cylinder(r * 1.12, 0.10, seg=seg, loc=(xe, y, z), axis='X')
+        for x in xs:                                    # branş bağlantı yakaları
+            b.tube(r * 0.85, r * 0.5, r * 1.6, seg=seg, loc=(x, y - r * 0.55, z), axis='Y')
     # Ana hat: kolektörün ortasından +Y yönünde
     y_end = y + run_length
     b.cylinder(r, run_length, seg=seg, loc=(xm, y + run_length / 2.0, z), axis='Y')

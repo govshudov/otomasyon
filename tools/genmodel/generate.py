@@ -60,21 +60,19 @@ def reset_scene() -> None:
             block.remove(item)
 
 
-HDR_STEP = 1.4      # ortak hatlı kolektörler arası (m), arka arkaya
-
-
 def links_of(pump: dict) -> list[str]:
     """Nasosun basabildiği kolektörler: "headers" (ortak hat) ya da yalnız "header"."""
     return list(pump.get("headers") or [pump["header"]])
 
 
 def header_layout(headers: list[dict], units: list[dict], base_y: float) -> dict[str, dict]:
-    """Kolektör yerleşimi: {id: {y, xm, xs}} (konfigürasyon sırasıyla; nasossuz kolektör çizilmez).
+    """Kolektör yerleşimi: {id: {y, xm, xs, transverse}} (konfigürasyon sırasıyla; nasossuz çizilmez).
 
     Kolektörler ortak nasoslar üzerinden gruplanır (bağlı bileşen). Grupta tek kolektör varsa
-    eskisi gibi: y = base_y, ana hat beslediği nasosların ortasında. Ortak hatta (ör. 1 Maý:
-    N-1…N-7 → T-1, T-2, T-3) k. kolektör y = base_y + k·HDR_STEP'te durur; ana hatları nasos
-    sırası boyunca eşit aralıkla yan yana dağılır (üst üste binmesin).
+    eskisi gibi: enine hat beslediği nasosları toplar, ana hat ortasından çıkar. Ortak hatta
+    (ör. 1 Maý: N-1…N-7 → T-1, T-2, T-3) nasoslar TEK enine kolektöre basar (grubun ilk
+    kolektörü çizer, bütün nasosları kapsar); her kolektörün yalnız ana hattı çizilir ve
+    ortak kolektörden T ile çıkar — ana hatlar nasos sırası boyunca yan yana dağılır.
     """
     xs_of: dict[str, list[float]] = {h["id"]: [] for h in headers}
     for u in units:
@@ -106,10 +104,11 @@ def header_layout(headers: list[dict], units: list[dict], base_y: float) -> dict
         if n == 1:
             xm = sum(xs) / len(xs)
         else:
-            allx = [x for c in comp for x in xs_of[c]]
+            allx = sorted({x for c in comp for x in xs_of[c]})
             x0, x1 = min(allx) - 0.45, max(allx) + 0.45
             xm = x0 + (k + 0.5) * (x1 - x0) / n
-        out[h] = {"y": base_y + k * HDR_STEP, "xm": xm, "xs": xs}
+            xs = allx                                    # ortak enine kolektör: bütün nasoslar
+        out[h] = {"y": base_y, "xm": xm, "xs": xs, "transverse": k == 0}
     return out
 
 
@@ -220,8 +219,9 @@ def main() -> int:
         dy = lay["y"] - hdr_cfg["y"]                    # arka sıradaki kolektör: ana hat o kadar kısa
         xm = piping.header(reg, mats, by_id[hid], lay["xs"], lay["y"], z_pipe, hdr_cfg["run_length"] - dy,
                            fm_offset=None if fm_offset is None else fm_offset - dy,
-                           xm=lay["xm"])
-        print(f"  {hid}: {len(lay['xs'])} pompa, y={lay['y']:.2f}, ana hat x={xm:+.2f}")
+                           xm=lay["xm"], transverse=lay["transverse"])
+        print(f"  {hid}: {len(lay['xs'])} pompa, ana hat x={xm:+.2f}"
+              + ("" if lay["transverse"] else " (ortak kolektörden çıkış)"))
     print(f"  armatür: {len(nrv_of)} çekvalf, {len(vlv_of)} vana")
 
     # ---------------- Kapak, ızgara, su ---------------- #
