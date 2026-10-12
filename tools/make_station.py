@@ -40,7 +40,8 @@ def channel_plan(cells_w: float) -> list[list[float]]:
 def build(sid: str, name: str, n_pumps: int, per_header: int,
           motor_kw: float = 160.0, rated_flow: float = 900.0,
           rated_head: float = 45.0, split: list[int] | None = None,
-          site: dict | None = None, members: list[list[int]] | None = None) -> dict:
+          site: dict | None = None, members: list[list[int]] | None = None,
+          level_sensors: bool = True, check_valves: bool = True) -> dict:
     # members: kolektör başına pompa NUMARALARI (1'den), örn. [[1, 3, 5], [2, 4, 6]] — sıralı
     # olmayan bağlantı için (ayar dosyası). Verilmezse split: kolektör başına pompa SAYISI
     # (örn. [4, 3, 3]); o da verilmezse per_header'a göre eşit dağılım.
@@ -101,10 +102,11 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
             ("id", f"VLV-{n:02d}"), ("type", "butterfly_valve"),
             ("label", f"N-{n} basyş klapany"), ("interlock_pump", f"PMP-{n:02d}"),
             ("params", {"dn": 350, "travel_s": 25})]))
-        nrvs.append(collections.OrderedDict([
-            ("id", f"NRV-{n:02d}"), ("type", "check_valve"),
-            ("label", f"N-{n} gaýtarmaýan klapan"), ("source_pump", f"PMP-{n:02d}"),
-            ("params", {"dn": 350})]))
+        if check_valves:             # PS-01'de (PS-21 TX) çekvalf yok; ayarda "cekvalf": true ile eklenir
+            nrvs.append(collections.OrderedDict([
+                ("id", f"NRV-{n:02d}"), ("type", "check_valve"),
+                ("label", f"N-{n} gaýtarmaýan klapan"), ("source_pump", f"PMP-{n:02d}"),
+                ("params", {"dn": 350})]))
 
     for h in range(n_headers):
         ids = [f"PMP-{n:02d}" for n in sorted(members[h])]
@@ -162,11 +164,18 @@ def build(sid: str, name: str, n_pumps: int, per_header: int,
                                      ("params", {"width": 2.0, "height": 3.0,
                                                  "travel_s": 90, "bay": 1})]),
             *headers, *pumps, *valves, *nrvs,
+            # Her nasosun emme hücresinde seviye datçiği (PS-01'deki LT-01… ile aynı biçim):
+            # 3D modelde hücre girişinde, nasos kartında "Suw derejesi", Twin'de LT-xx noktaları.
+            *([collections.OrderedDict([
+                ("id", f"LT-{n:02d}"), ("type", "level_sensor"),
+                ("label", f"N-{n} suwuň derejesi"), ("source_pump", f"PMP-{n:02d}")])
+               for n in range(1, n_pumps + 1)] if level_sensors else []),
         ]),
     ])
 
 
-GENERATED = {"basin", "trash_rack", "slide_gate", "header", "pump_hsc", "butterfly_valve", "check_valve"}
+GENERATED = {"basin", "trash_rack", "slide_gate", "header", "pump_hsc", "butterfly_valve", "check_valve",
+             "level_sensor"}
 
 
 def from_ayar(path: Path, yeniden: bool, geometri: bool = False) -> int:
@@ -197,6 +206,13 @@ def from_ayar(path: Path, yeniden: bool, geometri: bool = False) -> int:
         diff = [f"  {p}: dosyada {','.join(have.get(p) or ['YOK'])}, ayarda {','.join(h)}"
                 for p, h in sorted(want.items()) if have.get(p) != h]
         diff += [f"  {p}: dosyada var, ayarda YOK" for p in sorted(have) if p not in want]
+        # emme hücresi seviye datçikleri: nasos başına bir LT (ayarda "seviye_datcik": false değilse)
+        lts = {e["source_pump"] for e in old["equipment"] if e["type"] == "level_sensor"}
+        if a.get("seviye_datcik", True):
+            diff += [f"  {p}: seviye datçiği (LT) dosyada YOK" for p in sorted(want) if p not in lts]
+        nrv = any(e["type"] == "check_valve" for e in old["equipment"])
+        if nrv != bool(a.get("cekvalf", False)):
+            diff += [f"  çekvalf: dosyada {'VAR' if nrv else 'YOK'}, ayarda {'VAR' if a.get('cekvalf', False) else 'YOK'}"]
         if diff:
             print(f"{out.relative_to(ROOT)} ayarla UYUŞMUYOR:\n" + "\n".join(diff))
             print("Ekipmanı ayardan yeniden üretmek için: make istasyon YENIDEN=1 "
@@ -208,7 +224,9 @@ def from_ayar(path: Path, yeniden: bool, geometri: bool = False) -> int:
     n = a.get("nasos", {})
     cfg = build(sid, a.get("ad") or "Suw göteriji beket", n_pumps, 3,
                 motor_kw=float(n.get("motor_kw", 160.0)), rated_flow=float(n.get("debi_m3h", 900.0)),
-                rated_head=float(n.get("basys_m", 45.0)), members=members)
+                rated_head=float(n.get("basys_m", 45.0)), members=members,
+                level_sensors=bool(a.get("seviye_datcik", True)),
+                check_valves=bool(a.get("cekvalf", False)))
     for h, k in enumerate(a["kolektorler"]):
         if k.get("ad"):
             next(e for e in cfg["equipment"] if e["id"] == f"HDR-{h + 1:02d}")["label"] = k["ad"]

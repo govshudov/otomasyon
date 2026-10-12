@@ -306,31 +306,22 @@
       }
     },
     {
-      "id": "NRV-01",
-      "type": "check_valve",
-      "label": "N-1 gaýtarmaýan klapan",
-      "source_pump": "PMP-01",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-01",
+      "type": "level_sensor",
+      "label": "N-1 suwuň derejesi",
+      "source_pump": "PMP-01"
     },
     {
-      "id": "NRV-02",
-      "type": "check_valve",
-      "label": "N-2 gaýtarmaýan klapan",
-      "source_pump": "PMP-02",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-02",
+      "type": "level_sensor",
+      "label": "N-2 suwuň derejesi",
+      "source_pump": "PMP-02"
     },
     {
-      "id": "NRV-03",
-      "type": "check_valve",
-      "label": "N-3 gaýtarmaýan klapan",
-      "source_pump": "PMP-03",
-      "params": {
-        "dn": 350
-      }
+      "id": "LT-03",
+      "type": "level_sensor",
+      "label": "N-3 suwuň derejesi",
+      "source_pump": "PMP-03"
     }
   ]
 }

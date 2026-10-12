@@ -20,5 +20,7 @@
     { "ad": "T-2 esasy turba", "nasoslar": [5, 6, 7] },
     { "ad": "T-3 esasy turba", "nasoslar": [8, 9, 10] }
   ],
-  "nasos": { "motor_kw": 160, "debi_m3h": 900, "basys_m": 45 }
+  "nasos": { "motor_kw": 160, "debi_m3h": 900, "basys_m": 45 },
+  "seviye_datcik": true,
+  "cekvalf": false
 }

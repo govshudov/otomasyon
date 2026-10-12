@@ -159,6 +159,8 @@ kopyalayıp değiştirin.
 | `sikistirma_gun` | Kaç günden eski veri sıkıştırılsın. |
 | `kolektorler` | **Borular (esasy turba) ve onlara bağlı nasosların numaraları.** Nasoslar 1'den başlayarak numaralanır; her nasos en az bir boruda yer alır. Nasos sayısı buradan çıkar. Sıralı olmak zorunda değildir (`[1, 3, 5]` ve `[2, 4, 6]`), ama §8.6'daki 3D sınırına bakın. **Ortak hat:** bir nasos birden fazla boruya basabiliyorsa birden fazla listeye yazılır; nasosun ilk geçtiği boru ana borusudur. Örnek aşağıda. |
 | `nasos` | Nasos değerleri (motor gücü kW, debi m³/sag, basınç m). Simülasyon ve 3D model ölçüsü için. |
+| `seviye_datcik` | İsteğe bağlı, varsayılan `true`. Her nasosun emme hücresinde seviye datçiği (LT-01 … nasos sayısı kadar), Magtymguly'deki gibi. Nasos kartında "Suw derejesi", 3D'de hücre girişinde direk, Twin'de `LT-xx/level_m` ve `state` noktaları. Datçik yoksa `false`. |
+| `cekvalf` | İsteğe bağlı, varsayılan `false`. Nasosların basma hattında çekvalf (NRV). Magtymguly'de (PS-21 TX) yok; varsa `true`. |
 
 **Ortak hat örneği (1 Maý).** N-1…N-7 vanalarla T-1, T-2 ve T-3'ün hepsine basabiliyor, N-8…N-10 yalnız T-4'e:
 
