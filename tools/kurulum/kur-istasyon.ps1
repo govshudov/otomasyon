@@ -21,8 +21,6 @@
 #   8 arayuz       arayuz + sozluk (hazir paket paket\<id> varsa o; yoksa derlenir), /Twin/<id> noktalari
 #   9 history      Twin noktalarina history uzantisi (veritabanina aktarilsin)
 #  10 kontrol      ozet: baglanti, aktarim, nokta sayilari
-#  11 yerel-kopya  istasyonu kaydet; calisan istasyonun klasorunu Workbench'in yerel klasorune kopyala (YONETICI
-#                  PowerShell gerekir). Baska PC'ye bu yerel klasor tasinir; eski kalirsa baska istasyonun arayuzu gider.
 #
 # Sifreler (Niagara admin, postgres) sorulur, hicbir dosyaya yazilmaz, bitince ortamdan silinir.
 # TwinSim (simulasyon) KURULMAZ. (Dosya bilerek ASCII: Windows PowerShell 5.1 BOM'suz UTF-8'i yanlis okur.)
@@ -32,7 +30,7 @@ param(
   [string]$Url,
   [string]$User,
   [int]$Basla = 1,
-  [int]$Bitir = 11,
+  [int]$Bitir = 10,
   [switch]$Plan
 )
 $ErrorActionPreference = 'Stop'
@@ -70,7 +68,7 @@ $st = Get-Content $stFile -Raw -Encoding UTF8 | ConvertFrom-Json
 $paket = Join-Path $root "paket\$low"
 $hasPaket = Test-Path (Join-Path $paket 'index.html')
 
-$steps = @('', 'veritabani', 'modul', 'okuma', 'surucu', 'politika', 'okuma-sql', 'model', 'arayuz', 'history', 'kontrol', 'yerel-kopya')
+$steps = @('', 'veritabani', 'modul', 'okuma', 'surucu', 'politika', 'okuma-sql', 'model', 'arayuz', 'history', 'kontrol')
 Write-Host "Istasyon: $sid ($($st.name))  Niagara adi: $want  Niagara: $Url  veritabani: ${dbHost}:${dbPort}/$dbName"
 if ($Plan) { for ($i = $Basla; $i -le $Bitir; $i++) { Write-Host "  $i $($steps[$i])" }; exit 0 }
 if ($Url -notmatch '127\.0\.0\.1|localhost') { Write-Warning 'Uzak istasyon: betik istasyonun calistigi PC icin yazildi (veritabani ve modul kontrolu bu PC''de yapilir).' }
@@ -156,7 +154,7 @@ function Sema-Kur {
     if ($LASTEXITCODE) { throw 'sema olusturulamadi (hata yukarida)' }
   } finally { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
 }
-function Step([int]$n) { if ($n -lt $Basla -or $n -gt $Bitir) { return $false }; Write-Host ''; Write-Host "== $n/11 $($steps[$n]) ==" -ForegroundColor Cyan; return $true }
+function Step([int]$n) { if ($n -lt $Basla -or $n -gt $Bitir) { return $false }; Write-Host ''; Write-Host "== $n/10 $($steps[$n]) ==" -ForegroundColor Cyan; return $true }
 
 try {
   # 1 ---------------------------------------------------------------- veritabani
@@ -292,22 +290,6 @@ try {
     Write-Host "  - Twin noktalari (/Twin/$sid) gercek pompa/kolektor noktalarina Workbench'te baglanmali; baglanmazsa kartlar sabit deger gosterir"
     Write-Host '  - Ilk aktarim turu 5 dakika icinde; sonra arayuzde grafiklerin altinda "maglumat binyady" gorunmeli'
     Write-Host "  - Sayfa: $Url/file/twin/index.html (Ctrl+F5)"
-  }
-
-  # 11 --------------------------------------------------------------- yerel kopya
-  # Kurulum calisan istasyona (ProgramData) yazar; Workbench'in yerel klasoru eski kalir. Baska PC'ye o
-  # klasor tasinir: burada ne varsa orada da ayni olsun diye kaydedip yerel klasore kopyalanir.
-  if (Step 11) {
-    Need-Niagara
-    Run-Node @('tools\kurulum\kaydet.mjs')
-    $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    if ($admin) {
-      & powershell -NoProfile -ExecutionPolicy Bypass -File tools\kurulum\yerel-kopya.ps1 -Istasyon $want
-      if ($LASTEXITCODE) { throw 'yerel kopya guncellenemedi (hata yukarida)' }
-    } else {
-      Write-Host '  YAPILMADI: yonetici PowerShell degil. Yerel klasor (Workbench) ESKI kaldi; baska PC''ye tasimadan once:' -ForegroundColor Yellow
-      Write-Host "    yonetici PowerShell'de: make kur AYAR=$Ayar ADIM=11   (ya da Station Copier ile sagdan sola)" -ForegroundColor Yellow
-    }
   }
   Write-Host ''
   Write-Host 'TAMAM' -ForegroundColor Green
