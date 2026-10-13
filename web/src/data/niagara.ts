@@ -238,7 +238,8 @@ export async function stationMismatch(sid: string): Promise<string | null> {
         return `Bu interfeýs ${want} beketi üçin, bu Niagara beketi ${have}: nasoslar gabat gelmeýär. Dogry paketi gurnaň (make kur ADIM=8).`
       }
     }
-    const tw = await baja.Ord.make(`station:|${doc.niagara_root ?? 'slot:/Twin'}/${sid}`).get().then(() => true, () => false)
+    // slot adında '-' kaçışlı yazılır (PS-01 → PS$2d01), veri okuyan scan() ile aynı
+    const tw = await baja.Ord.make(`station:|${doc.niagara_root ?? 'slot:/Twin'}/${baja.SlotPath.escape(sid)}`).get().then(() => true, () => false)
     if (!tw) return `Niagara-da /Twin/${sid} ýok: bu beketde ${sid} gurnalmandyr (make kur ADIM=8 BITIR=9).`
   } catch { /* BajaScript yok: denetlenemez */ }
   return null

@@ -57,7 +57,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   'assets/index-WLq88uWG.js', 'assets/index-B225otsS.css', 'assets/index-B-LlEJqX.js', 'assets/index-CVorqr0Q.js',
   'assets/index-BKmtqs1C.js', 'assets/index-CZshYfQo.css',
   // 13 Ekim öncesi paketler (sadeleştirmeden önceki arayüz)
-  'assets/index-BAfEfuXV.js', 'assets/index-DAS0sHPs.js', 'assets/index-lJ809osB.js', 'assets/index-BxgeSIVI.css']
+  'assets/index-BAfEfuXV.js', 'assets/index-DAS0sHPs.js', 'assets/index-lJ809osB.js', 'assets/index-BxgeSIVI.css',
+  // 13 Ekim ilk paketler (Twin denetimi PS-01'i kaçışsız arıyordu)
+  'assets/index-DXq3joxA.js', 'assets/index-CG2Pvbuo.js', 'assets/index-BVfODpHN.js']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {
