@@ -1,4 +1,4 @@
-# Istasyon kurulumu — komutlar. Ayrintilar ve make yoksa dogrudan komutlar: KURULUM.md
+# Istasyon kurulumu ? komutlar. Ayrintilar ve make yoksa dogrudan komutlar: KURULUM.md
 #
 #   make                          bu yardim
 #   make gereksinim [ROL=hazirlik]  bu PC'de gerekenler var mi
@@ -14,6 +14,7 @@
 #   make kur   AYAR=ayarlar/1-may.json [ADIM=N] [BITIR=N]  kurulum (yarida kalirsa ADIM=N ile devam)
 #   make plan  AYAR=...                                     adimlari yaz
 #   make durum AYAR=...                                     kontrol raporu (yazmaz)
+#   make tasi  AYAR=... HEDEF=E:\stations                  baska PC'ye tasima klasoru (denetler; TASIMA.md)
 #
 # Tum hedefler PowerShell betiklerini cagirir (tools/kurulum); make yalniz kisayoldur.
 
@@ -21,9 +22,10 @@ AYAR  ?= ayarlar/magtymguly.json
 ADIM  ?= 1
 BITIR ?= 10
 ROL   ?= istasyon
-PS    := powershell -NoProfile -ExecutionPolicy Bypass -File
+HEDEF ?=
+PS   := powershell -NoProfile -ExecutionPolicy Bypass -File
 
-.PHONY: yardim gereksinim istasyon model paket hazirla surucu imzala kur plan durum
+.PHONY: yardim gereksinim istasyon model paket hazirla surucu imzala kur plan durum tasi
 
 yardim:
 	@echo Kullanim (ayrintilar KURULUM.md):
@@ -34,6 +36,7 @@ yardim:
 	@echo   make kur      AYAR=ayarlar/1-may.json [ADIM=N] [BITIR=N]
 	@echo   make plan     AYAR=ayarlar/1-may.json
 	@echo   make durum    AYAR=ayarlar/1-may.json
+	@echo   make tasi     AYAR=ayarlar/1-may.json HEDEF=E:\stations
 	@echo   make surucu / make imzala
 
 gereksinim:
@@ -64,3 +67,6 @@ plan:
 
 durum:
 	$(PS) tools/kurulum/kur-istasyon.ps1 -Ayar $(AYAR) -Basla 10 -Bitir 10
+
+tasi:
+	$(PS) tools/kurulum/tasima.ps1 -Ayar $(AYAR) -Hedef $(HEDEF)

@@ -1,5 +1,5 @@
 # Workbench'in istasyon klasorunde bir istasyonu yeni adla kopyalar (ayni PC'de deneme istasyonu icin):
-# portlar degistirilir, Twin klasoru cikarilir (kurulum betigi istasyonun kendi Twin'ini kurar).
+# portlar degistirilir, Twin klasoru ve arayuz (shared\twin) cikarilir (kurulum betigi istasyonun kendi Twin'ini ve arayuzunu kurar).
 # Kaynak istasyona dokunulmaz. Sonra: Workbench -> Platform -> Station Copier ile platforma kopyala, baslat.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\kurulum\istasyon-kopyala.ps1 -Kaynak MAGTYMGULY -Hedef YASYLDEPE `
@@ -26,6 +26,10 @@ if ($Hedef -notmatch '^[A-Za-z][A-Za-z0-9_]*$') { throw "istasyon adi harfle bas
 Write-Host "kopyalaniyor: $src -> $dst"
 robocopy $src $dst /E /NFL /NDL /NJH /NJS /NP /XF 'console_backup_*.txt' | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy hatasi ($LASTEXITCODE)" }
+# Kaynagin arayuzu (shared\twin = kaynak istasyonun stations.json'u ve modeli) yeni istasyona gecmesin:
+# yoksa yeni istasyon kaynagin nasoslarini gosterir. Kurulum betigi (adim 8) dogru paketi koyar.
+$ui = Join-Path $dst 'shared\twin'
+if (-not $TwinBirak -and (Test-Path $ui)) { Remove-Item -LiteralPath $ui -Recurse -Force; Write-Host '  shared\twin (kaynagin arayuzu) cikarildi' }
 
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 $bog = Join-Path $dst 'config.bog'

@@ -1,6 +1,6 @@
 // JACE paketi: web/dist → web/dist-niagara
 //
-//   node scripts/niagara-pack.mjs [--stations PS-01,PS-02] [--out ../paket/ps-01]
+//   node scripts/niagara-pack.mjs [--stations PS-01,PS-02] [--niagara MAGTYMGULY] [--out ../paket/ps-01]
 //
 // Derlenmiş arayüzün yanına JACE'te API olmadığı için gereken iki şeyi koyar:
 //   stations.json            istasyon listesi (göreli model yolları, niagara_root)
@@ -20,6 +20,9 @@ const OUT = outArg > 0 ? path.resolve(process.cwd(), process.argv[outArg + 1]) :
 
 const arg = process.argv.indexOf('--stations')
 const only = arg > 0 ? process.argv[arg + 1].split(',').map((s) => s.trim().toUpperCase()) : null
+// --niagara <ad>: paketin kurulacağı Niagara istasyonu; arayüz istasyonun kendi adıyla karşılaştırır
+const nArg = process.argv.indexOf('--niagara')
+const niagaraStation = nArg > 0 ? process.argv[nArg + 1] : undefined
 
 if (!fs.existsSync(path.join(DIST, 'index.html'))) throw new Error('önce: npm run build')
 fs.rmSync(OUT, { recursive: true, force: true })
@@ -79,7 +82,7 @@ if (plain === stations.length) fs.rmSync(path.join(OUT, 'draco'), { recursive: t
 fs.copyFileSync(path.join(ROOT, 'common', 'sozluk.json'), path.join(OUT, 'sozluk.json'))
 
 fs.writeFileSync(path.join(OUT, 'stations.json'), JSON.stringify({
-  stations: list, default: list[0]?.id, niagara_root: 'slot:/Twin',
+  stations: list, default: list[0]?.id, niagara_root: 'slot:/Twin', niagara_station: niagaraStation,
 }, null, 2) + '\n')
 
 let n = 0, bytes = 0

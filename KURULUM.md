@@ -363,6 +363,9 @@ başladığında veritabanına geçer.
 ### 8.10 PowerShell "running scripts is disabled"
 Komutları `powershell -ExecutionPolicy Bypass -File …` ile çalıştırın (make hedefleri zaten böyle çağırır).
 
+### 8.11 Başka PC'ye taşınan istasyonda başka istasyonun nasosları / kırmızı "Bu interfeýs … üçin" uyarısı
+Kopya Workbench'in yerel klasöründen, kurulumdan önceki haliyle alınmıştır (kurulum çalışan istasyona yazar, yerel kopyaya değil). Hemen düzeltmek için: `make kur AYAR=… ADIM=8 BITIR=9`. Bir dahakine `TASIMA.md` → A (`make tasi`): kopyayı denetler, arayüzü doğru paketle değiştirir.
+
 ---
 
 ## 9. Güvenlik
@@ -386,7 +389,7 @@ Komutları `powershell -ExecutionPolicy Bypass -File …` ile çalıştırın (m
 | `common/equipment_types.json` | Ekipman sinyalleri ve birimleri |
 | `db/timescale/10_okuma.sql` | Okuma katmanı (görünümler, özetler) |
 | `driver/timescale/` | Sürücü kaynağı, derleme (`build.mjs`), imza (`imzala.ps1`), testler |
-| `tools/kurulum/` | Kurulum betikleri (`kur-istasyon.ps1`, `hazirla.ps1`, `gereksinim.ps1`, `timescale-niagara.mjs`); `TsSema.java`: boş veritabanında tabloları sürücünün kendi koduyla kurar (4. adım) |
+| `tools/kurulum/` | Kurulum betikleri (`kur-istasyon.ps1`, `hazirla.ps1`, `gereksinim.ps1`, `timescale-niagara.mjs`, `tasima.ps1`: başka PC'ye taşıma klasörü); `TsSema.java`: boş veritabanında tabloları sürücünün kendi koduyla kurar (4. adım) |
 | `tools/jace/` | Niagara'ya yazan araçlar (arayüz, Twin noktaları, history, okuma servisi) |
 | `tools/genmodel/` | 3D model üreticisi (Blender) |
 | `tools/make_station.py` | Ayar → istasyon dosyası |

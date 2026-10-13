@@ -3,78 +3,91 @@
 Her istasyon kendi PC'sinde çalışır (Niagara lisansı aynı anda 1 istasyon). Portlar hepsinde
 aynıdır: web 80/443, Fox 1911/4911.
 
-## Bu klasörde ne var
+## Neden "nasoslar uymadı" (12 Ekim)
 
-| Dosya / klasör | Ne | Durum |
-|---|---|---|
-| `MAGTYMGULY\` | PS-01 istasyon kopyası | **Eski kopya:** adı `ANEW_MAGTYMGULY_20261006`, `Twin` altında `TwinSim` (benzetim programı) var. Sahaya bu haliyle götürmeyin (aşağıda 3. adım). |
-| `YASYLDEPE\` | PS-05 istasyon kopyası | Portlar 80/443/1911/4911. Twin yok, hedefte `make kur` kurar. |
-| `BIRINJI_MAY\` | PS-04 istasyon kopyası | Portlar 80/443/1911/4911. Twin yok, hedefte `make kur` kurar. |
-| `timescale-rt.jar` | TimescaleDB sürücüsü 1.7.1.0, imzalı | Hazır |
-| `gereksinimler\` | PostgreSQL 18.1, TimescaleDB 2.23.1, Node 24.21.0, Chrome, make 4.4.1 | Hazır |
-| `akyllyoy-codesign.pem` | Sürücünün imza sertifikası | **Bu klasörde yok.** `otomasyon\paket\surucu\akyllyoy-codesign.pem` dosyasını alın. |
+`C:\Users\<kullanıcı>\Niagara4.15\TridiumEMEA\stations\<istasyon>` klasörü Workbench'in **yerel
+kopyasıdır**. Çalışan istasyon başka yerdedir (`C:\ProgramData\Niagara4.15\…`, erişim kapalı).
+Kurulum betiği (`make kur`) **çalışan** istasyona yazar: Twin noktaları, arayüz (`file:^twin`),
+history. Yerel kopya bundan habersiz kalır.
 
-USB'ye bunlarla birlikte **`otomasyon` proje klasörünün tamamı** da gider (ya da hedefte
-`git clone https://github.com/govshudov/otomasyon`; önce bu PC'den `git push` yapılmış olmalı).
-Hedef PC'de proje klasörünün `gereksinimler\` alt klasörüne bu klasördeki `gereksinimler\`
-içeriğini koyun.
+YASYLDEPE ve BIRINJI_MAY, MAGTYMGULY'den kopyalanarak oluşturuldu. Yerel kopyalarında hâlâ
+Magtymguly'nin arayüzü (`shared\twin\stations.json` → PS-01, 6 nasos) vardı ve `/Twin/PS-05`,
+`/Twin/PS-04` yoktu. Bu klasör taşınınca yeni PC'de Magtymguly'nin nasosları göründü. `make kur`
+8. adımda doğru arayüzü yazınca düzeldi.
 
-## Hedef PC'de adımlar
+Önlem:
+- **`tasima.ps1`**: taşınacak kopyayı denetler. Ad, `/Twin/<kod>` ve Twin altında başka bir şey
+  (TwinSim, başka istasyon) olup olmadığına bakar. Bir sorun varsa durur ve **kopyalamaz**.
+  Arayüzü her zaman `paket\<kod>` ile değiştirir.
+- **Arayüz kendini denetler:** Paket başka bir Niagara istasyonuna açılırsa ya da `/Twin/<kod>`
+  yoksa ekranın üstünde kırmızı uyarı çıkar.
+- `istasyon-kopyala.ps1` yeni istasyona kaynağın arayüzünü (`shared\twin`) artık taşımıyor.
 
-1. **Niagara 4.15.5** kurun, lisansı yükleyin.
+## A. Bu PC'de (taşımadan önce)
 
+1. **Çalışan istasyonu kaydedin:** Workbench → istasyona bağlanın → istasyona sağ tık →
+   **Save Station**.
+2. **Çalışan istasyonu yerel klasöre alın:** Workbench → Platform → **Station Copier** →
+   sağdaki (platform) istasyonu seçin → **sola** (yerel) kopyalayın. Aynı ad varsa üzerine yazın.
+3. **Taşıma klasörünü hazırlayın** (PowerShell, proje klasöründe):
+   ```
+   powershell -ExecutionPolicy Bypass -File tools\kurulum\tasima.ps1 -Ayar ayarlar\yasyldepe.json -Hedef E:\stations
+   ```
+   `E:\stations\YASYLDEPE` (istasyon, arayüzü `paket\ps-05`), `E:\stations\surucu`
+   (`timescale-rt.jar`, `akyllyoy-codesign.pem`) ve ayar dosyası oluşur.
+   - "HATA … kurulumdan ÖNCEKİ hali" → 1. ve 2. adım yapılmamış.
+   - "Twin altında başka: TwinSim" → Workbench'te `Config → Twin → TwinSim` silin, Save, 1–3'ü tekrarlayın.
+   - "istasyon adı …" → Station Copier'da doğru adla kopyalayın.
+4. USB'ye bunlarla birlikte **`otomasyon` proje klasörünün tamamı** da gider (ya da hedefte
+   `git clone`; önce bu PC'den `git push`). Kurulum dosyaları (`gereksinimler\`) git'te yoktur,
+   USB ile gider.
+
+## B. Hedef PC'de
+
+1. **Niagara 4.15** kurun, lisansı yükleyin.
 2. **Gereksinimler** (yönetici PowerShell, proje klasöründe):
    ```
    powershell -ExecutionPolicy Bypass -File tools\kurulum\gereksinim-kur.ps1
    ```
    PostgreSQL kurulumunda `postgres` şifresini siz belirlersiniz; unutmayın.
-
-3. **İstasyonu kopyalayın:** Workbench → Platform → Station Copier ile istasyon klasörünü
-   (ör. `YASYLDEPE`) platforma gönderin, başlatın.
-   - MAGTYMGULY için: ad `MAGTYMGULY` olmalı (Station Copier'da yeni adla kopyalayın) ve
-     başlattıktan sonra `Config → Twin → TwinSim` silinmeli, Save.
-   - Milesight / Modbus sürücüleri ve cihazları bu PC'deki örnek cihazlardır; sahadaki
-     gerçek cihazlarla yeniden eklenir / ayarlanır.
-
-4. **Sürücü modülü (elle, bir kez):**
+3. **Sürücü modülü (elle, bir kez)**, `surucu\` klasöründen:
    1. Workbench → Tools → Certificate Management → User Trust Store → Import → `akyllyoy-codesign.pem`.
    2. Platform'a bağlanın → Certificate Management → User Trust Store → Import → aynı dosya.
       Parmak izi: `9D:25:35:92:…:8D:7F:B4`.
    3. İstasyonu durdurun, Workbench'i kapatın.
-   4. `timescale-rt.jar` → `C:\Niagara\Niagara-4.15.5.22\modules\`.
-   5. İstasyonu ve Workbench'i başlatın.
-
+   4. `timescale-rt.jar` → Niagara kurulum klasörünün `modules\` klasörüne (`make gereksinim` gösterir).
+   5. Workbench'i başlatın.
+4. **İstasyonu kopyalayın:** USB'deki istasyon klasörünü (ör. `YASYLDEPE`)
+   `C:\Users\<kullanıcı>\Niagara4.15\TridiumEMEA\stations\` altına koyun. Ardından Workbench →
+   Platform → Station Copier ile platforma kopyalayın ve başlatın.
 5. **Kurulum betiği** (PowerShell, proje klasöründe):
    ```
    make kur AYAR=ayarlar/yasyldepe.json
    ```
-   (`ayarlar/magtymguly.json`, `ayarlar/1-may.json` aynı şekilde.)
-   - 1. adım ve 4. adım `postgres` şifresini, 3. adım Niagara şifresini sorar.
+   - Veritabanı her PC'de yenidir: 1. ve 4. adımda `postgres` şifresi, 3. adımda Niagara şifresi sorulur.
    - 4. adımda: Workbench → Drivers → TimescaleNetwork → TimescaleDevice → Property Sheet →
      `password` → postgres şifresi → Save, sonra PowerShell'de Enter.
    - Yarıda kalırsa: `make kur AYAR=… ADIM=4` (o adımdan devam).
-
-6. **Twin noktalarını bağlayın:** `Config → Twin → <id>` altındaki noktalar boş oluşur;
-   Workbench'te gerçek noktalara bağlanır. Liste:
+6. **Saha cihazları:** Milesight / Modbus sürücüleri ve cihazları sahadaki gerçek cihazlara göre
+   ayarlanır. Twin noktaları bağlı değilse bağlanır. Liste:
    ```
    node tools\jace\deploy.mjs x y --station stations\ps-05.json --plan
    ```
-
 7. **Kontrol:**
    - `make durum AYAR=ayarlar/yasyldepe.json`
-   - `https://127.0.0.1/file/twin/index.html` (Ctrl+F5): grafikler, Ähli nokatlar, Hasabatlar.
+   - `https://127.0.0.1/file/twin/index.html` → **Ctrl+F5**. Başlıkta istasyonun adı olmalı, kırmızı uyarı olmamalı.
    - `TimescaleHistoryExport` → `lastRun` 5 dakikada bir değişmeli, `lastError` boş olmalı.
-
-Ayrıntı ve sorun giderme: `otomasyon\KURULUM.md`.
 
 ## Kurulumun kendisi neyi kurar, neyi kurmaz
 
 | Ne | Kim kurar |
 |---|---|
 | PostgreSQL, TimescaleDB, Node, Chrome, make | `gereksinim-kur.ps1` |
-| `timescale-rt.jar` (modules klasörü) ve sertifika (trust store) | **Elle** (4. adım). `make kur` 2. adımda yalnız denetler; eksikse durur. |
-| İstasyon içinde TimescaleNetwork / TimescaleDevice / TimescaleHistoryExport, okuma servisi TsOkuma | `make kur` |
+| `timescale-rt.jar` (modules klasörü) ve sertifika (trust store) | **Elle** (B.3). `make kur` 2. adımda yalnız denetler; eksikse durur. |
+| İstasyonun içinde TimescaleNetwork / TimescaleDevice / TimescaleHistoryExport, TsOkuma okuma servisi | `make kur` |
 | Veritabanı, tablolar, saklama politikaları, görünümler | `make kur` |
-| Arayüz (`file:^twin`), `/Twin/<id>` noktaları, history uzantıları | `make kur` |
+| Arayüz (`file:^twin`), `/Twin/<kod>` noktaları, history uzantıları | `make kur` (arayüz ayrıca `tasima.ps1` ile kopyaya konur) |
 | Milesight / Modbus saha sürücüleri ve cihazları | **Elle** |
-| Twin noktalarının gerçek noktalara bağlanması | **Elle** (6. adım) |
+| Twin noktalarının gerçek noktalara bağlanması | **Elle** (B.6) |
+
+Ayrıntı ve sorun giderme: `KURULUM.md`.

@@ -18,10 +18,12 @@
         "models/ps-04.part1.bin",
         "models/ps-04.part2.bin",
         "models/ps-04.part3.bin",
-        "models/ps-04.part4.bin"
+        "models/ps-04.part4.bin",
+        "models/ps-04.part5.bin"
       ]
     }
   ],
   "default": "PS-04",
-  "niagara_root": "slot:/Twin"
+  "niagara_root": "slot:/Twin",
+  "niagara_station": "BIRINJI_MAY"
 }

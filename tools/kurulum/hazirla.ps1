@@ -57,12 +57,13 @@ switch ($Hedef) {
   'paket' {
     Need-Ayar
     if (-not $node) { throw 'node bulunamadi' }
+    if (-not $a.niagara.istasyon) { throw "$Ayar icinde niagara.istasyon yok (paket hangi Niagara istasyonuna ait?)" }
     if (-not (Test-Path "build\$low-plain.glb")) { throw "build\$low-plain.glb yok: once make model AYAR=$Ayar" }
     if (-not (Test-Path 'web\node_modules\vite')) { throw 'web\node_modules yok: web klasorunde npm ci (internet gerekir)' }
     Push-Location web
     try {
       & $node node_modules\vite\bin\vite.js build; if ($LASTEXITCODE) { throw 'web derlemesi basarisiz' }
-      & $node scripts\niagara-pack.mjs --stations $sid --out "..\paket\$low"; if ($LASTEXITCODE) { throw 'paket uretilemedi' }
+      & $node scripts\niagara-pack.mjs --stations $sid --niagara $a.niagara.istasyon --out "..\paket\$low"; if ($LASTEXITCODE) { throw 'paket uretilemedi' }
     } finally { Pop-Location }
     Write-Host "paket: paket\$low  (istasyon PC'sine bu klasor gider; git ile ya da kopyalayarak)"
   }

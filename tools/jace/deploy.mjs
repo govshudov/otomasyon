@@ -55,7 +55,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   'models/ps-01.part0.bin', 'models/ps-01.part1.bin', 'models/ps-01.part2.bin', 'models/ps-01.part3.bin',
   // 12 Ekim paketleri (Türkmence metin düzeltmesinden önceki derleme)
   'assets/index-WLq88uWG.js', 'assets/index-B225otsS.css', 'assets/index-B-LlEJqX.js', 'assets/index-CVorqr0Q.js',
-  'assets/index-BKmtqs1C.js', 'assets/index-CZshYfQo.css']
+  'assets/index-BKmtqs1C.js', 'assets/index-CZshYfQo.css',
+  // 13 Ekim öncesi paketler (sadeleştirmeden önceki arayüz)
+  'assets/index-BAfEfuXV.js', 'assets/index-DAS0sHPs.js', 'assets/index-lJ809osB.js', 'assets/index-BxgeSIVI.css']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {

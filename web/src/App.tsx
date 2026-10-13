@@ -8,7 +8,7 @@ import { Timeline } from './ui/Timeline'
 import type { StationInfo } from './ui/StationPicker'
 import { SensorLabels } from './ui/SensorLabels'
 import { computeHealth } from './data/health'
-import { fetchStationConfig, fetchStations, niagaraUser, NIAGARA } from './data/niagara'
+import { fetchStationConfig, fetchStations, niagaraUser, NIAGARA, stationMismatch } from './data/niagara'
 import { enjamAdy, groupsOf, levelSev, pumpView, runStateOf, type StationCfg } from './data/pump'
 import { Header, Sidebar, type Page } from './ui/Shell'
 import { PumpBoard } from './ui/PumpBoard'
@@ -95,6 +95,15 @@ export default function App() {
   }, [station])
   const groups = useMemo(() => groupsOf(cfg), [cfg])
   const sid = station?.id ?? ''
+
+  // Paket bu Niagara istasyonuna mı ait (başka PC'ye kopyalanan istasyonda eski arayüz kalmasın)
+  const [mismatch, setMismatch] = useState<string | null>(null)
+  useEffect(() => {
+    if (!sid) return
+    let ok = true
+    stationMismatch(sid).then((m) => { if (ok) setMismatch(m) })
+    return () => { ok = false }
+  }, [sid])
 
   // ---- sahne: BİR KEZ kurulur -------------------------------------------- //
   // İstasyon değişiminde TwinScene'i yeniden kurmak iki soruna yol açıyordu:
@@ -277,6 +286,7 @@ export default function App() {
       <Header sid={sid} user={user} onMenu={() => setMini((m) => !m)}
               onStation={(s) => { switchStation(s.id); setStation(s) }} />
       <Sidebar page={page} setPage={setPage} collapsed={mini} />
+      {mismatch && <div className="wrongStation">{mismatch}</div>}
 
       {is3d && (
         <>

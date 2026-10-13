@@ -78,7 +78,9 @@ Duýduryş metinleri de aynı adla gösterilir ("Nasos 1 — …").
 
 ## 3. 1. bilgisayarda yapılacaklar
 
-`paket/` henüz eski (ps-01 ve ps-04 paketleri dünkü metin düzeltmesinden de önce). Kurulum
+**13 Ekim, 1. bilgisayar:** `make model` ve `make paket` üç istasyon için yapıldı, `OLD` listesi güncellendi. **Kalan:** her istasyon çalışırken `make kur … ADIM=8 BITIR=8` ve kontrol listesi.
+
+(Önceki durum: `paket/` eskiydi; ps-01 ve ps-04 paketleri dünkü metin düzeltmesinden de önceydi.) Kurulum
 betiğinin 8. adımı `paket\<kod>` varsa arayüzü oradan yükler; **paket yenilenmeden kurulursa eski
 arayüz gider.** Her istasyon için (önce Ýaşyldepe ile deneyin):
 
@@ -117,8 +119,9 @@ satırının yanına):
   3D kartında duruyor). **Karar bekliyor:** 8 sıcaklık Umumy syn'den kalksın mı, yoksa kartta tek
   satır şerit olarak mı kalsın?
 - **Tablolarda sütuna göre sıralama** (duýduryşlar, hasabat): henüz yok.
-- **2. bilgisayarda nasosların uyuşmaması:** Sebebi kesinleşmedi. Bir dahaki taşımada üç kontrol:
-  kopyadaki `<istasyon>\twin\stations.json` hangi kodu gösteriyor; Workbench → Config → Twin altında
-  o kod var mı ve noktalar bağlı mı; istasyon değiştirince Ctrl+F5 yapıldı mı (üç istasyon aynı
-  adresten açılıyor, tarayıcı önbelleği paylaşılıyor). Çalışan istasyonu taşırken
-  `istasyon-kopyala.ps1 -TwinBirak` Twin noktalarını ve bağlantılarını korur.
+- ~~2. bilgisayarda nasosların uyuşmaması~~ **Çözüldü (13 Ekim, 1. bilgisayar):** Taşınan kopya Workbench'in
+  yerel klasöründendi. Kurulum çalışan istasyona yazar, yerel kopya eski kalır: YASYLDEPE / BIRINJI_MAY
+  kopyalarında Magtymguly'nin arayüzü (PS-01) vardı, `/Twin/PS-05` ve `/Twin/PS-04` yoktu. Önlem:
+  `make tasi` (`tools/kurulum/tasima.ps1`) kopyayı denetler ve arayüzü paketle değiştirir. Arayüz de
+  başka istasyona açılınca kırmızı uyarı verir. `istasyon-kopyala.ps1` artık `shared\twin`'i taşımaz.
+  Adımlar: `TASIMA.md`.

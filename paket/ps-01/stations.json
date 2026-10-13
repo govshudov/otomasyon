@@ -22,5 +22,6 @@
     }
   ],
   "default": "PS-01",
-  "niagara_root": "slot:/Twin"
+  "niagara_root": "slot:/Twin",
+  "niagara_station": "MAGTYMGULY"
 }

@@ -20,5 +20,6 @@
     }
   ],
   "default": "PS-05",
-  "niagara_root": "slot:/Twin"
+  "niagara_root": "slot:/Twin",
+  "niagara_station": "YASYLDEPE"
 }

@@ -36,7 +36,8 @@ export interface StationEntry {
   model: string; twin_map: string; config?: string; model_parts?: string[]
   source_alive: boolean; alarms: number
 }
-interface StationsDoc { stations: StationEntry[]; default?: string; niagara_root?: string }
+/** `niagara_station`: paketin kurulduğu Niagara istasyonunun adı (ayar → niagara.istasyon) */
+interface StationsDoc { stations: StationEntry[]; default?: string; niagara_root?: string; niagara_station?: string }
 
 let stationsP: Promise<StationsDoc> | null = null
 
@@ -217,6 +218,30 @@ export async function niagaraHistory(tag: string, fromS: number, toS: number, li
 export async function niagaraUser(): Promise<string | null> {
   if (!NIAGARA) return null
   try { const b = await loadBaja(); return String(b.getUserName?.() ?? '') || null } catch { return null }
+}
+
+/**
+ * Paket bu istasyonun mu? İstasyon klasörü başka PC'ye kopyalanırken eski ya da başka
+ * istasyonun arayüzü (`file:^twin`) gelebilir; o zaman nasoslar uymaz. İstasyonun kendi adı
+ * (`stationName`) paketteki `niagara_station` ile, `/Twin/<sid>` klasörünün varlığıyla
+ * denetlenir. Sorun yoksa (ya da okunamazsa) null.
+ */
+export async function stationMismatch(sid: string): Promise<string | null> {
+  if (!NIAGARA) return null
+  try {
+    const [doc, baja] = await Promise.all([fetchStations(), loadBaja()])
+    const want = doc.niagara_station
+    if (want) {
+      const root = await baja.Ord.make('station:|slot:/').get().catch(() => null)
+      const have = root ? String(root.get('stationName') ?? '') : ''
+      if (have && have !== want) {
+        return `Bu interfeýs ${want} beketi üçin, bu Niagara beketi ${have}: nasoslar gabat gelmeýär. Dogry paketi gurnaň (make kur ADIM=8).`
+      }
+    }
+    const tw = await baja.Ord.make(`station:|${doc.niagara_root ?? 'slot:/Twin'}/${sid}`).get().then(() => true, () => false)
+    if (!tw) return `Niagara-da /Twin/${sid} ýok: bu beketde ${sid} gurnalmandyr (make kur ADIM=8 BITIR=9).`
+  } catch { /* BajaScript yok: denetlenemez */ }
+  return null
 }
 
 /** Bir noktanın `out` değeri: JS değeri + geçerli mi. */
