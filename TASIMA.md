@@ -5,42 +5,49 @@ aynıdır: web 80/443, Fox 1911/4911.
 
 ## Neden "nasoslar uymadı" (12 Ekim)
 
-`C:\Users\<kullanıcı>\Niagara4.15\TridiumEMEA\stations\<istasyon>` klasörü Workbench'in **yerel
-kopyasıdır**. Çalışan istasyon başka yerdedir (`C:\ProgramData\Niagara4.15\…`, erişim kapalı).
-Kurulum betiği (`make kur`) **çalışan** istasyona yazar: Twin noktaları, arayüz (`file:^twin`),
-history. Yerel kopya bundan habersiz kalır.
+Aynı adlı iki istasyon klasörü var:
 
-YASYLDEPE ve BIRINJI_MAY, MAGTYMGULY'den kopyalanarak oluşturuldu. Yerel kopyalarında hâlâ
-Magtymguly'nin arayüzü (`shared\twin\stations.json` → PS-01, 6 nasos) vardı ve `/Twin/PS-05`,
-`/Twin/PS-04` yoktu. Bu klasör taşınınca yeni PC'de Magtymguly'nin nasosları göründü. `make kur`
-8. adımda doğru arayüzü yazınca düzeldi.
+| Klasör | Ne |
+|---|---|
+| `C:\ProgramData\Niagara4.15\TridiumEMEA\stations\<istasyon>` | **Çalışan istasyon.** Niagara servisi buradan çalıştırır. Save Station ve `make kur` buraya yazar. Windows yalnız yöneticiye açar. |
+| `C:\Users\<kullanıcı>\Niagara4.15\TridiumEMEA\stations\<istasyon>` | **Workbench'in yerel kopyası.** Station Copier'ın sol tarafı. Niagara buraya kendiliğinden hiç yazmaz; yalnız Station Copier ile sağdan sola kopyalanınca güncellenir. |
+
+YASYLDEPE ve BIRINJI_MAY, MAGTYMGULY'nin yerel kopyasından üretilip platforma gönderildi. Sonra
+`make kur` doğru arayüzü ve `/Twin/PS-05`, `/Twin/PS-04` noktalarını çalışan istasyona yazdı.
+Yerel kopyalar hiç geri alınmadı; içlerinde Magtymguly'nin arayüzü (PS-01, 6 nasos) kaldı. Bu
+klasörler taşınınca yeni PC'de Magtymguly'nin nasosları göründü.
 
 Önlem:
-- **`tasima.ps1`**: taşınacak kopyayı denetler. Ad, `/Twin/<kod>` ve Twin altında başka bir şey
-  (TwinSim, başka istasyon) olup olmadığına bakar. Bir sorun varsa durur ve **kopyalamaz**.
-  Arayüzü her zaman `paket\<kod>` ile değiştirir.
-- **Arayüz kendini denetler:** Paket başka bir Niagara istasyonuna açılırsa ya da `/Twin/<kod>`
+- **`make kur` 11. adımı:** İstasyonu kaydeder ve çalışan istasyonun klasörünü yerel klasöre bire bir
+  kopyalar (yönetici PowerShell gerekir). Kurulumdan sonra yerel klasör çalışan istasyonla aynıdır.
+  Eski yerel kopya silinmez; `TridiumEMEA\stations_yedek\` klasörüne taşınır.
+- **`make tasi`:** Önce aynı şeyi yapar: kaydeder ve çalışan istasyonu yerel klasöre alır. Sonra
+  kopyayı denetler: ad, `/Twin/<kod>`, Twin altında TwinSim ya da başka istasyon. Bir sorun varsa
+  **kopyalamaz**.
+- **Arayüz kendini denetler:** Paket başka bir Niagara istasyonunda açılırsa ya da `/Twin/<kod>`
   yoksa ekranın üstünde kırmızı uyarı çıkar.
 - `istasyon-kopyala.ps1` yeni istasyona kaynağın arayüzünü (`shared\twin`) artık taşımıyor.
 
 ## A. Bu PC'de (taşımadan önce)
 
-1. **Çalışan istasyonu kaydedin:** Workbench → istasyona bağlanın → istasyona sağ tık →
-   **Save Station**.
-2. **Çalışan istasyonu yerel klasöre alın:** Workbench → Platform → **Station Copier** →
-   sağdaki (platform) istasyonu seçin → **sola** (yerel) kopyalayın. Aynı ad varsa üzerine yazın.
-3. **Taşıma klasörünü hazırlayın** (PowerShell, proje klasöründe):
+1. İstasyon **çalışırken**, **yönetici olarak açılmış PowerShell'de**, proje klasöründe:
    ```
-   powershell -ExecutionPolicy Bypass -File tools\kurulum\tasima.ps1 -Ayar ayarlar\yasyldepe.json -Hedef E:\stations
+   make tasi AYAR=ayarlar/yasyldepe.json HEDEF=E:\stations
    ```
-   `E:\stations\YASYLDEPE` (istasyon, arayüzü `paket\ps-05`), `E:\stations\surucu`
-   (`timescale-rt.jar`, `akyllyoy-codesign.pem`) ve ayar dosyası oluşur.
-   - "HATA … kurulumdan ÖNCEKİ hali" → 1. ve 2. adım yapılmamış.
-   - "Twin altında başka: TwinSim" → Workbench'te `Config → Twin → TwinSim` silin, Save, 1–3'ü tekrarlayın.
-   - "istasyon adı …" → Station Copier'da doğru adla kopyalayın.
-4. USB'ye bunlarla birlikte **`otomasyon` proje klasörünün tamamı** da gider (ya da hedefte
+   (make yoksa: `powershell -ExecutionPolicy Bypass -File tools\kurulum\tasima.ps1 -Ayar ayarlar\yasyldepe.json -Hedef E:\stations`)
+
+   Niagara şifresi sorulur. Betik istasyonu kaydeder, yerel klasöre alır ve denetler. Ardından
+   `E:\stations\YASYLDEPE` (istasyon), `E:\stations\surucu` (`timescale-rt.jar`,
+   `akyllyoy-codesign.pem`) ve ayar dosyası oluşur.
+   - "Twin altında başka: TwinSim" → Workbench'te `Config → Twin → TwinSim` silin, sonra tekrar çalıştırın.
+   - "istasyon adı …" → istasyonun adı ayar dosyasındaki `niagara.istasyon` ile aynı olmalı.
+2. USB'ye bunlarla birlikte **`otomasyon` proje klasörünün tamamı** da gider (ya da hedefte
    `git clone`; önce bu PC'den `git push`). Kurulum dosyaları (`gereksinimler\`) git'te yoktur,
    USB ile gider.
+
+Elle yapmak isterseniz (betik yerine): Workbench → istasyona sağ tık → **Save Station**. Sonra
+Platform → **Station Copier** → sağdaki (platform) istasyonu **sola** kopyalayın. Ardından
+`tasima.ps1 … -Kaynak <yerel klasör>`.
 
 ## B. Hedef PC'de
 

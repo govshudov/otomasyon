@@ -3,9 +3,9 @@
 #   powershell -ExecutionPolicy Bypass -File tools\kurulum\tasima.ps1 -Ayar ayarlar\yasyldepe.json -Hedef E:\stations
 #       [-Kaynak <istasyon klasoru>] [-Zorla]
 #
-# Kaynak (varsayilan): Workbench'in yerel istasyon klasoru %USERPROFILE%\Niagara4.15\TridiumEMEA\stations\<istasyon>.
-# DIKKAT: kurulum betigi (make kur) CALISAN istasyona yazar; yerel klasor kendiliginden guncellenmez. Once
-# Workbench -> Platform -> Station Copier ile calisan istasyonu yerel klasore kopyalayin (sagdan sola), sonra bu betik.
+# -Kaynak verilmezse (YONETICI PowerShell, istasyon CALISIRKEN): once calisan istasyon kaydedilir ve Workbench'in
+# yerel klasorune kopyalanir (kur-istasyon.ps1 adim 11 = yerel-kopya.ps1; Niagara sifresi sorulur), sonra o klasor
+# tasinir. Boylece burada ne varsa orada da o olur. -Kaynak <klasor>: verilen klasor oldugu gibi denetlenip tasinir.
 #
 # Denetler (biri tutmazsa durur; -Zorla ile yalniz uyarir):
 #   - config.bog'daki stationName = ayardaki niagara.istasyon
@@ -28,7 +28,16 @@ $ayarPath = (Resolve-Path $Ayar).Path
 $a = Get-Content $ayarPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $sid = $a.id; $low = $sid.ToLower(); $ist = $a.niagara.istasyon
 if (-not $sid -or -not $ist) { throw "$Ayar icinde id ya da niagara.istasyon yok" }
-if (-not $Kaynak) { $Kaynak = Join-Path $env:USERPROFILE "Niagara4.15\TridiumEMEA\stations\$ist" }
+if (-not $Kaynak) {
+  $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+  if (-not $admin) { throw 'Yonetici PowerShell gerekli (calisan istasyon yerel klasore alinir). Ya da -Kaynak <istasyon klasoru> verin.' }
+  Write-Host "calisan istasyon kaydedilip yerel klasore aliniyor ($ist)..."
+  & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tools\kurulum\kur-istasyon.ps1') -Ayar $ayarPath -Basla 11 -Bitir 11
+  if ($LASTEXITCODE) { throw 'calisan istasyon yerel klasore alinamadi (hata yukarida). Istasyon calisiyor mu?' }
+  $loc = @(Get-ChildItem (Join-Path $env:USERPROFILE 'Niagara4.*\*\stations') -Directory -ErrorAction SilentlyContinue | Sort-Object FullName)
+  $Kaynak = Join-Path $loc[-1].FullName $ist
+  Write-Host ''
+}
 $bog = Join-Path $Kaynak 'config.bog'
 if (-not (Test-Path $bog)) { throw "istasyon yok: $bog" }
 $paket = Join-Path $root "paket\$low"

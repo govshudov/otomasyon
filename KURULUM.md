@@ -252,6 +252,7 @@ Adımlar (her adım önce yapılmış mı diye bakar; yapılmışsa atlar):
 | 8 | arayüz | `paket/<id>/` → istasyonun `file:^twin` klasörü; `/Twin/<id>` noktaları (yoksa oluşturulur). Eski arayüz masaüstüne yedeklenir. | — |
 | 9 | history | Twin noktalarına history uzantısı (dakikada bir, veritabanına aktarılır) | — |
 | 10 | kontrol | Bağlantı, aktarım ve nokta sayıları raporu | — |
+| 11 | yerel-kopya | İstasyonu kaydeder; çalışan istasyonun klasörünü (`ProgramData`) Workbench'in yerel klasörüne bire bir kopyalar. Başka PC'ye taşınan klasör budur (`TASIMA.md`). | **Yönetici PowerShell.** Değilse uyarır; sonra `make yerel AYAR=…` |
 
 Yarıda kalırsa: `make kur AYAR=… ADIM=4` (4. adımdan devam). Tek bir adım: `ADIM=8 BITIR=8`.
 
@@ -364,7 +365,7 @@ başladığında veritabanına geçer.
 Komutları `powershell -ExecutionPolicy Bypass -File …` ile çalıştırın (make hedefleri zaten böyle çağırır).
 
 ### 8.11 Başka PC'ye taşınan istasyonda başka istasyonun nasosları / kırmızı "Bu interfeýs … üçin" uyarısı
-Kopya Workbench'in yerel klasöründen, kurulumdan önceki haliyle alınmıştır (kurulum çalışan istasyona yazar, yerel kopyaya değil). Hemen düzeltmek için: `make kur AYAR=… ADIM=8 BITIR=9`. Bir dahakine `TASIMA.md` → A (`make tasi`): kopyayı denetler, arayüzü doğru paketle değiştirir.
+Kopya Workbench'in yerel klasöründen, kurulumdan önceki haliyle alınmıştır (kurulum çalışan istasyona yazar; yerel klasör yalnız 11. adımda ya da Station Copier ile sağdan sola güncellenir). Hemen düzeltmek için: `make kur AYAR=… ADIM=8 BITIR=9`. Bir dahakine `TASIMA.md` → A (`make tasi`): kopyayı denetler, arayüzü doğru paketle değiştirir.
 
 ---
 
