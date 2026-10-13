@@ -6,10 +6,9 @@ import { LEVEL_EQ, MODE_TK, OVERALL_TK, fmtN, numOf, sigDef, thresholds, type Gr
 import { ChartBoard, type ChartSpec } from './ChartBoard'
 import { PointExplorer } from './PointExplorer'
 import { DbReportTables, dbReportCsvRows, useDbReport } from './DbReport'
-import { combine } from './PumpCharts'
+import { PumpChartBoard, combine } from './PumpCharts'
 import { fmtDateTime } from './Chart'
 import { Icon } from './icons'
-import { beketAdy } from './labels'
 
 /** Duýduryşlar, Hasabatlar, Grafikler sayfaları. */
 
@@ -30,7 +29,7 @@ function csvDownload(name: string, rows: (string | number)[][]) {
 
 // --------------------------------------------------------------------------- //
 
-export function AlarmsPage({ onLocate }: { onLocate: (equipment: string) => void }) {
+export function AlarmsPage() {
   const alarms = useTwin((s) => s.alarms)
   const log = useTwin((s) => s.alarmLog)
   const twin = useTwin((s) => s.twinMap)
@@ -51,15 +50,15 @@ export function AlarmsPage({ onLocate }: { onLocate: (equipment: string) => void
         <tbody>
           {alarms.length === 0 && <tr><td colSpan={7} className="emptyRow">Işjeň duýduryş ýok.</td></tr>}
           {alarms.map((a) => (
-            <tr key={a.id} className={`${a.level.toLowerCase()}${a.state === 'UNACK_ALM' ? ' unack' : ''}`} onClick={() => onLocate(a.equipment)}>
+            <tr key={a.id} className={`${a.level.toLowerCase()}${a.state === 'UNACK_ALM' ? ' unack' : ''}`}>
               <td><span className={`lvl ${a.level.toLowerCase()}`}>{LVL_TK[a.level]}</span></td>
-              <td><b>{eqName(a.equipment)}</b><div className="sub">{a.equipment}</div></td>
+              <td><b>{eqName(a.equipment)}</b></td>
               <td>{a.msg}</td>
               <td className="num">{valS(a.value)}</td>
               <td className="mono">{tsS(a.ts_raised)}</td>
               <td>{ST_TK[a.state] ?? a.state}</td>
               <td>{(a.state === 'UNACK_ALM' || a.state === 'RTN_UNACK') &&
-                <button className="small" onClick={(e) => { e.stopPropagation(); ack(a.id) }}>Tassykla</button>}</td>
+                <button className="small" onClick={() => ack(a.id)}>Tassykla</button>}</td>
             </tr>
           ))}
         </tbody>
@@ -71,7 +70,7 @@ export function AlarmsPage({ onLocate }: { onLocate: (equipment: string) => void
         <tbody>
           {log.length === 0 && <tr><td colSpan={5} className="emptyRow">Ýazgy ýok.</td></tr>}
           {log.slice(0, 120).map((a, i) => (
-            <tr key={i} onClick={() => onLocate(a.equipment)}>
+            <tr key={i}>
               <td className="mono">{tsS(a.ts)}</td>
               <td><span className={`lvl ${a.level.toLowerCase()}`}>{LVL_TK[a.level]}</span></td>
               <td>{eqName(a.equipment)}</td>
@@ -132,7 +131,7 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
   const d = (eq: string, k: string) => delta(hist[`${sid}.${eq}.${k}`])
   const exportCsv = () => {
     const rows: (string | number)[][] = [['Toplum', 'Nasos', 'Ýagdaýy', 'Inwertor sag', 'Transformator sag', 'Jemi sag',
-      'Döwürde inwertor sag', 'Döwürde transformator sag', 'Tok A', 'Kuwwat kW', 'Basyş bar']]
+      'Inwertorda döwürde sag', 'Transformatorda döwürde sag', 'Tok A', 'Kuwwat kW', 'Basyş bar']]
     for (const g of groups) for (const p of g.pumps) {
       const v = views[p.id]
       if (!v) continue
@@ -153,7 +152,7 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
   return (
     <div className="page">
       <div className="pageBar">
-        <h2>Hasabat · {beketAdy(sid)}</h2>
+        <h2>Hasabat</h2>
         <div className="seg small">
           {PERIODS.map((p) => <button key={p.k} className={period === p.k ? 'on' : ''} onClick={() => setPeriod(p.k)}>{p.t}</button>)}
         </div>
@@ -167,7 +166,7 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
           <tr><th>Toplum</th><th>Nasos</th><th>Ýagdaýy</th>
             <th className="num">Inwertor<small>jemi sag</small></th><th className="num">Transformator<small>jemi sag</small></th>
             <th className="num">Jemi<small>sag</small></th>
-            <th className="num">Döwürde inw.<small>sag</small></th><th className="num">Döwürde transf.<small>sag</small></th>
+            <th className="num">Inwertorda<small>döwürde sag</small></th><th className="num">Transformatorda<small>döwürde sag</small></th>
             <th className="num">Tok<small>A</small></th><th className="num">Kuwwat<small>kW</small></th><th className="num">Basyş<small>bar</small></th></tr>
         </thead>
         <tbody>
@@ -220,9 +219,7 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
 
 const GROUP_COLORS = ['#38bdf8', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#fb923c', '#22d3ee', '#a3e635']
 
-export function ChartsPage({ sid, groups, onPump }: {
-  sid: string; groups: Group[]; onPump: (id: string, label: string) => void
-}) {
+export function ChartsPage({ sid, groups }: { sid: string; groups: Group[] }) {
   const twin = useTwin((s) => s.twinMap)
   const tags = useMemo(() => [
     ...groups.flatMap((g) => [
@@ -253,31 +250,32 @@ export function ChartsPage({ sid, groups, onPump }: {
     ]
   }, [sid, groups, twin])
 
-  const [mode, setModeRaw] = useState<'beket' | 'nokat'>(() => {
-    try { return localStorage.getItem('twin.charts.mode') === 'nokat' ? 'nokat' : 'beket' } catch { return 'beket' }
+  // Görünüm: beket, bir nasos (id) ya da ähli nokatlar. Nasosyň 8 grafigine yalnız buradan gidilir.
+  const pumps = useMemo(() => groups.flatMap((g) => g.pumps), [groups])
+  const [mode, setModeRaw] = useState<string>(() => {
+    try { return localStorage.getItem('twin.charts.mode') ?? 'beket' } catch { return 'beket' }
   })
-  const setMode = (m: 'beket' | 'nokat') => {
+  const setMode = (m: string) => {
     setModeRaw(m)
     try { localStorage.setItem('twin.charts.mode', m) } catch { /* depolama kapalı */ }
   }
+  const pump = pumps.find((p) => p.id === mode)
+  const shown = mode === 'nokat' || pump ? mode : 'beket'     // saklanan nasos bu istasyonda yoksa beket
 
   return (
     <div className="page full">
       <div className="pumpPick">
         <div className="seg">
-          <button className={mode === 'beket' ? 'on' : ''} onClick={() => setMode('beket')}>Beket</button>
-          <button className={mode === 'nokat' ? 'on' : ''} onClick={() => setMode('nokat')}>Ähli nokatlar</button>
+          <button className={shown === 'beket' ? 'on' : ''} onClick={() => setMode('beket')}>Beket</button>
+          {pumps.map((p) => (
+            <button key={p.id} className={shown === p.id ? 'on' : ''} onClick={() => setMode(p.id)}>{p.label}</button>
+          ))}
+          <button className={shown === 'nokat' ? 'on' : ''} onClick={() => setMode('nokat')}>Ähli nokatlar</button>
         </div>
-        {mode === 'beket' && <>
-          <span>Nasosyň grafikleri:</span>
-          {groups.flatMap((g) => g.pumps.map((p) => (
-            <button key={p.id} onClick={() => onPump(p.id, p.label)}>{p.label}</button>
-          )))}
-        </>}
       </div>
-      {mode === 'beket'
-        ? <ChartBoard title={`${beketAdy(sid)} · grafikler`} tags={tags} build={build} fileName={`${sid}_beket`} />
-        : <PointExplorer sid={sid} />}
+      {shown === 'beket' && <ChartBoard title="Beket" tags={tags} build={build} fileName={`${sid}_beket`} />}
+      {pump && <PumpChartBoard key={pump.id} sid={sid} id={pump.id} label={pump.label} />}
+      {shown === 'nokat' && <PointExplorer sid={sid} />}
     </div>
   )
 }

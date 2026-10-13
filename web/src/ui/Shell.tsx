@@ -1,22 +1,24 @@
 import { useEffect, useState, type ReactElement } from 'react'
 import { useTwin } from '../data/store'
-import type { Group } from '../data/pump'
 import { Icon, Logo } from './icons'
-import { beketAdy } from './labels'
+import { StationPicker, type StationInfo } from './StationPicker'
 
 /**
- * Uygulama çerçevesi: üst başlık (beket · duýduryş sayısı · son duýduryş ·
- * sagat · ulanyjy · doly ekran) ve sol menü (referans panonun menüsü;
- * Network / Systems / Message Panel / Security çıkarıldı, Pump Stations →
- * Toplumlar). "Karta" istasyondaki harita Px'ini içerik alanında gösterir.
+ * Uygulama çerçevesi: üst başlık (beket adı · duýduryş sayısı · son duýduryş ·
+ * sagat · ulanyjy · doly ekran) ve sol menü. "Karta" istasyondaki harita Px'ini
+ * içerik alanında gösterir.
+ *
+ * Her ekrana TEK yol: soldaki menü. Başlıktaki duýduryş sayısı ve son duýduryş
+ * yalnız göstergedir, tıklanmaz. Menü sırası operatörün iş akışı: genel bakış →
+ * 3D → duýduryşlar → grafikler → hasabatlar → karta.
  */
 
-export type Page = 'map' | 'overview' | `group:${string}` | 'karta' | 'alarms' | 'reports' | 'charts'
+export type Page = 'overview' | 'map' | 'alarms' | 'charts' | 'reports' | 'karta'
 
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
-export function Header({ sid, user, onMenu, onAlarms }: {
-  sid: string; user: string; onMenu: () => void; onAlarms: () => void
+export function Header({ sid, user, onMenu, onStation }: {
+  sid: string; user: string; onMenu: () => void; onStation: (s: StationInfo) => void
 }) {
   const alarms = useTwin((s) => s.alarms)
   const connected = useTwin((s) => s.connected)
@@ -43,18 +45,17 @@ export function Header({ sid, user, onMenu, onAlarms }: {
   return (
     <header className="hdr">
       <button className="icon flat" onClick={onMenu} title="Menýu"><Icon.menu size={20} /></button>
-      <button className="hdrStation flat" onClick={onAlarms} title="Duýduryşlar">
+      <div className="hdrStation">
         <Icon.pumps size={19} />
-        <b>{beketAdy(sid)}</b>
-        <span className={unack ? 'cnt bad' : 'cnt'}>{unack}/{alarms.length}</span>
+        <StationPicker current={sid} onSelect={onStation} />
+        <span className={unack ? 'cnt bad' : 'cnt'} title="Tassyklanmadyk / ähli duýduryşlar">{unack}/{alarms.length}</span>
         <span className={`bell${unack ? ' ring' : ''}`}><Icon.bell size={17} /></span>
-      </button>
+      </div>
       <div className="hdrMid">
         {top ? (
-          <button className={`hdrAlarm flat ${top.level === 'ALARM' ? 'bad' : 'mid'}${top.state === 'UNACK_ALM' ? ' blink' : ''}`}
-                  onClick={onAlarms}>
-            <Icon.bell size={15} /> {beketAdy(sid)} / {top.msg}
-          </button>
+          <span className={`hdrAlarm ${top.level === 'ALARM' ? 'bad' : 'mid'}${top.state === 'UNACK_ALM' ? ' blink' : ''}`}>
+            <Icon.bell size={15} /> {top.msg}
+          </span>
         ) : <span className="hdrQuiet">Işjeň duýduryş ýok</span>}
       </div>
       {link && <span className={`pill ${link.c}`}>● {link.t}</span>}
@@ -68,35 +69,23 @@ export function Header({ sid, user, onMenu, onAlarms }: {
   )
 }
 
-export function Sidebar({ page, setPage, groups, collapsed }: {
-  page: Page; setPage: (p: Page) => void; groups: Group[]; collapsed: boolean
+export function Sidebar({ page, setPage, collapsed }: {
+  page: Page; setPage: (p: Page) => void; collapsed: boolean
 }) {
   const nAlarm = useTwin((s) => s.alarms.length)
-  const [open, setOpen] = useState(true)
   const item = (p: Page, icon: ReactElement, label: string, extra?: ReactElement) => (
     <button className={`navItem${page === p ? ' on' : ''}`} onClick={() => setPage(p)} title={label}>
       {icon}<span>{label}</span>{extra}
     </button>
   )
-  const inGroup = page.startsWith('group:')
   return (
     <nav className={`side${collapsed ? ' mini' : ''}`}>
-      {item('map', <Icon.cube />, 'Sanly ekiz')}
       {item('overview', <Icon.overview />, 'Umumy syn')}
-      <button className={`navItem${inGroup ? ' on' : ''}`} title="Toplumlar"
-              onClick={() => (collapsed ? setPage(`group:${groups[0]?.id ?? ''}`) : setOpen((o) => !o))}>
-        <Icon.pumps /><span>Toplumlar</span>
-        <i className={`chev${open ? ' open' : ''}`}><Icon.chevron size={15} /></i>
-      </button>
-      {open && !collapsed && groups.map((g) => (
-        <button key={g.id} className={`navSub${page === `group:${g.id}` ? ' on' : ''}`} onClick={() => setPage(`group:${g.id}`)}>
-          {g.name}<small>{g.pumps.length} nasos</small>
-        </button>
-      ))}
-      {item('karta', <Icon.map />, 'Karta')}
+      {item('map', <Icon.cube />, 'Sanly ekiz')}
       {item('alarms', <Icon.bell />, 'Duýduryşlar', nAlarm ? <b className="navBadge">{nAlarm}</b> : undefined)}
-      {item('reports', <Icon.report />, 'Hasabatlar')}
       {item('charts', <Icon.chart />, 'Grafikler')}
+      {item('reports', <Icon.report />, 'Hasabatlar')}
+      {item('karta', <Icon.map />, 'Karta')}
       <div className="sideFoot"><Logo size={collapsed ? 26 : 30} /><span><b>Suw göteriji</b>Sanly ekiz</span></div>
     </nav>
   )

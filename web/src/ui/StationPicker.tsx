@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { fetchStations } from '../data/niagara'
-import { beketAdy } from './labels'
 
 export interface StationInfo {
   id: string; name: string; description: string
@@ -12,11 +11,11 @@ export interface StationInfo {
 }
 
 /**
- * İstasyon seçici.
+ * İstasyon seçici — başlıkta, istasyonun adının yerinde.
  *
- * Bir tesiste birden çok terfi merkezi olması kural. Liste sunucudan gelir —
- * `stations/` dizinine yeni bir JSON düşünce arayüzde kendiliğinden belirir,
- * frontend'de hiçbir şey değişmez.
+ * Liste sunucudan gelir — `stations/` dizinine yeni bir JSON düşünce arayüzde
+ * kendiliğinden belirir. Sahada her bilgisayarda tek istasyon var (paketin
+ * stations.json'u): o zaman seçici yok, yalnız istasyonun adı yazılır.
  */
 export function StationPicker({ current, onSelect }: {
   current: string
@@ -35,6 +34,7 @@ export function StationPicker({ current, onSelect }: {
 
   const cur = list.find((s) => s.id === current)
   if (!list.length) return null
+  if (list.length === 1) return <b>{cur?.name ?? list[0].name}</b>
 
   return (
     <div className="picker">
@@ -55,7 +55,7 @@ export function StationPicker({ current, onSelect }: {
                   <span className={`dot ${s.source_alive ? 'live' : 'dead'}`} />
                 </div>
                 <div className="row2">
-                  {beketAdy(s.id)} · {s.pumps} nasos · {s.headers} kollektor · {s.cells} öýjük
+                  {s.pumps} nasos · {s.headers} kollektor · {s.cells} öýjük
                   {s.alarms > 0 && <em className="bad"> · {s.alarms} duýduryş</em>}
                 </div>
               </button>

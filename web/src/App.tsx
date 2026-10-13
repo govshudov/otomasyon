@@ -5,20 +5,15 @@ import type { TwinMap } from './scene/types'
 import { useTwin } from './data/store'
 import { InfoCard } from './ui/InfoCard'
 import { Timeline } from './ui/Timeline'
-import { StationPicker, type StationInfo } from './ui/StationPicker'
-import { Schema2D } from './ui/Schema2D'
+import type { StationInfo } from './ui/StationPicker'
 import { SensorLabels } from './ui/SensorLabels'
 import { computeHealth } from './data/health'
 import { fetchStationConfig, fetchStations, niagaraUser, NIAGARA } from './data/niagara'
-import { groupsOf, levelSev, pumpView, runStateOf, type StationCfg } from './data/pump'
+import { enjamAdy, groupsOf, levelSev, pumpView, runStateOf, type StationCfg } from './data/pump'
 import { Header, Sidebar, type Page } from './ui/Shell'
 import { PumpBoard } from './ui/PumpBoard'
-import { PumpCharts } from './ui/PumpCharts'
 import { AlarmsPage, ChartsPage, ReportsPage } from './ui/Pages'
 import { KartaPage } from './ui/Karta'
-import { beketAdy } from './ui/labels'
-
-type View = '3d' | '2d'
 
 /** Son açılan sayfa/görünüm hatırlanır (kiosk yeniden başlayınca aynı ekran gelsin). */
 function saved<T extends string>(key: string, ok: (v: string) => boolean, def: T): T {
@@ -35,12 +30,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [sel, setSel] = useState<{ equipment: string | null; component: string | null }>({ equipment: null, component: null })
   const [explode, setExplode] = useState(0)
-  const [view, setView] = useState<View>(() => saved('twin.view', (v) => v === '2d' || v === '3d', '3d'))
-  const [page, setPageRaw] = useState<Page>(() => saved<Page>('twin.page', (v) => /^(map|overview|karta|alarms|reports|charts|group:.+)$/.test(v), 'overview'))
+  const [page, setPageRaw] = useState<Page>(() => saved<Page>('twin.page', (v) => /^(map|overview|karta|alarms|reports|charts)$/.test(v), 'overview'))
   const [mini, setMini] = useState(() => saved<string>('twin.side', (v) => v === 'mini' || v === 'full', 'full') === 'mini')
   const [cfg, setCfg] = useState<StationCfg | null>(null)
   const [user, setUser] = useState(NIAGARA ? '…' : 'ýerli ulanyjy')
-  const [charts, setCharts] = useState<{ id: string; label: string } | null>(null)
 
   // Bina: 'kesik' = çatı ve kameraya bakan duvarlar gizli (pompalar görünür),
   // 'doly' = bina dışarıdan tam. Model yeniden yüklenince de uygulanır.
@@ -54,14 +47,12 @@ export default function App() {
   useEffect(() => { store('twin.side', mini ? 'mini' : 'full') }, [mini])
   useEffect(() => { niagaraUser().then((u) => u && setUser(u)) }, [])
 
-  const onMap = page === 'map'
-  const is3d = onMap && view === '3d'
+  const is3d = page === 'map'
 
   // 3D yalnız "Sanly ekiz" sayfasında çizilir — diğer sayfalarda GPU boşta kalsın
   useEffect(() => {
     sceneRef.current?.setPaused(!is3d)
-    store('twin.view', view)
-  }, [is3d, view, twin])
+  }, [is3d, twin])
 
   // Sol menü 3D'nin üstünde duruyor: sahnenin merkezi görünür alana kaysın
   useEffect(() => {
@@ -121,6 +112,8 @@ export default function App() {
       },
       onReady: (merged, tm) => {
         mergedRef.current = merged
+        // Ekipman adları arayüze buradan girer: her yerde aynı ad (pump.ts enjamAdy)
+        for (const e of Object.values(tm.equipment)) e.label = enjamAdy(e.label)
         setTwin(tm); setTwinMap(tm)
         setHasBuilding(merged.components.some((c) => c.faceN !== null))
       },
@@ -265,7 +258,7 @@ export default function App() {
   const frame = useCallback((node: string, margin = 2.4) => sceneRef.current?.frameNode(node, margin), [])
 
   const crumbs = useMemo(() => {
-    const out: { label: string; node: string | null }[] = [{ label: station ? beketAdy(station.id) : 'Beket', node: null }]
+    const out: { label: string; node: string | null }[] = [{ label: station?.name ?? 'Beket', node: null }]
     if (sel.equipment && twin?.equipment[sel.equipment]) {
       out.push({ label: twin.equipment[sel.equipment].label, node: sel.equipment })
       if (sel.component) out.push({ label: sel.component.replace(/__/g, ' '), node: `${sel.equipment}__${sel.component}` })
@@ -275,57 +268,40 @@ export default function App() {
     return out
   }, [sel, twin, station])
 
-  // 2D şemadan / duýduryş sayfasından bir ekipmana: 3D'ye geç, kartını aç, ona uç.
-  const open3D = useCallback((equipment: string) => {
-    setPage('map'); setView('3d')
-    setSel({ equipment, component: null }); setExplode(0)
-    requestAnimationFrame(() => frame(equipment, 2.6))
-  }, [frame, setPage])
-
-  const openCharts = useCallback((id: string, label: string) => setCharts({ id, label }), [])
-  const groupPage = page.startsWith('group:') ? groups.find((g) => `group:${g.id}` === page) : undefined
-
+  // Her ekran yalnız soldaki menüden açılır: sayfalar arası kısayol (alarmdan 3D'ye,
+  // karttan grafiğe, başlıktan duýduryşlara) yok — aynı yere tek yol.
   return (
     <div className={`app${mini ? ' sideMini' : ''}`}>
       <canvas ref={canvasRef} />
 
-      <Header sid={sid || '—'} user={user} onMenu={() => setMini((m) => !m)} onAlarms={() => setPage('alarms')} />
-      <Sidebar page={page} setPage={setPage} groups={groups} collapsed={mini} />
+      <Header sid={sid} user={user} onMenu={() => setMini((m) => !m)}
+              onStation={(s) => { switchStation(s.id); setStation(s) }} />
+      <Sidebar page={page} setPage={setPage} collapsed={mini} />
 
-      {onMap && (
+      {is3d && (
         <>
-          {is3d && !twin && !error && <div className="loading main">model ýüklenýär…</div>}
+          {!twin && !error && <div className="loading main">model ýüklenýär…</div>}
           {error && <div className="loading main bad">ýükleme ýalňyşlygy: {error}</div>}
           <div className="subbar">
-            <div className="seg" role="tablist">
-              <button className={is3d ? 'on' : ''} onClick={() => setView('3d')}>Sanly ekiz</button>
-              <button className={!is3d ? 'on' : ''} onClick={() => setView('2d')}>2D shema</button>
-            </div>
-            {station && (
-              <StationPicker current={station.id}
-                             onSelect={(s) => { switchStation(s.id); setStation(s) }} />
-            )}
-            {is3d && (
-              <nav className="crumbs">
-                {crumbs.map((c, i) => (
-                  <span key={i}>
-                    {i > 0 && <i>›</i>}
-                    <button className={i === crumbs.length - 1 ? 'on' : ''}
-                            onClick={() => {
-                              if (!c.node) { setSel({ equipment: null, component: null }); setExplode(0); sceneRef.current?.frameAll() }
-                              else { setSel((s) => i === 1 ? { equipment: s.equipment, component: null } : s); frame(c.node) }
-                            }}>
-                      {c.label}
-                    </button>
-                  </span>
-                ))}
-              </nav>
-            )}
+            <nav className="crumbs">
+              {crumbs.map((c, i) => (
+                <span key={i}>
+                  {i > 0 && <i>›</i>}
+                  <button className={i === crumbs.length - 1 ? 'on' : ''}
+                          onClick={() => {
+                            if (!c.node) { setSel({ equipment: null, component: null }); setExplode(0); sceneRef.current?.frameAll() }
+                            else { setSel((s) => i === 1 ? { equipment: s.equipment, component: null } : s); frame(c.node) }
+                          }}>
+                    {c.label}
+                  </button>
+                </span>
+              ))}
+            </nav>
             <div className="spacer" />
-            {is3d && historyEnabled && !playback.active && (
+            {historyEnabled && !playback.active && (
               <button onClick={() => enterPlayback()}>Taryhy oýnat</button>
             )}
-            {is3d && hasBuilding && (
+            {hasBuilding && (
               <button className={buildingFull ? 'on' : ''} onClick={() => {
                 // Bina kapanınca pompa görünmez; kartı açık kalırsa görünmeyen
                 // pompanın bilgisi ortada asılı kalıyordu.
@@ -337,33 +313,26 @@ export default function App() {
             )}
           </div>
 
-          {is3d && <Timeline />}
-          {is3d && twin && <SensorLabels twin={twin} register={registerLabels} />}
+          <Timeline />
+          {twin && <SensorLabels twin={twin} register={registerLabels} />}
 
-          {is3d && cardEq && twin && sel.equipment && (
+          {cardEq && twin && sel.equipment && (
             <InfoCard key={sel.equipment} station={twin.station} id={sel.equipment} eq={cardEq}
-                      cardRef={cardRef} onClose={closeCard}
-                      onCharts={() => openCharts(sel.equipment!, cardEq.label)} />
+                      cardRef={cardRef} onClose={closeCard} />
           )}
-
-          {!is3d && station && <div className="mainArea"><Schema2D twin={twin} station={station} /></div>}
         </>
       )}
 
-      {!onMap && (
+      {!is3d && (
         <main className="mainArea">
           {!cfg && page !== 'karta' && page !== 'alarms' && <div className="loading">beket maglumaty ýüklenýär…</div>}
-          {cfg && page === 'overview' && <PumpBoard sid={sid} groups={groups} onOpen={openCharts} />}
-          {cfg && groupPage && <PumpBoard sid={sid} groups={[groupPage]} onOpen={openCharts} />}
-          {cfg && page.startsWith('group:') && !groupPage && <PumpBoard sid={sid} groups={groups} onOpen={openCharts} />}
+          {cfg && page === 'overview' && <PumpBoard sid={sid} groups={groups} />}
           {page === 'karta' && <KartaPage />}
-          {page === 'alarms' && <AlarmsPage onLocate={open3D} />}
+          {page === 'alarms' && <AlarmsPage />}
           {cfg && page === 'reports' && <ReportsPage sid={sid} groups={groups} />}
-          {cfg && page === 'charts' && <ChartsPage sid={sid} groups={groups} onPump={openCharts} />}
+          {cfg && page === 'charts' && <ChartsPage sid={sid} groups={groups} />}
         </main>
       )}
-
-      {charts && sid && <PumpCharts sid={sid} id={charts.id} label={charts.label} onClose={() => setCharts(null)} />}
     </div>
   )
 }

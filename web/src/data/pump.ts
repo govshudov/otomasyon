@@ -84,10 +84,10 @@ export function groupsOf(cfg: StationCfg | null): Group[] {
   for (const e of cfg.equipment) if (e.type === 'level_sensor' && e.source_pump) pumpLevel.set(e.source_pump, e.id)
   return toplumlarOf(cfg.equipment).map((t, i) => ({
     id: t.headers[0].id, no: i + 1, name: `Toplum ${i + 1}`,
-    header: t.headers.map((h) => h.label ?? h.id).join(' · '),
-    headers: t.headers.map((h) => ({ id: h.id, label: h.label ?? h.id })),
+    header: t.headers.map((h) => enjamAdy(h.label ?? h.id)).join(' · '),
+    headers: t.headers.map((h) => ({ id: h.id, label: enjamAdy(h.label ?? h.id) })),
     pumps: t.pumps.map((p) => ({
-      id: p.id, label: p.label ?? p.id,
+      id: p.id, label: enjamAdy(p.label ?? p.id),
       motorKw: Number(p.params?.motor_kw ?? 160),
       ratedA: Number(p.params?.rated_current_a ?? 280),
       ratedQ: Number(p.params?.rated_flow_m3h ?? 900),
@@ -95,13 +95,20 @@ export function groupsOf(cfg: StationCfg | null): Group[] {
   }))
 }
 
-/** "T-1 N-3" → "N-3" (kısa ad; toplum zaten başlıkta yazıyor) */
-export const shortLabel = (label: string) => label.split(' ').pop() ?? label
-
-/** "T-1 N-3" → "NASOS 3" (nasos kartının başlığı) */
-export function nasosLabel(label: string): string {
-  const m = /N-?(\d+)\s*$/i.exec(label)
-  return m ? `NASOS ${Number(m[1])}` : label.toUpperCase()
+/**
+ * Ekipmanın ekranda görünen TEK adı. Konfigürasyondaki kısaltmalar aynı nasosu üç farklı
+ * adla gösteriyordu ("T-1 N-1", "NASOS 1", "PMP-01"); her yerde bu çeviri kullanılır:
+ *   "T-1 N-1" → "Nasos 1" · "T-3 esasy turba" → "Esasy turba 3" · "N-2 basyş klapany" → "Nasos 2 basyş klapany"
+ * Nasos numarası istasyon içinde tekdir, toplum adda tutulmaz: 1 Maý'da T-3 turbası Toplum 1'e
+ * bağlı, "T-" öneki toplum numarası sanılıp yanıltıyordu. Kaynak adlar (stations/*.json,
+ * twin-map, Niagara) değişmez; çeviri adların arayüze girdiği yerde yapılır (toplumlar,
+ * twin-map, duýduryş metinleri).
+ */
+export function enjamAdy(s: string): string {
+  return s
+    .replace(/\bT-\d+\s+N-(\d+)\b/g, 'Nasos $1')
+    .replace(/\bT-(\d+)\s+esasy turba\b/g, 'Esasy turba $1')
+    .replace(/\bN-(\d+)\b/g, 'Nasos $1')
 }
 
 // --------------------------------------------------------------------------- //

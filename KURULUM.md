@@ -206,7 +206,7 @@ Ya da üçü birden: `make hazirla AYAR=ayarlar/1-may.json`.
 - 3D önizleme `build/ps-04.png` olarak çıkar; açıp kontrol edin.
 - Bina, toprak, debimetre kuyusu ve makine dairesi Magtymguly'nin (PS-21 TX çizimi) ölçüleriyle üretilir. Bina genişliği nasos sayısından, derinliği borulardan kendiliğinden hesaplanır.
 - Gerçek ölçüler için `stations/ps-04.json` → `geometry` bölümü çizime göre düzeltilir. Sonra `make model` ve `make paket` tekrarlanır. Ayrıntı: `docs/PROJE-DURUMU.md`.
-- Giriş kapağının yanları beton perde (su yalnız kapak ve ızgara panellerinin durduğu yerden geçer; panellerle şevli duvar arası kapanır): `geometry` → `bridge` → `"gate_wall_t": 0.5` (perde kalınlığı, m). Yazılmazsa panellerin yanları açık kalır (Magtymguly'deki gibi). Ýaşyldepe'de açık.
+- Giriş kapağının yanları beton perde (su yalnız kapak ve ızgara panellerinin durduğu yerden geçer; panellerle şevli duvar arası kapanır): `geometry` → `bridge` → `"gate_wall_t": 0.5` (perde kalınlığı, m). Yazılmazsa panellerin yanları açık kalır. Magtymguly, 1 Maý ve Ýaşyldepe'de açık.
 - Geometriyi şablondan baştan almak için: `make istasyon AYAR=… GEOMETRI=1`. Elle yapılan geometri düzeltmeleri silinir; havuz seviyeleri ve ek ekipman korunur.
 - Hücre seviye datçikleri (LT-01…) üretilmez. Varsa `stations/ps-04.json`'a elle eklenir; `stations/ps-01.json`'daki `level_sensor` örneklerine bakın.
 

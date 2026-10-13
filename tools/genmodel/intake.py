@@ -14,7 +14,7 @@ from prim import Builder
 
 GAP = 0.18            # iki panel arası boşluk
 RACK_W = 2.0          # ızgara panelinin genişliği
-TOWER = 2.3           # kafes kulesinin döşeme üstündeki yüksekliği
+TOWER = 1.5           # kafes kulesinin köprü üstündeki yüksekliği (2,3 m fazla yüksek görünüyordu)
 
 
 def _panel_y(br: dict) -> float:
@@ -57,6 +57,24 @@ def _tower(b: Builder, x: float, y: float, w: float, z0: float, z1: float,
         b.box((0.05, 0.05, TOWER), (x + fx * w, y, z1 - TOWER / 2.0))
 
 
+def _drive(b: Builder, x: float, y: float, z: float, side: int) -> None:
+    """Elektrikli kaldırma ünitesi (kulenin üstünde): taban plakası, redüktör, yatay motor
+    (fan kapağı + klemens kutusu) ve elle açma için el çarkı. Motor `side` yönünde (+1 sağ, -1 sol)
+    dışa bakar, el çarkı içe. Ünitenin ekseni x'te — kapağın vida mili buradan iner."""
+    b.box((0.70, 0.50, 0.06), (x, y, z + 0.03))                                      # taban plakası
+    zc = z + 0.06 + 0.17
+    b.box((0.42, 0.40, 0.34), (x, y, zc))                                            # redüktör
+    mx = x + side * (0.21 + 0.25)
+    b.cylinder(0.15, 0.50, seg=16, loc=(mx, y, zc), axis='X')                        # motor
+    b.cylinder(0.16, 0.10, seg=16, loc=(mx + side * 0.30, y, zc), axis='X')          # fan kapağı
+    b.box((0.14, 0.12, 0.10), (mx, y, zc + 0.15 + 0.05))                             # klemens kutusu
+    wx = x - side * (0.21 + 0.12)
+    b.cylinder(0.04, 0.16, seg=10, loc=(x - side * (0.21 + 0.06), y, zc), axis='X')  # el çarkı mili
+    b.tube(0.22, 0.18, 0.04, seg=20, loc=(wx, y, zc), axis='X')                      # el çarkı
+    b.box((0.03, 0.38, 0.03), (wx, y, zc))                                           # çark kolları
+    b.box((0.03, 0.03, 0.38), (wx, y, zc))
+
+
 def slide_gate(reg, mats, eq: dict, g: dict, br: dict) -> None:
     """Sürgülü kapak: kanat + kafes çerçeve + kaldırma mekanizması.
 
@@ -87,13 +105,12 @@ def slide_gate(reg, mats, eq: dict, g: dict, br: dict) -> None:
     ob.data.materials.append(mats["MACHINE"])
 
     ho = Builder()
-    ho.box((0.55, 0.42, 0.30), (x, y, top + 0.15))                  # redüktör
-    ho.cylinder(0.10, 0.45, seg=10, loc=(x + 0.45, y, top + 0.15), axis='X')   # motor
-    ho.cylinder(0.04, top - (z0 + gh), seg=8,                       # vida mili
-                loc=(x, y, (top + z0 + gh) / 2.0))
+    _drive(ho, x, y, top, side=-1)                                  # motor dışa (sola)
+    ho.cylinder(0.04, top + 0.06 - (z0 + gh), seg=8,               # vida mili: kanattan redüktöre
+                loc=(x, y, (top + 0.06 + z0 + gh) / 2.0))
     ob = ho.finish(f"__hoist_{eid}")
     reg.equipment(ob, eid, "GATE__HOIST")
-    ob.data.materials.append(mats["DARK"])
+    ob.data.materials.append(mats["MACHINE"])          # kapağın gövdesiyle tek renk (siyah değil)
 
 
 def level_sensor(reg, mats, eq: dict, x: float, g: dict, cg: dict) -> None:
@@ -146,7 +163,7 @@ def trash_rack(reg, mats, eq: dict, g: dict, br: dict, w: float = RACK_W,
     for j in range(4):                                    # yatay bağlantı lamaları
         bars.box((w, 0.08, 0.06), (x, y, z0 + h * (0.06 + 0.3 * j)))
     _tower(bars, x, y, w, z0, top)
-    bars.box((0.6, 0.45, 0.35), (x, y, top + 0.17))       # tarak tahrik ünitesi
+    _drive(bars, x, y, top, side=1)                       # tarak tahrik ünitesi, motor dışa (sağa)
     ob = bars.finish(f"__rack_{eid}")
     reg.equipment(ob, eid, "RACK__BARS")
     ob.data.materials.append(mats["MACHINE"])
@@ -159,7 +176,7 @@ def trash_rack(reg, mats, eq: dict, g: dict, br: dict, w: float = RACK_W,
         cl.box((0.03, 0.14, 0.24), (x - w / 2.0 + w * (i + 0.5) / n, y - 0.08, zp - 0.18))
     ob = cl.finish(f"__cleaner_{eid}")
     reg.equipment(ob, eid, "RACK__CLEANER")
-    ob.data.materials.append(mats["DARK"])
+    ob.data.materials.append(mats["MACHINE"])          # ızgarayla tek renk (siyah değil)
     # Eksen ve strok modelin içine gömülüyor; frontend hangi parçanın nasıl
     # hareket ettiğini bilmiyor. Negatif strok: tarak AŞAĞI iner.
     ob["travel_axis"] = "Z"

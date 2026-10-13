@@ -6,7 +6,7 @@ import type { TwinMap } from '../scene/types'
 import { ChartBoard, type ChartSpec } from './ChartBoard'
 
 /**
- * Bir nasosun 8 grafiği (nasosa dokununca açılır):
+ * Bir nasosun 8 grafiği (Grafikler sayfasında nasos seçilince):
  * temperatura · ýagdaýy · duýduryş · işlän wagty · basyş · ýygylyk · tok · kuwwat.
  * Hepsi aynı zaman aralığında; bir grafiğe dokununca büyür.
  */
@@ -85,16 +85,9 @@ export function buildPumpCharts(sid: string, id: string, twin: TwinMap | null, d
   ]
 }
 
-export function PumpCharts({ sid, id, label, onClose }: { sid: string; id: string; label: string; onClose: () => void }) {
+export function PumpChartBoard({ sid, id, label }: { sid: string; id: string; label: string }) {
   const twin = useTwin((s) => s.twinMap)
   const tags = useMemo(() => pumpTags(sid, id), [sid, id])
   const build = useCallback((d: Record<string, Bucket[]>) => buildPumpCharts(sid, id, twin, d), [sid, id, twin])
-  return (
-    <div className="modal" onClick={onClose}>
-      <div className="modalBox" onClick={(e) => e.stopPropagation()}>
-        <ChartBoard title={`${label} · grafikler`} tags={tags} build={build} onClose={onClose}
-                    fileName={`${sid}_${id}`} />
-      </div>
-    </div>
-  )
+  return <ChartBoard title={label} tags={tags} build={build} fileName={`${sid}_${id}`} />
 }

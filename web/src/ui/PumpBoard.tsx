@@ -6,15 +6,14 @@ import { PumpCard } from './PumpCard'
 import { FlowCircle, LevelTank, PowerGauge } from './Gauges'
 
 /**
- * Umumy syn / Toplum sayfası: her toplum bir sıra nasos kartı, altta
- * beketiň çubuğu (her çıkış borusunun kuwwaty, akymy, jemi göwrümi,
- * basyşy + howuzyň suw derejesi).
+ * Umumy syn: her toplum bir sıra nasos kartı, altta beketiň çubuğu (her toplumun
+ * ayrı kutusu: kuwwat, her çıkış borusunun akymy, jemi göwrümi, basyşy + howuzyň
+ * suw derejesi, girýän akymy, göwrümi). Toplumlar ayrı sayfa değil — hepsi burada.
  */
 
-export function PumpBoard({ sid, groups, onOpen }: {
+export function PumpBoard({ sid, groups }: {
   sid: string
   groups: Group[]
-  onOpen: (pumpId: string, label: string) => void
 }) {
   const views = usePumpViews(sid, groups)
   const pressTags = useMemo(() => groups.flatMap((g) => g.pumps.map((p) => `${sid}.${p.id}.discharge_press_bar`)), [sid, groups])
@@ -32,12 +31,11 @@ export function PumpBoard({ sid, groups, onOpen }: {
                 <b>{g.name}</b><span>{g.header}</span>
                 <span className="grpRun">{run} / {g.pumps.length} işleýär</span>
               </div>
-              {/* Kartlar dikey: genişlik sınırlı, boy içeriğe göre uzar */}
-              <div className="cards" style={{ gridTemplateColumns: `repeat(${Math.max(g.pumps.length, 1)}, minmax(220px, 360px))` }}>
+              {/* Kartlar dikey, sabit genişlik; satıra sığmayan alt satıra geçer */}
+              <div className="cards">
                 {g.pumps.map((p) => views[p.id] && (
                   <PumpCard key={p.id} p={views[p.id]} ratedA={p.ratedA}
-                            press={recent[`${sid}.${p.id}.discharge_press_bar`]}
-                            onOpen={() => onOpen(p.id, p.label)} />
+                            press={recent[`${sid}.${p.id}.discharge_press_bar`]} />
                 ))}
               </div>
             </section>
@@ -100,6 +98,12 @@ export function StationBar({ sid, groups }: { sid: string; groups: Group[] }) {
           <div className="sbCell stack">
             <div className={`sbVal ${lsev === 'fault' ? 'bad' : lsev === 'warn' ? 'mid' : ''}`}>{fmtN(lvl, 2)}<small>m</small></div>
             <div className={`lvlState ${lsev}`}>{lsev === 'fault' ? 'Näsazlyk' : lsev === 'warn' ? 'Duýduryş' : 'Kadaly'}</div>
+          </div>
+          <div className="sbCell stack">
+            <div className="sbLab">Girýän akym</div>
+            <div className="sbVal">{fmtN(n(LEVEL_EQ, 'inflow_m3h'), 1)}<small>m³/sag</small></div>
+            <div className="sbLab">Göwrümi</div>
+            <div className="sbVal">{fmtN(n(LEVEL_EQ, 'volume_m3'), 0)}<small>m³</small></div>
           </div>
         </div>
       </div>

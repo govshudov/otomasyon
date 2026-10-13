@@ -191,20 +191,20 @@
           "camera": {
             "target": [
               1.09,
-              4.8725,
+              4.54,
               22.47
             ],
-            "radius": 5.005
+            "radius": 4.683
           }
         }
       },
       "camera": {
         "target": [
           1.09,
-          4.8725,
-          22.5025
+          4.54,
+          22.49
         ],
-        "radius": 5.006
+        "radius": 4.684
       }
     },
     "GATE-01": {
@@ -303,11 +303,11 @@
           },
           "camera": {
             "target": [
-              -0.89,
-              6.35,
+              -1.32,
+              6.04,
               22.47
             ],
-            "radius": 3.39
+            "radius": 3.105
           }
         },
         "GATE__FRAME": {
@@ -317,10 +317,10 @@
           "camera": {
             "target": [
               -1.09,
-              4.7,
+              4.3,
               22.47
             ],
-            "radius": 4.833
+            "radius": 4.445
           }
         },
         "GATE__LEAF": {
@@ -340,10 +340,10 @@
       "camera": {
         "target": [
           -1.09,
-          4.85,
+          4.54,
           22.47
         ],
-        "radius": 4.982
+        "radius": 4.683
       }
     },
     "HDR-01": {
@@ -709,7 +709,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-01.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -785,7 +785,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-01.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -1061,21 +1061,21 @@
           "signals": {},
           "camera": {
             "target": [
-              -18.61,
-              4.855,
-              -5.965
+              -18.5795,
+              4.1236,
+              -5.0122
             ],
-            "radius": 7.671
+            "radius": 8.687
           }
         }
       },
       "camera": {
         "target": [
-          -18.7877,
-          5.0214,
-          -9.0885
+          -18.7572,
+          4.29,
+          -8.1357
         ],
-        "radius": 10.294
+        "radius": 11.349
       }
     },
     "PMP-02": {
@@ -1093,7 +1093,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-02.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -1169,7 +1169,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-02.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -1445,21 +1445,21 @@
           "signals": {},
           "camera": {
             "target": [
-              -15.39,
-              4.855,
-              -6.765
+              -15.3595,
+              4.1236,
+              -5.8122
             ],
-            "radius": 7.978
+            "radius": 9.042
           }
         }
       },
       "camera": {
         "target": [
-          -16.5527,
-          5.0214,
-          -9.0885
+          -16.5222,
+          4.29,
+          -8.1357
         ],
-        "radius": 10.48
+        "radius": 11.519
       }
     },
     "PMP-03": {
@@ -1477,7 +1477,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-03.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -1553,7 +1553,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-03.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -1829,21 +1829,21 @@
           "signals": {},
           "camera": {
             "target": [
-              -12.17,
-              4.855,
-              -5.965
+              -12.1395,
+              4.1236,
+              -5.0122
             ],
-            "radius": 7.073
+            "radius": 8.159
           }
         }
       },
       "camera": {
         "target": [
-          -12.3477,
-          5.0214,
-          -9.0885
+          -12.3172,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.835
+        "radius": 10.931
       }
     },
     "PMP-04": {
@@ -1861,7 +1861,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-04.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -1937,7 +1937,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-04.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -2213,21 +2213,21 @@
           "signals": {},
           "camera": {
             "target": [
-              -8.35,
-              4.855,
-              -6.765
+              -8.3195,
+              4.1236,
+              -5.8122
             ],
-            "radius": 7.304
+            "radius": 8.447
           }
         }
       },
       "camera": {
         "target": [
-          -9.5127,
-          5.0214,
-          -9.0885
+          -9.4822,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.769
+        "radius": 10.871
       }
     },
     "PMP-05": {
@@ -2245,7 +2245,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-05.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -2321,7 +2321,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-05.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -2597,21 +2597,21 @@
           "signals": {},
           "camera": {
             "target": [
-              -5.13,
-              4.855,
-              -5.965
+              -5.0995,
+              4.1236,
+              -5.0122
             ],
-            "radius": 6.463
+            "radius": 7.63
           }
         }
       },
       "camera": {
         "target": [
-          -5.3077,
-          5.0214,
-          -9.0885
+          -5.2772,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.373
+        "radius": 10.512
       }
     },
     "PMP-06": {
@@ -2629,7 +2629,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-06.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -2705,7 +2705,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-06.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -2981,21 +2981,21 @@
           "signals": {},
           "camera": {
             "target": [
-              -1.91,
-              4.855,
-              -6.765
+              -1.8795,
+              4.1236,
+              -5.8122
             ],
-            "radius": 7.068
+            "radius": 8.239
           }
         }
       },
       "camera": {
         "target": [
-          -3.0727,
-          5.0214,
-          -9.0885
+          -3.0422,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.452
+        "radius": 10.584
       }
     },
     "PMP-07": {
@@ -3013,7 +3013,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-07.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -3089,7 +3089,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-07.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -3365,21 +3365,21 @@
           "signals": {},
           "camera": {
             "target": [
-              1.91,
-              4.855,
-              -5.965
+              1.8795,
+              4.1236,
+              -5.0122
             ],
-            "radius": 6.357
+            "radius": 7.538
           }
         }
       },
       "camera": {
         "target": [
-          3.0727,
-          5.0214,
-          -9.0885
+          3.0422,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.452
+        "radius": 10.584
       }
     },
     "PMP-08": {
@@ -3397,7 +3397,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-08.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -3473,7 +3473,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-08.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -3749,21 +3749,21 @@
           "signals": {},
           "camera": {
             "target": [
-              5.13,
-              4.855,
-              -6.765
+              5.0995,
+              4.1236,
+              -5.8122
             ],
-            "radius": 7.163
+            "radius": 8.324
           }
         }
       },
       "camera": {
         "target": [
-          5.3077,
-          5.0214,
-          -9.0885
+          5.2772,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.373
+        "radius": 10.512
       }
     },
     "PMP-09": {
@@ -3781,7 +3781,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-09.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -3857,7 +3857,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-09.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -4133,21 +4133,21 @@
           "signals": {},
           "camera": {
             "target": [
-              8.35,
-              4.855,
-              -5.965
+              8.3195,
+              4.1236,
+              -5.0122
             ],
-            "radius": 6.619
+            "radius": 7.764
           }
         }
       },
       "camera": {
         "target": [
-          9.5127,
-          5.0214,
-          -9.0885
+          9.4822,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.769
+        "radius": 10.871
       }
     },
     "PMP-10": {
@@ -4165,7 +4165,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-10.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -4241,7 +4241,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-10.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -4517,21 +4517,21 @@
           "signals": {},
           "camera": {
             "target": [
-              12.17,
-              4.855,
-              -6.765
+              12.1395,
+              4.1236,
+              -5.8122
             ],
-            "radius": 7.718
+            "radius": 8.811
           }
         }
       },
       "camera": {
         "target": [
-          12.3477,
-          5.0214,
-          -9.0885
+          12.3172,
+          4.29,
+          -8.1357
         ],
-        "radius": 9.835
+        "radius": 10.931
       }
     },
     "PMP-11": {
@@ -4549,7 +4549,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-11.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -4625,7 +4625,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-11.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -4901,21 +4901,21 @@
           "signals": {},
           "camera": {
             "target": [
-              15.39,
-              4.855,
-              -5.965
+              15.3595,
+              4.1236,
+              -5.0122
             ],
-            "radius": 7.355
+            "radius": 8.407
           }
         }
       },
       "camera": {
         "target": [
-          16.5527,
-          5.0214,
-          -9.0885
+          16.5222,
+          4.29,
+          -8.1357
         ],
-        "radius": 10.48
+        "radius": 11.519
       }
     },
     "PMP-12": {
@@ -4933,7 +4933,7 @@
         },
         "run_pano": {
           "tag": "PS-02.PMP-12.run_pano",
-          "label": "Panoda işleýär",
+          "label": "Transformatorda işleýär",
           "unit": null,
           "type": "bool",
           "range": null,
@@ -5009,7 +5009,7 @@
         },
         "hours_pano": {
           "tag": "PS-02.PMP-12.hours_pano",
-          "label": "Panoda işlän wagty",
+          "label": "Transformatorda işlän wagty",
           "unit": "sag",
           "type": "float",
           "range": [
@@ -5285,21 +5285,21 @@
           "signals": {},
           "camera": {
             "target": [
-              18.61,
-              4.855,
-              -6.765
+              18.5795,
+              4.1236,
+              -5.8122
             ],
-            "radius": 8.27
+            "radius": 9.303
           }
         }
       },
       "camera": {
         "target": [
-          18.7877,
-          5.0214,
-          -9.0885
+          18.7572,
+          4.29,
+          -8.1357
         ],
-        "radius": 10.294
+        "radius": 11.349
       }
     },
     "VLV-01": {
@@ -5358,11 +5358,11 @@
           },
           "camera": {
             "target": [
-              -22.7,
-              8.0199,
+              -22.53,
+              8.1512,
               -15.39
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5381,11 +5381,11 @@
       },
       "camera": {
         "target": [
-          -22.7,
-          7.73,
+          -22.6028,
+          7.8612,
           -15.39
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-02": {
@@ -5444,11 +5444,11 @@
           },
           "camera": {
             "target": [
-              -18.9,
-              8.0199,
+              -18.73,
+              8.1512,
               -16.99
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5467,11 +5467,11 @@
       },
       "camera": {
         "target": [
-          -18.9,
-          7.73,
+          -18.8028,
+          7.8612,
           -16.99
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-03": {
@@ -5530,11 +5530,11 @@
           },
           "camera": {
             "target": [
-              -15.1,
-              8.0199,
+              -14.93,
+              8.1512,
               -15.39
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5553,11 +5553,11 @@
       },
       "camera": {
         "target": [
-          -15.1,
-          7.73,
+          -15.0028,
+          7.8612,
           -15.39
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-04": {
@@ -5616,11 +5616,11 @@
           },
           "camera": {
             "target": [
-              -10.1,
-              8.0199,
+              -9.93,
+              8.1512,
               -16.99
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5639,11 +5639,11 @@
       },
       "camera": {
         "target": [
-          -10.1,
-          7.73,
+          -10.0028,
+          7.8612,
           -16.99
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-05": {
@@ -5702,11 +5702,11 @@
           },
           "camera": {
             "target": [
-              -6.3,
-              8.0199,
+              -6.13,
+              8.1512,
               -15.39
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5725,11 +5725,11 @@
       },
       "camera": {
         "target": [
-          -6.3,
-          7.73,
+          -6.2028,
+          7.8612,
           -15.39
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-06": {
@@ -5788,11 +5788,11 @@
           },
           "camera": {
             "target": [
-              -2.5,
-              8.0199,
+              -2.33,
+              8.1512,
               -16.99
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5811,11 +5811,11 @@
       },
       "camera": {
         "target": [
-          -2.5,
-          7.73,
+          -2.4028,
+          7.8612,
           -16.99
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-07": {
@@ -5874,11 +5874,11 @@
           },
           "camera": {
             "target": [
-              2.5,
-              8.0199,
+              2.67,
+              8.1512,
               -15.39
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5897,11 +5897,11 @@
       },
       "camera": {
         "target": [
-          2.5,
-          7.73,
+          2.5972,
+          7.8612,
           -15.39
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-08": {
@@ -5960,11 +5960,11 @@
           },
           "camera": {
             "target": [
-              6.3,
-              8.0199,
+              6.47,
+              8.1512,
               -16.99
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -5983,11 +5983,11 @@
       },
       "camera": {
         "target": [
-          6.3,
-          7.73,
+          6.3972,
+          7.8612,
           -16.99
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-09": {
@@ -6046,11 +6046,11 @@
           },
           "camera": {
             "target": [
-              10.1,
-              8.0199,
+              10.27,
+              8.1512,
               -15.39
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -6069,11 +6069,11 @@
       },
       "camera": {
         "target": [
-          10.1,
-          7.73,
+          10.1972,
+          7.8612,
           -15.39
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-10": {
@@ -6132,11 +6132,11 @@
           },
           "camera": {
             "target": [
-              15.1,
-              8.0199,
+              15.27,
+              8.1512,
               -16.99
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -6155,11 +6155,11 @@
       },
       "camera": {
         "target": [
-          15.1,
-          7.73,
+          15.1972,
+          7.8612,
           -16.99
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-11": {
@@ -6218,11 +6218,11 @@
           },
           "camera": {
             "target": [
-              18.9,
-              8.0199,
+              19.07,
+              8.1512,
               -15.39
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -6241,11 +6241,11 @@
       },
       "camera": {
         "target": [
-          18.9,
-          7.73,
+          18.9972,
+          7.8612,
           -15.39
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "VLV-12": {
@@ -6304,11 +6304,11 @@
           },
           "camera": {
             "target": [
-              22.7,
-              8.0199,
+              22.87,
+              8.1512,
               -16.99
             ],
-            "radius": 0.391
+            "radius": 0.465
           }
         },
         "VLV__BODY": {
@@ -6327,11 +6327,11 @@
       },
       "camera": {
         "target": [
-          22.7,
-          7.73,
+          22.7972,
+          7.8612,
           -16.99
         ],
-        "radius": 0.609
+        "radius": 0.751
       }
     },
     "NRV-01": {
@@ -7018,7 +7018,7 @@
     ]
   },
   "budget": {
-    "tris": 64438,
+    "tris": 62058,
     "objects": 119,
     "materials": 6
   }

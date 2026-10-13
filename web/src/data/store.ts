@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { TwinMap } from '../scene/types'
 import { NIAGARA, NiagaraSource } from './niagara'
 import { recordValues } from './history'
+import { enjamAdy } from './pump'
 
 /**
  * Canlı veri deposu — API'nin WebSocket'ine bağlanır.
@@ -19,6 +20,9 @@ export interface Alarm {
   value: number | boolean | null
   ts_raised: number; ts_acked: number; ts_cleared: number
 }
+
+/** Duýduryş metni ekipman adıyla başlar ("T-1 N-1 — …"): ekrandaki adla aynı olsun */
+const adlandir = (a: Alarm): Alarm => ({ ...a, msg: enjamAdy(a.msg) })
 
 export interface Playback {
   active: boolean
@@ -138,7 +142,7 @@ export const useTwin = create<TwinState>((set, get) => ({
           ...(get().playback.active ? {} : { values: live.values, status: live.status }),
           health: m.health ?? {},
           componentHealth: m.component_health ?? {},
-          alarms: m.alarms ?? [],
+          alarms: (m.alarms ?? []).map(adlandir),
           sourceAlive: !!m.sources?.[m.station?.station_id ?? '']?.alive,
           dataStale: m.sources?.[m.station?.station_id ?? '']?.fresh === false,
           dataTs: m.sources?.[m.station?.station_id ?? '']?.data_ts ?? null,
@@ -165,7 +169,7 @@ export const useTwin = create<TwinState>((set, get) => ({
           lastMessageAt: now,
         })
       } else if (m.type === 'alarm') {
-        const a: Alarm = m.alarm
+        const a: Alarm = adlandir(m.alarm)
         const list = get().alarms.filter((x) => x.id !== a.id)
         if (a.state !== 'NORM') list.push(a)
         list.sort((x, y) =>

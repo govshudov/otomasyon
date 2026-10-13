@@ -1,5 +1,5 @@
 import type { Bucket } from '../data/history'
-import { fmtDuration, fmtN, MODE_TK, OVERALL_TK, SEV_TK, nasosLabel, type PumpView, type Reading, type Sev } from '../data/pump'
+import { fmtDuration, fmtN, MODE_TK, OVERALL_TK, SEV_TK, type PumpView, type Reading, type Sev } from '../data/pump'
 import { ArcGauge, Sparkline } from './Gauges'
 import { Icon } from './icons'
 
@@ -8,7 +8,7 @@ import { Icon } from './icons'
  * başlık (NASOS n + durum), ýagdaýy | işlän wagty, duýduryş (tam genişlik),
  * temperatura (6 nasos + 2 podşipnik, grafiksiz), basyş + küçük grafik
  * (tam genişlik), ýygylyk göstergesi | tok · kuwwat.
- * Karta dokununca 8 grafik açılır.
+ * Yalnız gösterge: nasosun 8 grafiği Grafikler sayfasında (tek yol).
  */
 
 const sevCls = (s: Sev) => (s === 'fault' ? 'bad' : s === 'warn' ? 'mid' : 'good')
@@ -21,16 +21,15 @@ function TempCell({ r }: { r: Reading }) {
   )
 }
 
-export function PumpCard({ p, press, ratedA, onOpen }: {
-  p: PumpView; press?: Bucket[]; ratedA: number; onOpen: () => void
+export function PumpCard({ p, press, ratedA }: {
+  p: PumpView; press?: Bucket[]; ratedA: number
 }) {
   const hzActive = p.mode === 'inv' || p.mode === 'run'
   const ampF = p.amp === null ? 0 : Math.max(0, Math.min(1, p.amp / (ratedA * 1.2)))
   return (
-    <div className={`pcard ${p.overall}`} onClick={onOpen} role="button" tabIndex={0} title="Grafikler"
-         onKeyDown={(e) => { if (e.key === 'Enter') onOpen() }}>
+    <div className={`pcard ${p.overall}`}>
       <div className="pcHead">
-        <span className={`pcName ${p.overall}`}>{nasosLabel(p.label)}</span>
+        <span className={`pcName ${p.overall}`}>{p.label}</span>
         <span className={`pcState ${p.overall}`}>{OVERALL_TK[p.overall]}</span>
       </div>
 

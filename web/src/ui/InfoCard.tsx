@@ -14,8 +14,8 @@ import { MODE_TK, OVERALL_TK, SEV_TK, fmtDuration, fmtN, levelSev, pumpView, typ
  * üstünde kalır ve Pi'de kare başına React uzlaştırması çalışmaz.
  *
  * Nasos için izleme panosundaki kartın özeti gösterilir (ýagdaýy, üç
- * duýduryş, 8 temperatura, basyş/Hz/tok/kuwwat, işlän wagty) ve
- * "Grafikler" 8 grafiği açar. Diğer ekipmanda twin-map'teki sinyal listesi.
+ * duýduryş, 8 temperatura, basyş/Hz/tok/kuwwat, işlän wagty); 8 grafiği
+ * Grafikler sayfasında. Diğer ekipmanda twin-map'teki sinyal listesi.
  */
 
 /** Durumu isteğe bağlı ekipman tipleri — durum gelmiyorsa kartta rozet gösterilmez. */
@@ -80,13 +80,12 @@ function PumpSummary({ station, id, label }: { station: string; id: string; labe
   )
 }
 
-export function InfoCard({ station, id, eq, cardRef, onClose, onCharts }: {
+export function InfoCard({ station, id, eq, cardRef, onClose }: {
   station: string
   id: string
   eq: EquipmentDef
   cardRef: (el: HTMLDivElement | null) => void
   onClose: () => void
-  onCharts?: () => void
 }) {
   const values = useTwin((s) => s.values)
   const stale = useTwin((s) => s.stale)
@@ -106,7 +105,6 @@ export function InfoCard({ station, id, eq, cardRef, onClose, onCharts }: {
       <div className="cardHead">
         <div>
           <b>{eq.label}</b>
-          <div className="sub">{id}</div>
         </div>
         {/* Datçikte durum isteğe bağlı: JACE'te LT-0x/state noktası değer
             taşıyorsa rozet görünür; boşsa rozet yerine yalnız değer satırı. */}
@@ -137,7 +135,6 @@ export function InfoCard({ station, id, eq, cardRef, onClose, onCharts }: {
           })}
         </div>
       )}
-      {isPump && onCharts && <button className="wide" onClick={onCharts}>8 grafigi aç</button>}
       {trend && <Trend sig={trend} onClose={() => setTrend(null)} />}
     </div>
   )
