@@ -190,7 +190,10 @@ export function isNokatlary(doc: EgriDoc, pumps: PumpInput[], flowM3h: number | 
     est[p.id] = p.model && sk !== null ? qFromPower(p.model, sk, r) : null
   }
   const total = flowM3h !== null && flowM3h > 0 ? flowM3h / 3600 : null
-  const sameModel = run.length > 0 && run.every((p) => p.model && p.model === run[0].model)
+  // Eşit bölme yalnız aynı model VE aynı hızda (inwertorda yavaş dönen nasos o an az basar ya da hiç basmaz)
+  const r0 = run.length ? speedRatio(run[0].hz, run[0].inverter) : 1
+  const sameModel = run.length > 0 && run.every((p) => p.model && p.model === run[0].model
+    && Math.abs(speedRatio(p.hz, p.inverter) - r0) < 0.01)
   const estSum = run.reduce((a, p) => a + (est[p.id] ?? NaN), 0)
   for (const p of pumps) {
     const r = speedRatio(p.hz, p.inverter)
