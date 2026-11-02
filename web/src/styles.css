@@ -616,3 +616,31 @@ a.navItem { text-decoration: none; }
 .kartaMsg p { font-size: 12.5px; line-height: 1.55; margin: 0 0 10px; }
 .kartaMsg b { color: #d4d8de; }
 .kartaMsg .btnLink { background: #22324a; color: #cfe3ff; border-color: #34507a; margin-top: 6px; }
+/* ---- H–Q egrisi (Umumy syn → nasos kartı) ---- */
+.pcard.clickable { cursor: pointer; }
+.pcard.clickable:hover { border-color: #5a6575; }
+.hqScrim { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .55); display: grid; place-items: center; padding: 16px; }
+.hqPanel { width: min(720px, 100%); max-height: 100%; overflow: auto; background: var(--panel-solid); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, .5); }
+.hqHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+.hqHead b { font-size: 16px; display: block; }
+.hqHead span { color: var(--dim); font-size: 12px; }
+.hqHead .x { background: none; border: none; color: var(--dim); font-size: 22px; line-height: 1; padding: 0 4px; cursor: pointer; }
+.hq { width: 100%; height: auto; display: block; }
+.hq .grid { stroke: #343a43; stroke-width: 1; }
+.hq .tick { fill: #8d949e; font-size: 11px; }
+.hq .axis { fill: #c9ced6; font-size: 12px; }
+.hq .lbl { fill: #9aa1aa; font-size: 11px; }
+.hq .lowZone { fill: rgba(239, 68, 68, .07); }
+.hq .qmin { stroke: #ef4444; stroke-width: 1; stroke-dasharray: 4 4; }
+.hq .curve { fill: none; stroke: #4aa8ff; stroke-width: 2.4; }
+.hq .curve.nominal { stroke: #6b7480; stroke-width: 1.4; stroke-dasharray: 6 5; }
+.hq .design { stroke: #e8eaed; stroke-width: 2; }
+.hq .pt .halo { fill: rgba(34, 197, 94, .22); }
+.hq .pt .dot { fill: #22c55e; stroke: #0f1a12; stroke-width: 1.5; }
+.hq .pt.bad .halo { fill: rgba(239, 68, 68, .25); }
+.hq .pt.bad .dot { fill: #ef4444; }
+.hq .ptLbl { fill: #e8eaed; font-size: 12px; font-weight: 600; }
+.hqRows { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px 18px; margin-top: 8px; font-size: 12.5px; }
+.hqRows div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line-soft); padding: 3px 0; }
+.hqRows span { color: var(--dim); }
+.hqNote { margin-top: 8px; font-size: 12px; color: var(--dim); }

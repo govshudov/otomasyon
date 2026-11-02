@@ -336,7 +336,7 @@ export default function App() {
       {!is3d && (
         <main className="mainArea">
           {!cfg && page !== 'karta' && page !== 'alarms' && <div className="loading">beket maglumaty ýüklenýär…</div>}
-          {cfg && page === 'overview' && <PumpBoard sid={sid} groups={groups} />}
+          {cfg && page === 'overview' && <PumpBoard sid={sid} groups={groups} cfg={cfg} />}
           {page === 'karta' && <KartaPage />}
           {page === 'alarms' && <AlarmsPage />}
           {cfg && page === 'reports' && <ReportsPage sid={sid} groups={groups} />}

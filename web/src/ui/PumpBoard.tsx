@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTwin } from '../data/store'
 import { usePumpViews, useRecent } from '../data/usePumps'
-import { LEVEL_EQ, fmtN, levelSev, numOf, sigDef, thresholds, type Group } from '../data/pump'
+import { LEVEL_EQ, fmtN, levelSev, numOf, sigDef, thresholds, type Group, type StationCfg } from '../data/pump'
+import { isNokatlary, loadEgriler, modelOf, type EgriDoc } from '../data/egri'
+import { CurveModal } from './HeadCurve'
 import { PumpCard } from './PumpCard'
 import { FlowCircle, LevelTank, PowerGauge } from './Gauges'
 
@@ -9,13 +11,16 @@ import { FlowCircle, LevelTank, PowerGauge } from './Gauges'
  * Umumy syn: her toplum bir sıra nasos kartı, altta beketiň çubuğu (her toplumun
  * ayrı kutusu: kuwwat, her çıkış borusunun akymy, jemi göwrümi, basyşy + howuzyň
  * suw derejesi, girýän akymy, göwrümi). Toplumlar ayrı sayfa değil — hepsi burada.
+ * Nasos kartına tıklanınca o nasosun H–Q egrisi ve häzirki iş nokady açılır.
  */
 
-export function PumpBoard({ sid, groups }: {
+export function PumpBoard({ sid, groups, cfg }: {
   sid: string
   groups: Group[]
+  cfg: StationCfg | null
 }) {
   const views = usePumpViews(sid, groups)
+  const [curve, setCurve] = useState<string | null>(null)
   const pressTags = useMemo(() => groups.flatMap((g) => g.pumps.map((p) => `${sid}.${p.id}.discharge_press_bar`)), [sid, groups])
   const recent = useRecent(pressTags)
 
@@ -34,7 +39,7 @@ export function PumpBoard({ sid, groups }: {
               {/* Kartlar dikey, sabit genişlik; satıra sığmayan alt satıra geçer */}
               <div className="cards">
                 {g.pumps.map((p) => views[p.id] && (
-                  <PumpCard key={p.id} p={views[p.id]} ratedA={p.ratedA}
+                  <PumpCard key={p.id} p={views[p.id]} ratedA={p.ratedA} onOpen={() => setCurve(p.id)}
                             press={recent[`${sid}.${p.id}.discharge_press_bar`]} />
                 ))}
               </div>
@@ -43,7 +48,73 @@ export function PumpBoard({ sid, groups }: {
         })}
       </div></div>
       <StationBar sid={sid} groups={groups} />
+      {curve && <PumpCurve sid={sid} groups={groups} cfg={cfg} pumpId={curve} onClose={() => setCurve(null)} />}
     </div>
+  )
+}
+
+/** Konfigürasyondan sayı (stations/<id>.json) */
+const numParam = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+
+/**
+ * Bir nasosun H–Q penceresi. Q toplumun akym ölçeginden (aynı modelde işleýän nasoslar
+ * eşit böler) ya da nasosun kuwwatından; H basyşdan ve emme suyunun derejesinden.
+ */
+function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
+  sid: string; groups: Group[]; cfg: StationCfg | null; pumpId: string; onClose: () => void
+}) {
+  const [doc, setDoc] = useState<EgriDoc | null>(null)
+  useEffect(() => { loadEgriler().then(setDoc) }, [])
+  const views = usePumpViews(sid, groups)
+  const values = useTwin((s) => s.values)
+  const stale = useTwin((s) => s.stale)
+  const g = groups.find((x) => x.pumps.some((p) => p.id === pumpId))
+  const v = views[pumpId]
+  if (!g || !v) return null
+
+  const n = (eq: string, k: string) => numOf(values, stale, `${sid}.${eq}.${k}`)
+  const raw = cfg as unknown as { hydraulics?: { basin?: { invert_el?: number } } } | null
+  const invert = numParam(raw?.hydraulics?.basin?.invert_el) ?? 0
+  const basinLvl = n(LEVEL_EQ, 'level_m')
+  const eqOf = (id: string) => cfg?.equipment.find((e) => e.id === id)
+
+  const inputs = g.pumps.map((p) => {
+    const pv = views[p.id]
+    const axis = numParam(eqOf(p.id)?.params?.centerline_el_m)
+    const lvl = pv?.level ?? basinLvl
+    return {
+      id: p.id, model: modelOf(doc, sid, p.id), running: !!pv?.running, inverter: pv?.mode === 'inv',
+      press: pv?.press ?? null, kw: pv?.kw ?? null, amp: pv?.amp ?? null, hz: pv?.hz ?? null,
+      dz: axis !== null && lvl !== null ? axis - (invert + lvl) : null,
+    }
+  })
+  const flows = g.headers.map((h) => n(h.id, 'flow_m3h'))
+  const flow = flows.some((f) => f !== null) ? flows.reduce<number>((a, f) => a + (f ?? 0), 0) : null
+  const pts = doc ? isNokatlary(doc, inputs, flow) : {}
+  const pt = pts[pumpId] ?? null
+  const me = inputs.find((i) => i.id === pumpId)!
+  const m = me.model
+  const runN = inputs.filter((i) => i.running).length
+
+  const rows = [
+    { label: 'Akym Q', value: pt?.q != null ? `${fmtN(pt.q * 3600, 0)} m³/sag` : '—' },
+    { label: 'Basyş beýikligi H', value: pt?.h != null ? `${fmtN(pt.h, 1)} m` : '—' },
+    { label: 'Basyş', value: `${fmtN(v.press, 2)} bar` },
+    { label: 'Kuwwat · Tok', value: `${fmtN(v.kw, 0)} kW · ${fmtN(v.amp, 1)} A` },
+    { label: 'Ýygylyk', value: `${fmtN(v.hz, 1)} Hz` },
+    { label: 'Suw derejesi', value: `${fmtN(v.level ?? basinLvl, 2)} m` },
+  ]
+  if (m) rows.push({ label: 'Taslama', value: `${fmtN(m.taslama.q * 3600, 0)} m³/sag · ${fmtN(m.taslama.h, 0)} m · η ${fmtN(m.taslama.eta, 1)} %` })
+
+  const note = !v.running ? 'Nasos durýar: iş nokady ýok.'
+    : pt?.q == null ? 'Akym hasaplanyp bilmedi (akym ölçegi we kuwwat ýok).'
+    : pt.qUsul === 'akym' ? `Akym: ${g.header} akym ölçeginden${runN > 1 ? `, ${runN} işleýän nasosa bölündi` : ''}.`
+    : 'Akym: nasosyň kuwwatyndan, zawod egrisi boýunça (takmynan).'
+  const lvlNote = v.running && pt?.dz == null ? ' Suw derejesi ýa-da nasos okunyň beýikligi ýok: H diňe basyşdan.' : ''
+
+  return (
+    <CurveModal title={v.label} sub={m ? `${m.ad} · ${m.motor_kw} kW · ${m.rpm} aýl/min` : 'Egri ýok'}
+                m={m} pt={pt} rows={rows} note={note + lvlNote} onClose={onClose} />
   )
 }
 

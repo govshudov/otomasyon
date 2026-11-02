@@ -1,0 +1,65 @@
+{
+  "_aciklama": [
+    "Nasos egrileri (KSB performans egrisi, pdf/ klasoru). Arayuz: Umumy syn -> nasos kartina tikla -> H-Q grafigi.",
+    "q: debi m3/s (PDF'teki gibi), h: basma yuksekligi m, p: nasos mil gucu kW. Noktalar PDF grafiklerinden okundu (+-1 m / +-10 kW);",
+    "tasarim noktasi, kapali vana basinci (q=0), Qmin ve en yuksek guc PDF'teki sayilardan. Egriler nominal devirde (50 Hz).",
+    "atama: istasyon kodu -> nasos -> model. Degisince: make paket, istasyonda make kur ADIM=8 BITIR=8."
+  ],
+  "rho": 992,
+  "motor_verim": 0.965,
+  "cos_phi": 0.85,
+  "gerilim_v": 6000,
+  "modeller": {
+    "RDLO 400-705": {
+      "ad": "KSB RDLO 400-705 A SC G F",
+      "pdf": "pdf/600kW RDLO 400-705 A SC G F.pdf",
+      "motor_kw": 600, "rpm": 995, "adet": 7,
+      "taslama": { "q": 0.38, "h": 80.0, "p": 363.06, "eta": 81.3 },
+      "qmin": 0.27519,
+      "q": [0, 0.1, 0.2, 0.3, 0.38, 0.5, 0.6, 0.7, 0.8, 0.83],
+      "h": [86.9, 86.4, 85.0, 82.5, 80.0, 74.0, 67.0, 58.0, 47.5, 44.0],
+      "p": [200, 240, 283, 325, 363, 432, 477, 506, 520, 527]
+    },
+    "RDLO 400-665": {
+      "ad": "KSB RDLO 400-665 A SC G F",
+      "pdf": "pdf/650kW RDLO 400-665 A SC G F.pdf",
+      "motor_kw": 650, "rpm": 995, "adet": 3,
+      "taslama": { "q": 0.70, "h": 66.0, "p": 501.43, "eta": 89.6 },
+      "qmin": 0.35702,
+      "q": [0, 0.2, 0.357, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.03],
+      "h": [80.0, 79.2, 77.5, 76.8, 74.0, 70.3, 66.0, 61.0, 55.0, 48.5, 46.5],
+      "p": [235, 300, 360, 380, 425, 465, 501, 530, 550, 560, 564]
+    },
+    "RDLO 400-880": {
+      "ad": "KSB RDLO 400-880 A1 SC G F",
+      "pdf": "pdf/1100kW RDLO 400-880 A1 SC G F.pdf",
+      "motor_kw": 1100, "rpm": 993, "adet": 3,
+      "taslama": { "q": 0.55, "h": 120.0, "p": 753.6, "eta": 85.2 },
+      "qmin": 0.42426,
+      "q": [0, 0.1, 0.2, 0.3, 0.4, 0.424, 0.5, 0.55, 0.6, 0.7, 0.8, 0.85],
+      "h": [130.9, 130.5, 130.0, 129.5, 127.5, 126.8, 123.0, 120.0, 116.5, 109.0, 100.0, 93.0],
+      "p": [300, 345, 410, 520, 620, 640, 712, 754, 800, 867, 945, 962]
+    },
+    "RDLO 500-1035": {
+      "ad": "KSB RDLO 500-1035 A SC P F",
+      "pdf": "pdf/1200kW RDLO 500-1035 A1 SC P F.pdf",
+      "motor_kw": 1200, "rpm": 746, "adet": 1,
+      "taslama": { "q": 0.85, "h": 90.0, "p": 850.26, "eta": 87.5 },
+      "qmin": 0.5608,
+      "q": [0, 0.2, 0.4, 0.56, 0.6, 0.8, 0.85, 1.0, 1.2, 1.34],
+      "h": [100.75, 100.0, 98.5, 96.3, 95.6, 91.3, 90.0, 85.0, 77.0, 69.5],
+      "p": [350, 460, 560, 660, 690, 825, 850, 940, 1045, 1098]
+    }
+  },
+  "_atama_notu": "TAHMIN, dogrulanmadi: 1 May'in 7+3 nasosu 7x RDLO 400-705 + 3x RDLO 400-665 ile, Yasyldepe'nin 3 nasosu 3x RDLO 400-880 ile eslestirildi. Magtymguly ve RDLO 500-1035 (1 adet) atanmadi.",
+  "atama": {
+    "PS-04": {
+      "PMP-01": "RDLO 400-705", "PMP-02": "RDLO 400-705", "PMP-03": "RDLO 400-705", "PMP-04": "RDLO 400-705",
+      "PMP-05": "RDLO 400-705", "PMP-06": "RDLO 400-705", "PMP-07": "RDLO 400-705",
+      "PMP-08": "RDLO 400-665", "PMP-09": "RDLO 400-665", "PMP-10": "RDLO 400-665"
+    },
+    "PS-05": {
+      "PMP-01": "RDLO 400-880", "PMP-02": "RDLO 400-880", "PMP-03": "RDLO 400-880"
+    }
+  }
+}

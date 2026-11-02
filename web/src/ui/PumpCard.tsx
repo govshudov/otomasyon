@@ -8,7 +8,7 @@ import { Icon } from './icons'
  * başlık (NASOS n + durum), ýagdaýy | işlän wagty, duýduryş (tam genişlik),
  * temperatura (6 nasos + 2 podşipnik, grafiksiz), basyş + küçük grafik
  * (tam genişlik), ýygylyk göstergesi | tok · kuwwat.
- * Yalnız gösterge: nasosun 8 grafiği Grafikler sayfasında (tek yol).
+ * Nasosun 8 grafiği Grafikler sayfasında; karta tıklanınca H–Q egrisi açılır.
  */
 
 const sevCls = (s: Sev) => (s === 'fault' ? 'bad' : s === 'warn' ? 'mid' : 'good')
@@ -21,13 +21,13 @@ function TempCell({ r }: { r: Reading }) {
   )
 }
 
-export function PumpCard({ p, press, ratedA }: {
-  p: PumpView; press?: Bucket[]; ratedA: number
+export function PumpCard({ p, press, ratedA, onOpen }: {
+  p: PumpView; press?: Bucket[]; ratedA: number; onOpen?: () => void
 }) {
   const hzActive = p.mode === 'inv' || p.mode === 'run'
   const ampF = p.amp === null ? 0 : Math.max(0, Math.min(1, p.amp / (ratedA * 1.2)))
   return (
-    <div className={`pcard ${p.overall}`}>
+    <div className={`pcard ${p.overall}${onOpen ? ' clickable' : ''}`} onClick={onOpen} title={onOpen ? 'H–Q egrisi' : undefined}>
       <div className="pcHead">
         <span className={`pcName ${p.overall}`}>{p.label}</span>
         <span className={`pcState ${p.overall}`}>{OVERALL_TK[p.overall]}</span>
