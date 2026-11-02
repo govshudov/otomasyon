@@ -125,14 +125,18 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   const mixed = new Set(inputs.filter((i) => i.running).map((i) => i.model)).size > 1
 
   const rows: CurveRow[] = [
-    { label: 'Akym Q', value: pt?.q != null ? `${fmtN(pt.q * 3600, 0)} m³/sag` : '—' },
+    { label: 'Akym Q', value: pt?.q != null ? `${fmtN(pt.q, 3)} m³/s` : '—' },
     { label: 'Basyş beýikligi H', value: pt?.h != null ? `${fmtN(pt.h, 1)} m` : '—' },
     { label: 'Basyş', value: `${fmtN(v.press, 2)} bar` },
     { label: 'Kuwwat · Tok', value: `${fmtN(v.kw, 0)} kW · ${fmtN(v.amp, 1)} A` },
     { label: 'Ýygylyk', value: `${fmtN(v.hz, 1)} Hz` },
     { label: 'Suw derejesi', value: `${fmtN(v.level ?? basinLvl, 2)} m` },
   ]
-  if (m) rows.push({ label: 'Taslama', value: `${fmtN(m.taslama.q * 3600, 0)} m³/sag · ${fmtN(m.taslama.h, 0)} m · η ${fmtN(m.taslama.eta, 1)} %` })
+  if (m) rows.push(
+    { label: 'Taslama Q', value: `${fmtN(m.taslama.q, 3)} m³/s` },
+    { label: 'Taslama H', value: `${fmtN(m.taslama.h, 1)} m` },
+    { label: 'Taslama η (PÝK)', value: `${fmtN(m.taslama.eta, 1)} %` },
+  )
   // Zawod egrisinden tapawut: seçilen dönemin noktalarından (50 Hz'e indirgenmiş)
   const dev = m ? tapawut(m, cloud) : null
   const sev = tapawutSev(dev)

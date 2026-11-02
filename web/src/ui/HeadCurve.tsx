@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { fmtN } from '../data/pump'
-import type { EgriModel, IsNokady, NormPoint } from '../data/egri'
+import { interp, type EgriModel, type IsNokady, type NormPoint } from '../data/egri'
 
 /**
  * H–Q grafigi (KSB "Total developed head"): zawod egrisi, taslama nokady, Qmin
- * we nasosyň häzirki iş nokady. Debi ekranda m³/sag (akym ölçegleri gibi).
+ * we nasosyň häzirki iş nokady. Debi m³/s (KSB PDF'indäki ýaly).
  * Inwertörde egri ýygylyga görä ölçeklenýär; nominal egri kesik çyzyk bolup galýar.
  */
 
@@ -45,11 +45,11 @@ export function HeadCurve({ m, pt, cloud = [], dev = null }: {
 }) {
   const r = pt?.r ?? 1
   const scaled = r < 0.995 || r > 1.005
-  const qs = m.q.map((q) => q * 3600)
-  const pq = pt?.q != null ? pt.q * 3600 : null
+  const qs = m.q
+  const pq = pt?.q ?? null
   const ph = pt?.h ?? null
 
-  const cq = cloud.map((c) => c.q * 3600)
+  const cq = cloud.map((c) => c.q)
   const xMax = Math.max(qs[qs.length - 1], pq ?? 0, ...cq) * 1.06
   let yLo = Math.min(...m.h) * (scaled ? r * r : 1), yHi = Math.max(...m.h)
   if (ph !== null) { yLo = Math.min(yLo, ph); yHi = Math.max(yHi, ph) }
@@ -61,13 +61,19 @@ export function HeadCurve({ m, pt, cloud = [], dev = null }: {
 
   const X = (q: number) => L + (q / xMax) * (W - L - R)
   const Y = (h: number) => T + (1 - (h - y0) / (y1 - y0)) * (H - T - B)
-  const path = (k: number, f = 1) => smooth(m.q.map((q, i) => [X(q * 3600 * k), Y(m.h[i] * k * k * f)]))
+  const path = (k: number, f = 1) => smooth(m.q.map((q, i) => [X(q * k), Y(m.h[i] * k * k * f)]))
 
   const xt: number[] = []; for (let v = 0; v <= xMax + 1e-6; v += xs) xt.push(v)
   const yt: number[] = []; for (let v = y0; v <= y1 + 1e-6; v += ys) yt.push(v)
-  const tq = m.taslama.q * 3600 * r, th = m.taslama.h * r * r
-  const qmin = m.qmin * 3600 * r
+  const tq = m.taslama.q * r, th = m.taslama.h * r * r
+  const qmin = m.qmin * r
   const below = pq !== null && pq < qmin
+  const xDig = xs < 0.1 ? 2 : 1
+  // nokta egrinin altındaysa yazısı da aşağıda: egri çizgisinin üstüne binmesin
+  const hc = pq !== null ? interp(m.q, m.h, pq / r) : null
+  const under = ph !== null && hc !== null && ph < hc * r * r
+  // egri sağa doğru iner: altındaki noktanın yazısı sol-altta, üstündekinin sağ-üstte egriden uzak durur
+  const left = pq !== null && (under ? X(pq) > L + 190 : X(pq) > W - 190)
 
   return (
     <svg className="hq" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="H–Q egrisi">
@@ -80,10 +86,10 @@ export function HeadCurve({ m, pt, cloud = [], dev = null }: {
       {xt.map((v) => (
         <g key={`x${v}`}>
           <line x1={X(v)} x2={X(v)} y1={T} y2={H - B} className="grid" />
-          <text x={X(v)} y={H - B + 17} className="tick" textAnchor="middle">{v.toLocaleString('en-US')}</text>
+          <text x={X(v)} y={H - B + 17} className="tick" textAnchor="middle">{v.toFixed(xDig)}</text>
         </g>
       ))}
-      <text x={(L + W - R) / 2} y={H - 8} className="axis" textAnchor="middle">Akym Q, m³/sag</text>
+      <text x={(L + W - R) / 2} y={H - 8} className="axis" textAnchor="middle">Akym Q, m³/s</text>
       <text x={14} y={(T + H - B) / 2} className="axis" textAnchor="middle"
             transform={`rotate(-90 14 ${(T + H - B) / 2})`}>Basyş beýikligi H, m</text>
 
@@ -92,7 +98,7 @@ export function HeadCurve({ m, pt, cloud = [], dev = null }: {
       <line x1={X(qmin)} x2={X(qmin)} y1={T} y2={H - B} className="qmin" />
       <text x={X(qmin) + 4} y={T + 13} className="lbl">Qmin</text>
 
-      {cloud.map((c, i) => <circle key={i} cx={X(c.q * 3600)} cy={Y(c.h)} r={2.6} className={c.inv ? 'cl inv' : 'cl'} />)}
+      {cloud.map((c, i) => <circle key={i} cx={X(c.q)} cy={Y(c.h)} r={2.6} className={c.inv ? 'cl inv' : 'cl'} />)}
       {dev !== null && <path d={path(1, 1 + dev / 100)} className="curve now" />}
       {scaled && <path d={path(1)} className="curve nominal" />}
       <path d={path(r)} className="curve" />
@@ -106,9 +112,9 @@ export function HeadCurve({ m, pt, cloud = [], dev = null }: {
         <g className={`pt${below ? ' bad' : ''}`}>
           <circle cx={X(pq)} cy={Y(ph)} r={13} className="halo" />
           <circle cx={X(pq)} cy={Y(ph)} r={6.5} className="dot" />
-          <text x={X(pq) + (X(pq) > W - 170 ? -14 : 14)} y={Y(ph) - 12} className="ptLbl"
-                textAnchor={X(pq) > W - 170 ? 'end' : 'start'}>
-            {fmtN(pq, 0)} m³/sag · {fmtN(ph, 1)} m
+          <text x={X(pq) + (left ? -16 : 16)} y={Y(ph) + (under ? 26 : -16)} className="ptLbl"
+                textAnchor={left ? 'end' : 'start'}>
+            {fmtN(pq, 3)} m³/s · {fmtN(ph, 1)} m
           </text>
         </g>
       )}

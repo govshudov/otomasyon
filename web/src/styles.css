@@ -639,10 +639,11 @@ a.navItem { text-decoration: none; }
 .hq .pt .dot { fill: #22c55e; stroke: #0f1a12; stroke-width: 1.5; }
 .hq .pt.bad .halo { fill: rgba(239, 68, 68, .25); }
 .hq .pt.bad .dot { fill: #ef4444; }
-.hq .ptLbl { fill: #e8eaed; font-size: 12px; font-weight: 600; }
-.hqRows { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px 18px; margin-top: 8px; font-size: 12.5px; }
-.hqRows div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line-soft); padding: 3px 0; }
-.hqRows span { color: var(--dim); }
+.hq .ptLbl { fill: #e8eaed; font-size: 12.5px; font-weight: 600; paint-order: stroke; stroke: #25292f; stroke-width: 4px; stroke-linejoin: round; }
+.hqRows { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+.hqRows div { display: flex; flex-direction: column; gap: 3px; background: #1e232a; border: 1px solid var(--line-soft); border-radius: 6px; padding: 7px 10px; min-width: 0; }
+.hqRows span { color: var(--dim); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hqRows b { font-size: 15px; }
 .hqNote { margin-top: 8px; font-size: 12px; color: var(--dim); }
 .hqHead .seg { margin-left: auto; }
 .hq .cl { fill: rgba(154, 161, 170, .55); }
