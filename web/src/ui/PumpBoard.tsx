@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTwin } from '../data/store'
 import { usePumpViews, useRecent } from '../data/usePumps'
-import { LEVEL_EQ, fmtN, levelSev, numOf, sigDef, thresholds, type Group, type StationCfg } from '../data/pump'
-import { isNokatlary, loadEgriler, modelOf, type EgriDoc } from '../data/egri'
-import { CurveModal } from './HeadCurve'
+import { LEVEL_EQ, fmtN, levelIdOf, levelSev, numOf, sigDef, thresholds, type Group, type StationCfg } from '../data/pump'
+import { gecmisNokatlar, isNokatlary, loadEgriler, modelOf, tapawut, tapawutSev, type EgriDoc, type NormPoint } from '../data/egri'
+import { queryHistory } from '../data/history'
+import { CurveModal, type CurveRow, type Dowur } from './HeadCurve'
 import { PumpCard } from './PumpCard'
 import { FlowCircle, LevelTank, PowerGauge } from './Gauges'
 
@@ -69,14 +70,42 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   const values = useTwin((s) => s.values)
   const stale = useTwin((s) => s.stale)
   const g = groups.find((x) => x.pumps.some((p) => p.id === pumpId))
+  const [dowur, setDowur] = useState<Dowur>(1)
+  const [cloud, setCloud] = useState<NormPoint[]>([])
+  const raw = cfg as unknown as { hydraulics?: { basin?: { invert_el?: number } } } | null
+  const invert = numParam(raw?.hydraulics?.basin?.invert_el) ?? 0
+  const eqOf = (id: string) => cfg?.equipment.find((e) => e.id === id)
+
+  // Geçmiş: seçilen dönemin kovalarından 50 Hz'e indirgenmiş iş nokatları
+  useEffect(() => {
+    if (!doc || !g) return
+    let ok = true
+    const tg = (eq: string, k: string) => `${sid}.${eq}.${k}`
+    const pumps = g.pumps.map((p) => {
+      const lt = levelIdOf(p.id)
+      return {
+        id: p.id, model: modelOf(doc, sid, p.id), axis: numParam(eqOf(p.id)?.params?.centerline_el_m),
+        lvlTag: lt ? tg(lt, 'level_m') : null,
+        press: tg(p.id, 'discharge_press_bar'), kw: tg(p.id, 'power_kw'), amp: tg(p.id, 'current_a'), hz: tg(p.id, 'vfd_freq_hz'),
+      }
+    })
+    const flowTags = g.headers.map((h) => tg(h.id, 'flow_m3h'))
+    const basinTag = tg(LEVEL_EQ, 'level_m')
+    const tags = [...pumps.flatMap((p) => [p.press, p.kw, p.amp, p.hz, ...(p.lvlTag ? [p.lvlTag] : [])]), ...flowTags, basinTag]
+    const to = Date.now() / 1000
+    const n = dowur === 1 ? 288 : dowur === 7 ? 336 : 360
+    queryHistory(tags, to - dowur * 86400, to, n)
+      .then((r) => { if (ok) setCloud(gecmisNokatlar(doc, pumps, flowTags, basinTag, invert, r.data, pumpId)) })
+      .catch(() => { if (ok) setCloud([]) })
+    return () => { ok = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, g, sid, pumpId, dowur, invert])
+
   const v = views[pumpId]
   if (!g || !v) return null
 
   const n = (eq: string, k: string) => numOf(values, stale, `${sid}.${eq}.${k}`)
-  const raw = cfg as unknown as { hydraulics?: { basin?: { invert_el?: number } } } | null
-  const invert = numParam(raw?.hydraulics?.basin?.invert_el) ?? 0
   const basinLvl = n(LEVEL_EQ, 'level_m')
-  const eqOf = (id: string) => cfg?.equipment.find((e) => e.id === id)
 
   const inputs = g.pumps.map((p) => {
     const pv = views[p.id]
@@ -95,8 +124,9 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   const me = inputs.find((i) => i.id === pumpId)!
   const m = me.model
   const runN = inputs.filter((i) => i.running).length
+  const mixed = new Set(inputs.filter((i) => i.running).map((i) => i.model)).size > 1
 
-  const rows = [
+  const rows: CurveRow[] = [
     { label: 'Akym Q', value: pt?.q != null ? `${fmtN(pt.q * 3600, 0)} m³/sag` : '—' },
     { label: 'Basyş beýikligi H', value: pt?.h != null ? `${fmtN(pt.h, 1)} m` : '—' },
     { label: 'Basyş', value: `${fmtN(v.press, 2)} bar` },
@@ -105,16 +135,27 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
     { label: 'Suw derejesi', value: `${fmtN(v.level ?? basinLvl, 2)} m` },
   ]
   if (m) rows.push({ label: 'Taslama', value: `${fmtN(m.taslama.q * 3600, 0)} m³/sag · ${fmtN(m.taslama.h, 0)} m · η ${fmtN(m.taslama.eta, 1)} %` })
+  // Zawod egrisinden tapawut: seçilen dönemin noktalarından (50 Hz'e indirgenmiş)
+  const dev = m ? tapawut(m, cloud) : null
+  const sev = tapawutSev(dev)
+  if (m) rows.push({
+    label: `Egriden tapawut (${dowur} gün)`,
+    value: dev === null ? 'nokat az' : `${dev > 0 ? '+' : ''}${fmtN(dev, 1)} % · ${sev === 'ok' ? 'kadaly' : sev === 'warn' ? 'duýduryş' : 'näsazlyk'}`,
+    cls: sev === 'ok' ? 'good' : sev === 'warn' ? 'mid' : sev === 'fault' ? 'bad' : undefined,
+  })
 
   const note = !v.running ? 'Nasos durýar: iş nokady ýok.'
     : pt?.q == null ? 'Akym hasaplanyp bilmedi (akym ölçegi we kuwwat ýok).'
-    : pt.qUsul === 'akym' ? `Akym: ${g.header} akym ölçeginden${runN > 1 ? `, ${runN} işleýän nasosa bölündi` : ''}.`
+    : pt.qUsul === 'akym' ? `Akym: ${g.header} akym ölçeginden${runN > 1
+        ? (mixed ? `, ${runN} işleýän nasosa kuwwatlaryna görä bölündi (dürli görnüşli nasoslar)` : `, ${runN} işleýän nasosa deň bölündi`) : ''}.`
     : 'Akym: nasosyň kuwwatyndan, zawod egrisi boýunça (takmynan).'
-  const lvlNote = v.running && pt?.dz == null ? ' Suw derejesi ýa-da nasos okunyň beýikligi ýok: H diňe basyşdan.' : ''
+  const lvlNote = (v.running && pt?.dz == null ? ' Suw derejesi ýa-da nasos okunyň beýikligi ýok: H diňe basyşdan.' : '')
+    + (cloud.length ? ` Geçmiş: ${cloud.length} nokat${cloud.some((c) => c.inv) ? ', inwertordakylar 50 Hz-e getirildi' : ''}.` : '')
 
   return (
     <CurveModal title={v.label} sub={m ? `${m.ad} · ${m.motor_kw} kW · ${m.rpm} aýl/min` : 'Egri ýok'}
-                m={m} pt={pt} rows={rows} note={note + lvlNote} onClose={onClose} />
+                m={m} pt={pt} cloud={cloud} dev={dev} dowur={dowur} setDowur={setDowur}
+                rows={rows} note={note + lvlNote} onClose={onClose} />
   )
 }
 

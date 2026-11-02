@@ -73,6 +73,96 @@ export function shaftKw(doc: EgriDoc, kw: number | null, amp: number | null): nu
   return null
 }
 
+// --------------------------------------------------------------------------- //
+// Geçmiş: zawod egrisi bilen häzirki ýagdaýyň deňeşdirmesi
+// --------------------------------------------------------------------------- //
+
+/** 50 Hz'e indirgenmiş geçmiş nokta. inv: inwertorda ölçülen (ýygylyk < 49,5 Hz) */
+export interface NormPoint { t: number; q: number; h: number; inv: boolean }
+
+/**
+ * Nasos inwertorda (ýygylyk r = Hz/50) ölçülen nokta benzerlik yasalarıyla 50 Hz'e
+ * indirgenir: Q/r, H/r². Böylece inwertordaki ve transformatordaki noktalar aynı
+ * zawod egrisiyle deňeşdirilir.
+ */
+export const to50 = (q: number, h: number, r: number) => ({ q: q / r, h: h / (r * r) })
+
+/**
+ * Zawod egrisinden tapawut (%): noktaların (H_ölçülen − H_egri(Q)) / H_egri(Q) medyanı.
+ * Medyan: geçiş anlarındaki (işe başlama, duruş) tek tük sapmalar sonucu bozmasın.
+ * En az 5 nokta egriniň aralygynda olmalı; yoksa null.
+ */
+export function tapawut(m: EgriModel, pts: { q: number; h: number }[]): number | null {
+  const d: number[] = []
+  for (const p of pts) {
+    const he = interp(m.q, m.h, p.q)
+    if (he !== null && he > 0) d.push((p.h - he) / he)
+  }
+  if (d.length < 5) return null
+  d.sort((a, b) => a - b)
+  const k = Math.floor(d.length / 2)
+  return (d.length % 2 ? d[k] : (d[k - 1] + d[k]) / 2) * 100
+}
+
+/** Tapawut bahasy: ISO 9906 2B çydamlylygy ±5 % (H) */
+export function tapawutSev(dev: number | null): 'ok' | 'warn' | 'fault' | null {
+  if (dev === null) return null
+  const a = Math.abs(dev)
+  return a <= 5 ? 'ok' : a <= 10 ? 'warn' : 'fault'
+}
+
+export interface GecmisPump {
+  id: string; model: EgriModel | null
+  /** nasos okunyň beýikligi (m) */
+  axis: number | null
+  /** kendi emme hücresinin seviye etiketi (LT); yoksa havuzunki kullanılır */
+  lvlTag: string | null
+  press: string; kw: string; amp: string; hz: string
+}
+
+/**
+ * Geçmiş kovalarından bir nasosun 50 Hz'e indirgenmiş iş nokatları. Her kovada
+ * toplumun bütün nasosları değerlendirilir (akym ölçegi işleýänlere bölünür);
+ * işleýär = kuwwat motoryň 5 %-inden köp (ýa-da kuwwat ýok, tok > 2 A).
+ */
+export function gecmisNokatlar(doc: EgriDoc, pumps: GecmisPump[], flowTags: string[], basinTag: string,
+                               invert: number, data: Record<string, [number, number, number, number][]>,
+                               target: string): NormPoint[] {
+  const at = new Map<string, Map<number, number>>()
+  const get = (tag: string | null, t: number): number | null => {
+    if (!tag) return null
+    let mp = at.get(tag)
+    if (!mp) { mp = new Map((data[tag] ?? []).map((b) => [Math.round(b[0]), b[1]])); at.set(tag, mp) }
+    const v = mp.get(t)
+    return v === undefined || !Number.isFinite(v) ? null : v
+  }
+  const me = pumps.find((p) => p.id === target)
+  if (!me) return []
+  const out: NormPoint[] = []
+  for (const b of data[me.press] ?? []) {
+    const t = Math.round(b[0])
+    const flows = flowTags.map((f) => get(f, t))
+    const flow = flows.some((f) => f !== null) ? flows.reduce<number>((a, f) => a + (f ?? 0), 0) : null
+    const basin = get(basinTag, t)
+    const inputs: PumpInput[] = pumps.map((p) => {
+      const kw = get(p.kw, t), amp = get(p.amp, t), hz = get(p.hz, t)
+      const motor = p.model?.motor_kw ?? 100
+      const running = kw !== null ? kw > motor * 0.05 : amp !== null && amp > 2
+      const lvl = get(p.lvlTag, t) ?? basin
+      return {
+        id: p.id, model: p.model, running, inverter: hz !== null && hz > 5 && hz < 49.5,
+        press: get(p.press, t), kw, amp, hz,
+        dz: p.axis !== null && lvl !== null ? p.axis - (invert + lvl) : null,
+      }
+    })
+    const pt = isNokatlary(doc, inputs, flow)[target]
+    if (pt?.q == null || pt.h == null || pt.q <= 0) continue
+    const n = to50(pt.q, pt.h, pt.r)
+    out.push({ t: b[0], q: n.q, h: n.h, inv: pt.r < 0.99 })
+  }
+  return out
+}
+
 export interface PumpInput {
   id: string; model: EgriModel | null; running: boolean; inverter: boolean
   press: number | null; kw: number | null; amp: number | null; hz: number | null

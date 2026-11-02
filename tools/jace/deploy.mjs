@@ -61,7 +61,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   // 13 Ekim ilk paketler (Twin denetimi PS-01'i kaçışsız arıyordu)
   'assets/index-DXq3joxA.js', 'assets/index-CG2Pvbuo.js', 'assets/index-BVfODpHN.js',
   // 14 Ekim paketleri (H–Q egrisinden önce)
-  'assets/index-BKnegaGk.js', 'assets/index-dhNT868V.js', 'assets/index-DtzAyK3f.js', 'assets/index-JA7T63NI.css']
+  'assets/index-BKnegaGk.js', 'assets/index-dhNT868V.js', 'assets/index-DtzAyK3f.js', 'assets/index-JA7T63NI.css',
+  // H–Q egrisinin ilk sürümü (geçmiş nokatlar ve tapawut yok)
+  'assets/index-BANKeV5G.js', 'assets/index-BYNljiAs.js', 'assets/index-CbrbpmUW.css', 'assets/index-CntTro-W.js']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {

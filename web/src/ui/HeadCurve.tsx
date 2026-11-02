@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { fmtN } from '../data/pump'
-import type { EgriModel, IsNokady } from '../data/egri'
+import type { EgriModel, IsNokady, NormPoint } from '../data/egri'
 
 /**
  * H–Q grafigi (KSB "Total developed head"): zawod egrisi, taslama nokady, Qmin
@@ -36,23 +36,32 @@ function smooth(p: number[][]): string {
   return out
 }
 
-export function HeadCurve({ m, pt }: { m: EgriModel; pt: IsNokady | null }) {
+export function HeadCurve({ m, pt, cloud = [], dev = null }: {
+  m: EgriModel; pt: IsNokady | null
+  /** geçmiş nokatlar, 50 Hz'e indirgenmiş */
+  cloud?: NormPoint[]
+  /** zawod egrisinden tapawut, % (häzirki egri = zawod egrisi × (1 + dev/100)) */
+  dev?: number | null
+}) {
   const r = pt?.r ?? 1
   const scaled = r < 0.995 || r > 1.005
   const qs = m.q.map((q) => q * 3600)
   const pq = pt?.q != null ? pt.q * 3600 : null
   const ph = pt?.h ?? null
 
-  const xMax = Math.max(qs[qs.length - 1], pq ?? 0) * 1.06
+  const cq = cloud.map((c) => c.q * 3600)
+  const xMax = Math.max(qs[qs.length - 1], pq ?? 0, ...cq) * 1.06
   let yLo = Math.min(...m.h) * (scaled ? r * r : 1), yHi = Math.max(...m.h)
   if (ph !== null) { yLo = Math.min(yLo, ph); yHi = Math.max(yHi, ph) }
+  for (const c of cloud) { yLo = Math.min(yLo, c.h); yHi = Math.max(yHi, c.h) }
+  if (dev !== null) yLo = Math.min(yLo, Math.min(...m.h) * (1 + dev / 100))
   const ys = niceStep(yHi - yLo + 10, 5)
   const y0 = Math.max(0, Math.floor((yLo - 5) / ys) * ys), y1 = Math.ceil((yHi + 3) / ys) * ys
   const xs = niceStep(xMax, 6)
 
   const X = (q: number) => L + (q / xMax) * (W - L - R)
   const Y = (h: number) => T + (1 - (h - y0) / (y1 - y0)) * (H - T - B)
-  const path = (k: number) => smooth(m.q.map((q, i) => [X(q * 3600 * k), Y(m.h[i] * k * k)]))
+  const path = (k: number, f = 1) => smooth(m.q.map((q, i) => [X(q * 3600 * k), Y(m.h[i] * k * k * f)]))
 
   const xt: number[] = []; for (let v = 0; v <= xMax + 1e-6; v += xs) xt.push(v)
   const yt: number[] = []; for (let v = y0; v <= y1 + 1e-6; v += ys) yt.push(v)
@@ -83,6 +92,8 @@ export function HeadCurve({ m, pt }: { m: EgriModel; pt: IsNokady | null }) {
       <line x1={X(qmin)} x2={X(qmin)} y1={T} y2={H - B} className="qmin" />
       <text x={X(qmin) + 4} y={T + 13} className="lbl">Qmin</text>
 
+      {cloud.map((c, i) => <circle key={i} cx={X(c.q * 3600)} cy={Y(c.h)} r={2.6} className={c.inv ? 'cl inv' : 'cl'} />)}
+      {dev !== null && <path d={path(1, 1 + dev / 100)} className="curve now" />}
       {scaled && <path d={path(1)} className="curve nominal" />}
       <path d={path(r)} className="curve" />
 
@@ -105,10 +116,15 @@ export function HeadCurve({ m, pt }: { m: EgriModel; pt: IsNokady | null }) {
   )
 }
 
-export interface CurveRow { label: string; value: string }
+export interface CurveRow { label: string; value: string; cls?: string }
 
-export function CurveModal({ title, sub, m, pt, rows, note, onClose }: {
+export type Dowur = 1 | 7 | 30
+const DOWUR: [Dowur, string][] = [[1, '1 gün'], [7, '7 gün'], [30, '30 gün']]
+
+export function CurveModal({ title, sub, m, pt, cloud, dev, dowur, setDowur, rows, note, onClose }: {
   title: string; sub: string; m: EgriModel | null; pt: IsNokady | null
+  cloud?: NormPoint[]; dev?: number | null
+  dowur?: Dowur; setDowur?: (d: Dowur) => void
   rows: CurveRow[]; note?: string; onClose: () => void
 }) {
   useEffect(() => {
@@ -116,16 +132,31 @@ export function CurveModal({ title, sub, m, pt, rows, note, onClose }: {
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, [onClose])
+  const nInv = cloud?.filter((c) => c.inv).length ?? 0
   return (
     <div className="hqScrim" onClick={onClose}>
       <div className="hqPanel" onClick={(e) => e.stopPropagation()}>
         <div className="hqHead">
           <div><b>{title}</b><span>{sub}</span></div>
+          {setDowur && (
+            <div className="seg">
+              {DOWUR.map(([d, l]) => <button key={d} className={dowur === d ? 'on' : ''} onClick={() => setDowur(d)}>{l}</button>)}
+            </div>
+          )}
           <button className="x" onClick={onClose} aria-label="ýap">×</button>
         </div>
-        {m ? <HeadCurve m={m} pt={pt} /> : <div className="empty">Bu nasos üçin egri girizilmedik (common/nasos_egrileri.json → atama).</div>}
+        {m ? <HeadCurve m={m} pt={pt} cloud={cloud} dev={dev} /> : <div className="empty">Bu nasos üçin egri girizilmedik (common/nasos_egrileri.json → atama).</div>}
+        {m && (
+          <div className="hqLegend">
+            <span><i className="lg zawod" />Zawod egrisi (PDF)</span>
+            {dev != null && <span><i className="lg now" />Häzirki egri</span>}
+            {!!cloud?.length && <span><i className="lg cl" />Transformatorda</span>}
+            {nInv > 0 && <span><i className="lg cl inv" />Inwertorda (50 Hz-e getirildi)</span>}
+            <span><i className="lg live" />Häzirki iş nokady</span>
+          </div>
+        )}
         <div className="hqRows">
-          {rows.map((r) => <div key={r.label}><span>{r.label}</span><b>{r.value}</b></div>)}
+          {rows.map((r) => <div key={r.label}><span>{r.label}</span><b className={r.cls}>{r.value}</b></div>)}
         </div>
         {note && <div className="hqNote">{note}</div>}
       </div>
