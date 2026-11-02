@@ -658,3 +658,4 @@ a.navItem { text-decoration: none; }
 .hqRows b.good { color: var(--ok); }
 .hqRows b.mid { color: var(--warn); }
 .hqRows b.bad { color: var(--alarm); }
+.hqHead .x { margin-left: auto; }

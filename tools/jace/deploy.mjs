@@ -63,7 +63,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   // 14 Ekim paketleri (H–Q egrisinden önce)
   'assets/index-BKnegaGk.js', 'assets/index-dhNT868V.js', 'assets/index-DtzAyK3f.js', 'assets/index-JA7T63NI.css',
   // H–Q egrisinin ilk sürümü (geçmiş nokatlar ve tapawut yok)
-  'assets/index-BANKeV5G.js', 'assets/index-BYNljiAs.js', 'assets/index-CbrbpmUW.css', 'assets/index-CntTro-W.js']
+  'assets/index-BANKeV5G.js', 'assets/index-BYNljiAs.js', 'assets/index-CbrbpmUW.css', 'assets/index-CntTro-W.js',
+  // H–Q 1/7/30 gün seçicili sürüm
+  'assets/index-BI2iy-57.css', 'assets/index-BQbRqpN9.js', 'assets/index-Dj7Fz387.js', 'assets/index-DSgNgGa1.js']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {

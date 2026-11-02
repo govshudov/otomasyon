@@ -4,7 +4,7 @@ import { usePumpViews, useRecent } from '../data/usePumps'
 import { LEVEL_EQ, fmtN, levelIdOf, levelSev, numOf, sigDef, thresholds, type Group, type StationCfg } from '../data/pump'
 import { gecmisNokatlar, isNokatlary, loadEgriler, modelOf, tapawut, tapawutSev, type EgriDoc, type NormPoint } from '../data/egri'
 import { queryHistory } from '../data/history'
-import { CurveModal, type CurveRow, type Dowur } from './HeadCurve'
+import { CurveModal, type CurveRow } from './HeadCurve'
 import { PumpCard } from './PumpCard'
 import { FlowCircle, LevelTank, PowerGauge } from './Gauges'
 
@@ -70,13 +70,12 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   const values = useTwin((s) => s.values)
   const stale = useTwin((s) => s.stale)
   const g = groups.find((x) => x.pumps.some((p) => p.id === pumpId))
-  const [dowur, setDowur] = useState<Dowur>(1)
   const [cloud, setCloud] = useState<NormPoint[]>([])
   const raw = cfg as unknown as { hydraulics?: { basin?: { invert_el?: number } } } | null
   const invert = numParam(raw?.hydraulics?.basin?.invert_el) ?? 0
   const eqOf = (id: string) => cfg?.equipment.find((e) => e.id === id)
 
-  // Geçmiş: seçilen dönemin kovalarından 50 Hz'e indirgenmiş iş nokatları
+  // Deňeşdirme: soňky 24 sagadyň (5 min kovalar) 50 Hz'e indirgenmiş iş nokatları
   useEffect(() => {
     if (!doc || !g) return
     let ok = true
@@ -93,13 +92,12 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
     const basinTag = tg(LEVEL_EQ, 'level_m')
     const tags = [...pumps.flatMap((p) => [p.press, p.kw, p.amp, p.hz, ...(p.lvlTag ? [p.lvlTag] : [])]), ...flowTags, basinTag]
     const to = Date.now() / 1000
-    const n = dowur === 1 ? 288 : dowur === 7 ? 336 : 360
-    queryHistory(tags, to - dowur * 86400, to, n)
+    queryHistory(tags, to - 86400, to, 288)
       .then((r) => { if (ok) setCloud(gecmisNokatlar(doc, pumps, flowTags, basinTag, invert, r.data, pumpId)) })
       .catch(() => { if (ok) setCloud([]) })
     return () => { ok = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, g, sid, pumpId, dowur, invert])
+  }, [doc, g, sid, pumpId, invert])
 
   const v = views[pumpId]
   if (!g || !v) return null
@@ -139,7 +137,7 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   const dev = m ? tapawut(m, cloud) : null
   const sev = tapawutSev(dev)
   if (m) rows.push({
-    label: `Egriden tapawut (${dowur} gün)`,
+    label: 'Egriden tapawut (24 sag)',
     value: dev === null ? 'nokat az' : `${dev > 0 ? '+' : ''}${fmtN(dev, 1)} % · ${sev === 'ok' ? 'kadaly' : sev === 'warn' ? 'duýduryş' : 'näsazlyk'}`,
     cls: sev === 'ok' ? 'good' : sev === 'warn' ? 'mid' : sev === 'fault' ? 'bad' : undefined,
   })
@@ -154,7 +152,7 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
 
   return (
     <CurveModal title={v.label} sub={m ? `${m.ad} · ${m.motor_kw} kW · ${m.rpm} aýl/min` : 'Egri ýok'}
-                m={m} pt={pt} cloud={cloud} dev={dev} dowur={dowur} setDowur={setDowur}
+                m={m} pt={pt} cloud={cloud} dev={dev}
                 rows={rows} note={note + lvlNote} onClose={onClose} />
   )
 }

@@ -118,13 +118,9 @@ export function HeadCurve({ m, pt, cloud = [], dev = null }: {
 
 export interface CurveRow { label: string; value: string; cls?: string }
 
-export type Dowur = 1 | 7 | 30
-const DOWUR: [Dowur, string][] = [[1, '1 gün'], [7, '7 gün'], [30, '30 gün']]
-
-export function CurveModal({ title, sub, m, pt, cloud, dev, dowur, setDowur, rows, note, onClose }: {
+export function CurveModal({ title, sub, m, pt, cloud, dev, rows, note, onClose }: {
   title: string; sub: string; m: EgriModel | null; pt: IsNokady | null
   cloud?: NormPoint[]; dev?: number | null
-  dowur?: Dowur; setDowur?: (d: Dowur) => void
   rows: CurveRow[]; note?: string; onClose: () => void
 }) {
   useEffect(() => {
@@ -138,11 +134,6 @@ export function CurveModal({ title, sub, m, pt, cloud, dev, dowur, setDowur, row
       <div className="hqPanel" onClick={(e) => e.stopPropagation()}>
         <div className="hqHead">
           <div><b>{title}</b><span>{sub}</span></div>
-          {setDowur && (
-            <div className="seg">
-              {DOWUR.map(([d, l]) => <button key={d} className={dowur === d ? 'on' : ''} onClick={() => setDowur(d)}>{l}</button>)}
-            </div>
-          )}
           <button className="x" onClick={onClose} aria-label="ýap">×</button>
         </div>
         {m ? <HeadCurve m={m} pt={pt} cloud={cloud} dev={dev} /> : <div className="empty">Bu nasos üçin egri girizilmedik (common/nasos_egrileri.json → atama).</div>}
