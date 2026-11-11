@@ -46,7 +46,10 @@ function oku(comp: any): EskiDeger {
     if (!sv) return { v: null, disp: '', ok: false }
     let v = sv.getValue ? sv.getValue() : sv
     if (v instanceof Number || v instanceof Boolean || v instanceof String) v = v.valueOf()
-    else if (v !== null && typeof v === 'object') v = typeof v.getTag === 'function' ? v.getTag() : String(v)
+    // Enum noktası (ör. PowerMode): eski Px'teki dönüşümler sıra numarasını (ordinal) kullanır
+    else if (v !== null && typeof v === 'object') v = typeof v.getOrdinal === 'function' ? v.getOrdinal()
+      : typeof v.getTag === 'function' ? v.getTag() : String(v)
+    if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) v = Number(v)
     if (typeof v === 'number' && Number.isNaN(v)) v = null
     const st = sv.getStatus?.()
     const ok = st ? (typeof st.isValid === 'function' ? st.isValid()

@@ -15,7 +15,7 @@
   if (!id && m && !/^dugme$/i.test(m[1])) id = decodeURIComponent(m[1]).toUpperCase()
   var KAT = 'twinNasosKatman'
   var BASE = '/file/twin/'
-  var GEN = 440, ARA = 14, KENAR = 8
+  var GEN = 310, ARA = 12, KENAR = 8
 
   // Popup'ı Px sayfasının en üst belgesine kur (aynı köken); olmazsa bir üst çerçeveye
   var ust = window.parent
@@ -72,7 +72,7 @@
 
   function yerles(f, b) {
     var vw = ust.innerWidth, vh = ust.innerHeight
-    var w = Math.min(GEN, vw - 2 * KENAR), h = f.offsetHeight || 320
+    var w = Math.min(GEN, vw - 2 * KENAR), h = f.offsetHeight || 240
     var left = b.right + ARA + w <= vw - KENAR ? b.right + ARA
       : b.left - ARA - w >= KENAR ? b.left - ARA - w : vw - w - KENAR
     var top = Math.max(KENAR, Math.min(b.top + b.h / 2 - h / 2, vh - h - KENAR))
@@ -89,7 +89,7 @@
     f.src = BASE + 'nasos.html#' + encodeURIComponent(id)
     f.title = id
     Object.assign(f.style, {
-      position: 'fixed', zIndex: '2147483000', height: '320px', maxHeight: (ust.innerHeight - 2 * KENAR) + 'px',
+      position: 'fixed', zIndex: '2147483000', height: '240px', maxHeight: (ust.innerHeight - 2 * KENAR) + 'px',
       border: '1px solid #526e83', borderRadius: '10px', background: '#405667',
       boxShadow: '0 16px 40px rgba(0, 0, 0, 0.5)', colorScheme: 'dark',
     })
