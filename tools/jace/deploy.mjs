@@ -73,7 +73,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   // H–Q m³/s sürümü (gömülü sayfalardan önce)
   'assets/index-B3hiLu1E.css', 'assets/index-CerbwZzp.js', 'assets/index-CUhVI1ln.js', 'assets/index-wllf4t0L.js',
   // gömülü sayfaların ilk sürümü (arhiw.html'den önce)
-  'assets/index-BIwklkbr.css', 'assets/index-Blvg6KDE.js', 'assets/index-C37N052P.js', 'assets/index-CLtAL5pi.js']
+  'assets/index-BIwklkbr.css', 'assets/index-Blvg6KDE.js', 'assets/index-C37N052P.js', 'assets/index-CLtAL5pi.js',
+  // arka plan #142f42'den önce
+  'assets/index-C93OQkYS.js', 'assets/index-CNhXrLGD.css', 'assets/index-D2X0uzGE.js', 'assets/index-DsrNEgNf.js']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {

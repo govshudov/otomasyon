@@ -16,7 +16,7 @@
  * kırmızı. Büyük harfli küçük başlıklar, tablo rakamları.
  */
 :root {
-  --bg: #1c1f23;
+  --bg: rgba(20, 47, 66, 0.9);   /* #142f42, %90 — eski TV arayüzünün arka planı */
   --panel: rgba(37, 41, 47, 0.97);
   --panel-solid: #25292f;
   --tile: #2c3137;
@@ -49,6 +49,7 @@
 @media (max-width: 1060px) { :root { --topbar: 46px; } }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; overflow: hidden; }
+html { background: #142f42; }   /* --bg yarı saydam: altında koyu mavi kalsın */
 body {
   background: var(--bg); color: var(--text);
   font: 12.5px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
