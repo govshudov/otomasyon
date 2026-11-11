@@ -70,12 +70,14 @@
     return { left: x, top: y, right: x + bw, bottom: y + bh, w: bw, h: bh }
   }
 
-  function yerles(f, b) {
+  /** ortala: dikeyde kutunun ortasına; değilse yerinde kalır, yalnız ekrandan taşmaz */
+  function yerles(f, b, ortala) {
     var vw = ust.innerWidth, vh = ust.innerHeight
     var w = Math.min(GEN, vw - 2 * KENAR), h = f.offsetHeight || 240
     var left = b.right + ARA + w <= vw - KENAR ? b.right + ARA
       : b.left - ARA - w >= KENAR ? b.left - ARA - w : vw - w - KENAR
-    var top = Math.max(KENAR, Math.min(b.top + b.h / 2 - h / 2, vh - h - KENAR))
+    var y0 = ortala || !f.style.top ? b.top + b.h / 2 - h / 2 : parseFloat(f.style.top)
+    var top = Math.max(KENAR, Math.min(y0, vh - h - KENAR))
     f.style.left = Math.round(left) + 'px'
     f.style.top = Math.round(top) + 'px'
     f.style.width = w + 'px'
@@ -92,14 +94,28 @@
       position: 'fixed', zIndex: '2147483000', height: '240px', maxHeight: (ust.innerHeight - 2 * KENAR) + 'px',
       border: '1px solid #526e83', borderRadius: '10px', background: '#405667',
       boxShadow: '0 16px 40px rgba(0, 0, 0, 0.5)', colorScheme: 'dark',
+      visibility: 'hidden',
     })
-    yerles(f, b)
+    yerles(f, b, true)
     d.body.appendChild(f)
-    // Kart yüklenince çerçeve boyu değişir (nasos.html yazar): dikeyde yeniden ortala
+    // Popup, kart gerçek boyunu alana kadar (nasos.html çerçeve yüksekliğini yazar) gizli kalır;
+    // sonra bir kez ortalanıp gösterilir. Önce tahmini boyla gösterip sonra kaydırmak zıplatıyordu.
+    var goster = function () {
+      if (f.style.visibility !== 'hidden') return
+      yerles(f, b, true)
+      f.style.visibility = 'visible'
+    }
     try {
       var RO = ust.ResizeObserver || window.ResizeObserver
-      if (RO) { f.__ro = new RO(function () { yerles(f, b) }); f.__ro.observe(f) }
+      if (RO) {
+        f.__ro = new RO(function () {
+          if (f.style.visibility === 'hidden') { if (f.style.height !== '240px') goster() }
+          else yerles(f, b, false)
+        })
+        f.__ro.observe(f)
+      }
     } catch (e) { /* yok */ }
+    setTimeout(goster, 1500)   // boy bildirilmezse yine de göster
   }
 
   // Esc üst belgede de popup'ı kapatsın (bir kez bağlanır)
