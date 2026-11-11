@@ -79,6 +79,10 @@ for (const [i, s] of stations.entries()) {
 }
 if (plain === stations.length) fs.rmSync(path.join(OUT, 'draco'), { recursive: true, force: true })
 
+// Eski arayüzden (Px sayfaları, nav menüsü) bağlantıyla açılan tek sayfalar: index.html'in
+// kopyaları; arayüz dosya adına bakıp yalnız o sayfayı, başlık ve menü olmadan açar (App.tsx GOMULU)
+for (const f of ['grafikler.html', 'hasabatlar.html']) fs.copyFileSync(path.join(OUT, 'index.html'), path.join(OUT, f))
+
 // Nokta adları sözlüğü: arayüz çalışırken okur (değişince yalnız bu dosya yeniden yüklenir)
 fs.copyFileSync(path.join(ROOT, 'common', 'sozluk.json'), path.join(OUT, 'sozluk.json'))
 // Nasos egrileri (KSB PDF'leri) ve hangi nasosun hangi model olduğu: H–Q grafigi

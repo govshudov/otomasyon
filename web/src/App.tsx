@@ -21,6 +21,14 @@ function saved<T extends string>(key: string, ok: (v: string) => boolean, def: T
 }
 const store = (key: string, v: string) => { try { localStorage.setItem(key, v) } catch { /* depolama kapalı olabilir */ } }
 
+/**
+ * Gömülü sayfa: eski arayüzün (Px sayfaları, nav menüsü) bağlantısıyla açılan tek sayfa.
+ * Pakette index.html'in kopyaları grafikler.html / hasabatlar.html olarak durur; dosya adına
+ * göre yalnız o sayfa açılır, başlık ve sol menü gösterilmez (eski arayüzün kendi menüsü var).
+ */
+const GOMULU: Page | null = /\/grafikler\.html$/i.test(location.pathname) ? 'charts'
+  : /\/hasabatlar\.html$/i.test(location.pathname) ? 'reports' : null
+
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<TwinScene | null>(null)
@@ -30,7 +38,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [sel, setSel] = useState<{ equipment: string | null; component: string | null }>({ equipment: null, component: null })
   const [explode, setExplode] = useState(0)
-  const [page, setPageRaw] = useState<Page>(() => saved<Page>('twin.page', (v) => /^(map|overview|karta|alarms|reports|charts)$/.test(v), 'overview'))
+  const [page, setPageRaw] = useState<Page>(() => GOMULU ?? saved<Page>('twin.page', (v) => /^(map|overview|karta|alarms|reports|charts)$/.test(v), 'overview'))
   const [mini, setMini] = useState(() => saved<string>('twin.side', (v) => v === 'mini' || v === 'full', 'full') === 'mini')
   const [cfg, setCfg] = useState<StationCfg | null>(null)
   const [user, setUser] = useState(NIAGARA ? '…' : 'ýerli ulanyjy')
@@ -280,12 +288,14 @@ export default function App() {
   // Her ekran yalnız soldaki menüden açılır: sayfalar arası kısayol (alarmdan 3D'ye,
   // karttan grafiğe, başlıktan duýduryşlara) yok — aynı yere tek yol.
   return (
-    <div className={`app${mini ? ' sideMini' : ''}`}>
+    <div className={`app${mini ? ' sideMini' : ''}${GOMULU ? ' gomulu' : ''}`}>
       <canvas ref={canvasRef} />
 
-      <Header sid={sid} user={user} onMenu={() => setMini((m) => !m)}
-              onStation={(s) => { switchStation(s.id); setStation(s) }} />
-      <Sidebar page={page} setPage={setPage} collapsed={mini} />
+      {!GOMULU && <>
+        <Header sid={sid} user={user} onMenu={() => setMini((m) => !m)}
+                onStation={(s) => { switchStation(s.id); setStation(s) }} />
+        <Sidebar page={page} setPage={setPage} collapsed={mini} />
+      </>}
       {mismatch && <div className="wrongStation">{mismatch}</div>}
 
       {is3d && (

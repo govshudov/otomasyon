@@ -660,3 +660,6 @@ a.navItem { text-decoration: none; }
 .hqRows b.mid { color: var(--warn); }
 .hqRows b.bad { color: var(--alarm); }
 .hqHead .x { margin-left: auto; }
+
+/* Gömülü sayfa (grafikler.html / hasabatlar.html): başlık ve sol menü yok */
+.app.gomulu { --hdr: 0px; --sidew: 0px; }

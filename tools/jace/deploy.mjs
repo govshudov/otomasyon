@@ -69,7 +69,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   // H–Q 24 sag sürümü (eşit bölmede hız denetimi yokdu)
   'assets/index-ck43ceVL.js', 'assets/index-CPSy-NoM.js', 'assets/index-z56EdfGU.js',
   // H–Q m³/sag sürümü
-  'assets/index-0d4sBzne.css', 'assets/index-B13Fs1hR.js', 'assets/index-BDjL2bCO.js', 'assets/index-Cc0-y0nt.js']
+  'assets/index-0d4sBzne.css', 'assets/index-B13Fs1hR.js', 'assets/index-BDjL2bCO.js', 'assets/index-Cc0-y0nt.js',
+  // H–Q m³/s sürümü (gömülü sayfalardan önce)
+  'assets/index-B3hiLu1E.css', 'assets/index-CerbwZzp.js', 'assets/index-CUhVI1ln.js', 'assets/index-wllf4t0L.js']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {
