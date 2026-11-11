@@ -77,7 +77,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   // arka plan #142f42'den önce
   'assets/index-C93OQkYS.js', 'assets/index-CNhXrLGD.css', 'assets/index-D2X0uzGE.js', 'assets/index-DsrNEgNf.js',
   // mavi temadan önce
-  'assets/index-BQadUR-n.css', 'assets/index-CZrUGnzT.js', 'assets/index-DMIfUmZH.js', 'assets/index-fVJl1-3a.js']
+  'assets/index-BQadUR-n.css', 'assets/index-CZrUGnzT.js', 'assets/index-DMIfUmZH.js', 'assets/index-fVJl1-3a.js',
+  // 11 Kasım öncesi paketler (#142f42 teması, nasos popup'ından önce)
+  'assets/index-BbxsOBjv.js', 'assets/index-BeYR0SDV.js', 'assets/index-CYE9jNy2.js', 'assets/index-b-Ft6cgd.css']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {

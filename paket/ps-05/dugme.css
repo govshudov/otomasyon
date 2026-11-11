@@ -1,0 +1,9 @@
+/* Eski TV Px sayfasındaki nasos düğmesi (dugme.js): saydam, üzerine gelince çerçeve + ad */
+html, body { margin: 0; height: 100%; background: transparent; cursor: pointer; overflow: hidden; }
+body { box-sizing: border-box; border: 3px solid transparent; border-radius: 10px; transition: border-color .12s, background .12s; }
+body:hover { border-color: rgba(79, 195, 255, 0.9); background: rgba(79, 195, 255, 0.12); }
+html::after {
+  content: attr(data-id); position: fixed; left: 6px; top: 6px; padding: 2px 8px; border-radius: 4px;
+  font: 700 14px system-ui, sans-serif; color: #e8f1f7; background: #1f394c; opacity: 0; transition: opacity .12s;
+}
+html:hover::after { opacity: 1; }
