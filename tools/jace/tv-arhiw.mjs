@@ -42,7 +42,8 @@ if (GERI) {
   const m = eski.t.match(/<WebWidget\b[^>]*\blayout="([^"]+)"[^>]*>[\s\S]*?<\/WebWidget>/)
   if (!m) { log('DUR: ' + SAYFA + ' içinde WebWidget bulunamadı (sayfa beklenenden farklı); hiçbir şey yazılmadı'); process.exit(2) }
   yeni = eski.t.replace(m[0], `<WebBrowser layout="${m[1]}" ord="file:^twin/arhiw_git.html" showProgressIndicator="false"/>`)
-  if (!/<module name="jxBrowser"\/>/.test(yeni)) yeni = yeni.replace('<import>', '<import>\n  <module name="jxBrowser"/>')
+  // WebBrowser tipi workbench modülünde (workbench:WebBrowser); mevcut Px'ler jxBrowser'ı da ekliyor
+  for (const mod of ['jxBrowser', 'workbench']) if (!new RegExp(`<module name="${mod}"/>`).test(yeni)) yeni = yeni.replace('<import>', `<import>\n  <module name="${mod}"/>`)
   log('yeni içerik: başlık aynı, ' + m[1] + ' alanında WebBrowser → file:^twin/arhiw_git.html')
 }
 

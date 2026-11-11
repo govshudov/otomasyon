@@ -668,3 +668,11 @@ a.navItem { text-decoration: none; }
 .app.gomulu.sekmeli { --hdr: 46px; }
 .gomuluSekme { position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 30; display: flex; gap: 6px; align-items: center; padding: 0 12px; background: var(--bar); border-bottom: 1px solid #234156; }
 .gomuluSekme button { font-size: 15px; font-weight: 600; padding: 7px 22px; }
+
+/* nasos.html: eski TV Px sayfasındaki nasos popup'ının içi — 3D kartının aynısı, TV için büyük */
+html:has(.nasosSayfa), html:has(.nasosSayfa) body, html:has(.nasosSayfa) #root { height: auto; min-height: 0; }
+.nasosSayfa { position: relative; zoom: 1.6; }
+.nasosSayfa .card { position: relative; visibility: visible; width: auto; margin: 0; border-radius: 0; box-shadow: none; border-top: 0; border-right: 0; border-bottom: 0; }
+.nasosSayfa .card::after { display: none; }
+.nasosSayfa .loading { position: static; min-height: 90px; }
+.nasosYap { position: absolute; top: 4px; right: 4px; z-index: 31; min-height: 26px; padding: 0 8px; font-size: 16px; background: none; border-color: transparent; color: var(--dim); }

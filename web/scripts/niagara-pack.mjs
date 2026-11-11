@@ -84,6 +84,18 @@ if (plain === stations.length) fs.rmSync(path.join(OUT, 'draco'), { recursive: t
 for (const f of ['grafikler.html', 'hasabatlar.html', 'arhiw.html']) fs.copyFileSync(path.join(OUT, 'index.html'), path.join(OUT, f))
 // Px WebBrowser kutusu sayfayı /ord/... adresinden açabilir; orada ./assets yolları bozulur. Bu küçük sayfa
 // tarayıcıyı asıl adrese (/file/twin/arhiw.html) yönlendirir (meta refresh: istasyonun CSP'si satır içi scripti engelleyebilir)
+// Nasos popup'ı (eski TV Px sayfalarında, aynı pencerede): nasos.html#PMP-03 kartın kendisi;
+// dugme/<ID>.html Workbench'te nasos resminin üstüne konan saydam WebBrowser kutusunun sayfası
+// (ord = file:^twin/dugme/PMP-03.html). Tıklanınca dugme.js popup'ı Px sayfasının üstüne açar.
+fs.copyFileSync(path.join(OUT, 'index.html'), path.join(OUT, 'nasos.html'))
+fs.mkdirSync(path.join(OUT, 'dugme'), { recursive: true })
+const dugmeler = []
+for (const s of stations) for (const e of s.equipment.filter((x) => x.type === 'pump_hsc')) {
+  fs.writeFileSync(path.join(OUT, 'dugme', `${e.id}.html`),
+    '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/file/twin/dugme.css">' +
+    '<script src="/file/twin/dugme.js" defer></script></head><body></body></html>\n')
+  dugmeler.push(e.id)
+}
 fs.writeFileSync(path.join(OUT, 'arhiw_git.html'), '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/file/twin/arhiw.html"></head><body style="background:#1b1f24"></body></html>\n')
 
 // Nokta adları sözlüğü: arayüz çalışırken okur (değişince yalnız bu dosya yeniden yüklenir)
@@ -98,4 +110,4 @@ fs.writeFileSync(path.join(OUT, 'stations.json'), JSON.stringify({
 let n = 0, bytes = 0
 const walk = (d) => { for (const f of fs.readdirSync(d)) { const p = path.join(d, f); const st = fs.statSync(p); if (st.isDirectory()) walk(p); else { n++; bytes += st.size } } }
 walk(OUT)
-console.log(`dist-niagara: ${n} dosya, ${(bytes / 1024).toFixed(0)} KB — istasyonlar: ${list.map((s) => s.id).join(', ')}`)
+console.log(`dist-niagara: ${n} dosya, nasos düğmesi: ${dugmeler.length}, ${(bytes / 1024).toFixed(0)} KB — istasyonlar: ${list.map((s) => s.id).join(', ')}`)
