@@ -25,7 +25,7 @@ export interface ChartProps {
 }
 
 const C = {
-  grid: '#343a43', axis: '#8d949e', text: '#c9ced6',
+  grid: '#294c65', axis: '#8d949e', text: '#c9ced6',
   max: '#ef4444', avg: '#9aa0a8', min: '#eab308', warn: '#f59e0b', alarm: '#ef4444',
 }
 
@@ -166,7 +166,7 @@ export function Chart(p: ChartProps) {
       g.beginPath(); g.moveTo(x, H - PAD.b); g.lineTo(x, H - PAD.b + 4); g.stroke()
       g.fillText(fmtTime(t, withDate), x, H - 6)
     }
-    g.strokeStyle = '#4a515b'
+    g.strokeStyle = '#376585'
     g.beginPath(); g.moveTo(PAD.l, H - PAD.b + 0.5); g.lineTo(W - PAD.r, H - PAD.b + 0.5); g.stroke()
 
     if (!has) {
