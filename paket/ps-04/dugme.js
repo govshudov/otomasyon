@@ -15,7 +15,7 @@
   if (!id && m && !/^dugme$/i.test(m[1])) id = decodeURIComponent(m[1]).toUpperCase()
   var KAT = 'twinNasosKatman'
   var BASE = '/file/twin/'
-  var GEN = 310, ARA = 12, KENAR = 8
+  var GEN = 255, ARA = 12, KENAR = 8
 
   // Popup'ı Px sayfasının en üst belgesine kur (aynı köken); olmazsa bir üst çerçeveye
   var ust = window.parent

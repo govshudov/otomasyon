@@ -671,7 +671,7 @@ a.navItem { text-decoration: none; }
 
 /* nasos.html: eski TV Px sayfasındaki nasos popup'ının içi — 3D kartının aynısı, TV için büyük */
 html:has(.nasosSayfa), html:has(.nasosSayfa) body, html:has(.nasosSayfa) #root { height: auto; min-height: 0; }
-.nasosSayfa { position: relative; zoom: 1.12; }
+.nasosSayfa { position: relative; zoom: 0.95; }
 .nasosSayfa .card { position: relative; visibility: visible; width: auto; margin: 0; border-radius: 0; box-shadow: none; border-top: 0; border-right: 0; border-bottom: 0; }
 .nasosSayfa .card::after { display: none; }
 .nasosSayfa .loading { position: static; min-height: 90px; padding: 34px 14px 14px; text-align: center; }
