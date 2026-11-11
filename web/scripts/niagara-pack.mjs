@@ -81,7 +81,10 @@ if (plain === stations.length) fs.rmSync(path.join(OUT, 'draco'), { recursive: t
 
 // Eski arayüzden (Px sayfaları, nav menüsü) bağlantıyla açılan tek sayfalar: index.html'in
 // kopyaları; arayüz dosya adına bakıp yalnız o sayfayı, başlık ve menü olmadan açar (App.tsx GOMULU)
-for (const f of ['grafikler.html', 'hasabatlar.html']) fs.copyFileSync(path.join(OUT, 'index.html'), path.join(OUT, f))
+for (const f of ['grafikler.html', 'hasabatlar.html', 'arhiw.html']) fs.copyFileSync(path.join(OUT, 'index.html'), path.join(OUT, f))
+// Px WebBrowser kutusu sayfayı /ord/... adresinden açabilir; orada ./assets yolları bozulur. Bu küçük sayfa
+// tarayıcıyı asıl adrese (/file/twin/arhiw.html) yönlendirir (meta refresh: istasyonun CSP'si satır içi scripti engelleyebilir)
+fs.writeFileSync(path.join(OUT, 'arhiw_git.html'), '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/file/twin/arhiw.html"></head><body style="background:#1b1f24"></body></html>\n')
 
 // Nokta adları sözlüğü: arayüz çalışırken okur (değişince yalnız bu dosya yeniden yüklenir)
 fs.copyFileSync(path.join(ROOT, 'common', 'sozluk.json'), path.join(OUT, 'sozluk.json'))

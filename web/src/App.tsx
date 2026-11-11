@@ -27,7 +27,9 @@ const store = (key: string, v: string) => { try { localStorage.setItem(key, v) }
  * göre yalnız o sayfa açılır, başlık ve sol menü gösterilmez (eski arayüzün kendi menüsü var).
  */
 const GOMULU: Page | null = /\/grafikler\.html$/i.test(location.pathname) ? 'charts'
-  : /\/hasabatlar\.html$/i.test(location.pathname) ? 'reports' : null
+  : /\/(hasabatlar|arhiw)\.html$/i.test(location.pathname) ? (/arhiw/i.test(location.pathname) ? 'charts' : 'reports') : null
+/** arhiw.html: eski TV arayüzünün "ARHIW MAGLUMATLARY" sayfasında; Grafikler | Hasabatlar sekmeleriyle */
+const GOMULU_SEKME = /\/arhiw\.html$/i.test(location.pathname)
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -288,8 +290,15 @@ export default function App() {
   // Her ekran yalnız soldaki menüden açılır: sayfalar arası kısayol (alarmdan 3D'ye,
   // karttan grafiğe, başlıktan duýduryşlara) yok — aynı yere tek yol.
   return (
-    <div className={`app${mini ? ' sideMini' : ''}${GOMULU ? ' gomulu' : ''}`}>
+    <div className={`app${mini ? ' sideMini' : ''}${GOMULU ? ' gomulu' : ''}${GOMULU_SEKME ? ' sekmeli' : ''}`}>
       <canvas ref={canvasRef} />
+      {GOMULU_SEKME && (
+        <div className="gomuluSekme">
+          {([['charts', 'Grafikler'], ['reports', 'Hasabatlar']] as [Page, string][]).map(([p, t]) => (
+            <button key={p} className={page === p ? 'on' : ''} onClick={() => setPageRaw(p)}>{t}</button>
+          ))}
+        </div>
+      )}
 
       {!GOMULU && <>
         <Header sid={sid} user={user} onMenu={() => setMini((m) => !m)}

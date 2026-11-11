@@ -663,3 +663,7 @@ a.navItem { text-decoration: none; }
 
 /* Gömülü sayfa (grafikler.html / hasabatlar.html): başlık ve sol menü yok */
 .app.gomulu { --hdr: 0px; --sidew: 0px; }
+/* arhiw.html (eski TV arayüzünde): üstte yalnız Grafikler | Hasabatlar */
+.app.gomulu.sekmeli { --hdr: 46px; }
+.gomuluSekme { position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 30; display: flex; gap: 6px; align-items: center; padding: 0 12px; background: var(--bar); border-bottom: 1px solid #2c3036; }
+.gomuluSekme button { font-size: 15px; font-weight: 600; padding: 7px 22px; }
