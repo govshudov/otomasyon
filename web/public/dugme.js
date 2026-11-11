@@ -41,7 +41,7 @@
     f.title = id
     Object.assign(f.style, {
       width: '440px', height: '320px', maxWidth: '94vw', maxHeight: '92vh',
-      border: '1px solid #2c526d', borderRadius: '10px', background: '#1f394c',
+      border: '1px solid #526e83', borderRadius: '10px', background: '#405667',
       boxShadow: '0 16px 40px rgba(0, 0, 0, 0.5)', colorScheme: 'dark',
     })
     k.appendChild(f)

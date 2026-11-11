@@ -96,7 +96,7 @@ for (const s of stations) for (const e of s.equipment.filter((x) => x.type === '
     '<script src="/file/twin/dugme.js" defer></script></head><body></body></html>\n')
   dugmeler.push(e.id)
 }
-fs.writeFileSync(path.join(OUT, 'arhiw_git.html'), '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/file/twin/arhiw.html"></head><body style="background:#1b1f24"></body></html>\n')
+fs.writeFileSync(path.join(OUT, 'arhiw_git.html'), '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/file/twin/arhiw.html"></head><body style="background:#384b5a"></body></html>\n')
 
 // Nokta adları sözlüğü: arayüz çalışırken okur (değişince yalnız bu dosya yeniden yüklenir)
 fs.copyFileSync(path.join(ROOT, 'common', 'sozluk.json'), path.join(OUT, 'sozluk.json'))
