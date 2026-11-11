@@ -102,6 +102,8 @@ fs.writeFileSync(path.join(OUT, 'arhiw_git.html'), '<!doctype html><html><head><
 fs.copyFileSync(path.join(ROOT, 'common', 'sozluk.json'), path.join(OUT, 'sozluk.json'))
 // Nasos egrileri (KSB PDF'leri) ve hangi nasosun hangi model olduğu: H–Q grafigi
 fs.copyFileSync(path.join(ROOT, 'common', 'nasos_egrileri.json'), path.join(OUT, 'nasos_egrileri.json'))
+// Nasos popup'ının okuduğu eski TV noktaları (sahada Workbench'te düzenlenebilir: Files → twin)
+fs.copyFileSync(path.join(ROOT, 'common', 'eski_noktalar.json'), path.join(OUT, 'eski_noktalar.json'))
 
 fs.writeFileSync(path.join(OUT, 'stations.json'), JSON.stringify({
   stations: list, default: list[0]?.id, niagara_root: 'slot:/Twin', niagara_station: niagaraStation,

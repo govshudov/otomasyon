@@ -1,0 +1,44 @@
+{
+  "_aciklama": [
+    "Eski TV arayuzundeki nasos popup'inin (nasos.html) okudugu noktalar. Eski Px sayfalarinin (Pump.px, TOPLUM_1/2, OG_ELEKTRIK) kullandigi noktalarin aynisi.",
+    "Sahada Workbench'te degistirilebilir: Files -> twin -> eski_noktalar.json (cift tik, metin duzenleyici), kaydet, popup'i yeniden ac.",
+    "{n} = nasos numarasi (N-3 -> 3), {t} = toplum klasoru, {y} = toplumun yaceyka klasoru, {k} = nasosun toplum icindeki sirasi (1'den).",
+    "Bir anahtarda birden fazla yol varsa sirayla denenir (ornek: P2_OutLet buyuk L ile yazilmis). Yol sonundaki /out yazilmasa da olur."
+  ],
+  "kok": "station:|slot:/Drivers/NiagaraNetwork/PS21_JACE/points",
+  "toplumlar": [
+    { "klasor": "Toplum_1", "yaceyka": "Toplum1_Yaceyka", "nasoslar": [1, 2, 3] },
+    { "klasor": "Toplum2", "yaceyka": "Toplum2_Yaceyka", "nasoslar": [4, 5, 6, 7, 8] }
+  ],
+  "noktalar": {
+    "yagday": ["{t}/PowerMode_M{k}"],
+    "duydurys": ["INFOS/Warnings_Of_Pump{n}"],
+    "nasazlyk": ["INFOS/Faults_Of_Pump{n}"],
+    "status": ["INFOS/StatusOfPump{n}"],
+    "basys": ["Presures/P{n}_Outlet", "Presures/P{n}_OutLet"],
+    "akym": ["PUMP_FLOW/M{n}/Divide"],
+    "tizlik": ["PUMP_FLOW/M{n}/Velocity"],
+    "jemi": ["PUMP_FLOW/M{n}/Total"],
+    "suw": ["Water_Level/M{n}"],
+    "giris_wana": ["VANALAR/StatusOfInPump{n}"],
+    "cykys_wana": ["VANALAR/StatusOfOutPump{n}"],
+    "inw_sag": ["{t}/Startup_M{k}/HOUR"],
+    "inw_min": ["{t}/Startup_M{k}/MIN"],
+    "trans_sag": ["{t}/Line_M{k}/HOUR"],
+    "trans_min": ["{t}/Line_M{k}/MIN"],
+    "U1": ["{t}/Temps_P{k}/U1"],
+    "U2": ["{t}/Temps_P{k}/U2"],
+    "V1": ["{t}/Temps_P{k}/V1"],
+    "V2": ["{t}/Temps_P{k}/V2"],
+    "W1": ["{t}/Temps_P{k}/W1"],
+    "W2": ["{t}/Temps_P{k}/W2"],
+    "On": ["{t}/Temps_P{k}/On"],
+    "Arka": ["{t}/Temps_P{k}/Arka"],
+    "IL1": ["{y}/P{k}/IL1"],
+    "IL2": ["{y}/P{k}/IL2"],
+    "IL3": ["{y}/P{k}/IL3"],
+    "inw_tok": ["{t}/VFD_Current"],
+    "inw_kuwwat": ["{t}/VFD_MPower"],
+    "inw_tizlik": ["{t}/VFD_M_Speed"]
+  }
+}

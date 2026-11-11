@@ -81,7 +81,9 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   // 11 Kasım öncesi paketler (#142f42 teması, nasos popup'ından önce)
   'assets/index-BbxsOBjv.js', 'assets/index-BeYR0SDV.js', 'assets/index-CYE9jNy2.js', 'assets/index-b-Ft6cgd.css',
   // #384b5a (TV sekmeleri) renginden önce
-  'assets/index-CjABMRQ2.js', 'assets/index-wlWV0FeA.css']
+  'assets/index-CjABMRQ2.js', 'assets/index-wlWV0FeA.css',
+  // eski TV noktalı nasos popup'ından önce
+  'assets/index-wiFyZ5ue.js', 'assets/index-B0xUnFQ9.css']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {
