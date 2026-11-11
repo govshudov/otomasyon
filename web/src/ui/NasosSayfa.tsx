@@ -33,7 +33,6 @@ export function NasosSayfa() {
   const [vals, setVals] = useState<Record<string, EskiDeger>>({})
   const [missing, setMissing] = useState<string[]>([])
   const [err, setErr] = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     let ok = true, stop = () => {}
@@ -43,12 +42,11 @@ export function NasosSayfa() {
       if (!Number.isFinite(n)) throw new Error(`nasos belgisi ýok (${id || '?'})`)
       const cfg = await loadEskiCfg()
       const { ords } = nasosOrds(cfg, n)
-      if (DEMO) { const all: Record<string, EskiDeger> = {}; for (const k of Object.keys(ords)) all[k] = demoDeger(k); setVals(all); setReady(true); return }
+      if (DEMO) { const all: Record<string, EskiDeger> = {}; for (const k of Object.keys(ords)) all[k] = demoDeger(k); setVals(all); return }
       const r = await abone(ords, (key, d) => { if (ok) setVals((s) => ({ ...s, [key]: d })) })
       stop = r.stop
       if (!ok) { stop(); return }
       setMissing(r.missing.map((m) => `${m.key}: ${m.ords.join(' | ')}`))
-      setReady(true)
     })().catch((e) => ok && setErr(String(e?.message ?? e)))
     return () => { ok = false; stop(); window.removeEventListener('keydown', esc) }
   }, [id, n])
@@ -96,7 +94,6 @@ export function NasosSayfa() {
           <span className={`chip ${yagCls}`}>{yagdayOf(yag) ?? 'Maglumat ýok'}</span>
           <button className="x" onClick={yap} aria-label="ýap">×</button>
         </div>
-        {!ready && <div className="empty">ýüklenýär…</div>}
 
         <div className={`eskiDurum ${duy !== null && duy > 0 ? 'warn' : ''}`}><em>Duýduryş</em>{nasazOf(duy) ?? '—'}</div>
         <div className={`eskiDurum ${nas !== null && nas > 0 ? 'fault' : ''}`}><em>Näsazlyk</em>{nasazOf(nas) ?? '—'}</div>
