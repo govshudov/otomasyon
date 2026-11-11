@@ -1,6 +1,9 @@
-// Eski TV Px sayfasındaki nasos düğmesi.
+// Eski TV Px sayfasındaki nasos düğmesi (dugme.html#PMP-03).
 // Workbench'te nasos resminin üstüne bir WebBrowser kutusu konur, ord'u:
 //   file:^twin/dugme/PMP-03.html
+// O sayfa yalnız buraya yönlendirir: Niagara kutunun içini kendi dosya görünümüyle sarar ve
+// sayfadaki dosya yollarını bozar; yönlendirme (meta refresh) bozulmaz. Sarmalayıcı sayfaların
+// arka planı burada saydam yapılır, nasos resmi görünür.
 // Kutu saydamdır; üzerine gelince çerçevesi görünür. Tıklanınca AYNI pencerede nasos popup'ı
 // (file:^twin/nasos.html#PMP-03) tıklanan nasosun YANINDA açılır (sağında; yer yoksa solunda),
 // nasosların üstünü kapatmaz, sayfa karartılmaz. Başka nasosa tıklamak popup'ı o nasosa geçirir;
@@ -8,7 +11,8 @@
 (function () {
   'use strict'
   var m = location.pathname.match(/([^\/]+)\.html$/i)
-  var id = m ? decodeURIComponent(m[1]).toUpperCase() : ''
+  var id = decodeURIComponent(location.hash.slice(1)).toUpperCase()
+  if (!id && m && !/^dugme$/i.test(m[1])) id = decodeURIComponent(m[1]).toUpperCase()
   var KAT = 'twinNasosKatman'
   var BASE = '/file/twin/'
   var GEN = 440, ARA = 14, KENAR = 8
@@ -20,24 +24,50 @@
   document.documentElement.setAttribute('data-id', id)
   document.title = id
 
+  /** Niagara'nın kutuyu sardığı ara sayfaları (dosya görünümü) saydam yap: nasos resmi görünsün.
+   *  Yalnız adresinde "dugme" geçen sarmalayıcılara dokunulur; Px sayfasının kendisine değil. */
+  function saydam() {
+    var w = window
+    try {
+      while (w !== ust && w.frameElement) {
+        var fe = w.frameElement
+        fe.style.background = 'transparent'
+        fe.setAttribute('allowtransparency', 'true')
+        fe.setAttribute('scrolling', 'no')   // küçük kutuda kaydırma çubuğu çıkmasın
+        w = w.parent
+        if (w === ust || !/dugme/i.test(String(w.location.href))) break
+        var d = w.document
+        for (var el = fe.parentElement; el; el = el.parentElement) el.style.background = 'transparent'
+        d.documentElement.style.background = 'transparent'
+        d.documentElement.style.overflow = 'hidden'
+        if (d.body) { d.body.style.background = 'transparent'; d.body.style.overflow = 'hidden' }
+        var all = d.querySelectorAll('.window-bg, .bajaux-container, .hx, form, div')
+        for (var i = 0; i < all.length; i++) all[i].style.background = 'transparent'
+      }
+    } catch (e) { /* yok */ }
+  }
+  saydam()
+  // Sarmalayıcı sayfa geç çizilebilir: bir kez daha
+  setTimeout(saydam, 800)
+
   function yap() {
     var k = ust.document.getElementById(KAT)
     if (k) { if (k.__ro) k.__ro.disconnect(); k.parentNode.removeChild(k) }
   }
 
-  /** Bu düğmenin (WebBrowser kutusunun) üst belgedeki ekran dikdörtgeni */
+  /** Bu düğmenin üst belgedeki ekran dikdörtgeni. Aradaki çerçevelerin ölçeği hesaba katılır
+   *  (Px tuvali ekrana sığsın diye küçültülür). */
   function kutu() {
-    var x = 0, y = 0, w = window, b = null
+    var x = 0, y = 0, bw = window.innerWidth, bh = window.innerHeight, w = window
     try {
       while (w !== ust && w.frameElement) {
         var r = w.frameElement.getBoundingClientRect()
-        if (!b) b = { w: r.width, h: r.height }
-        x += r.left; y += r.top
+        var s = w.innerWidth ? r.width / w.innerWidth : 1
+        x = r.left + x * s; y = r.top + y * s; bw *= s; bh *= s
         w = w.parent
       }
     } catch (e) { /* yok */ }
-    if (!b) b = { w: 0, h: 0 }
-    return { left: x, top: y, right: x + b.w, bottom: y + b.h, w: b.w, h: b.h }
+    return { left: x, top: y, right: x + bw, bottom: y + bh, w: bw, h: bh }
   }
 
   function yerles(f, b) {

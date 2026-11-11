@@ -86,14 +86,16 @@ for (const f of ['grafikler.html', 'hasabatlar.html', 'arhiw.html']) fs.copyFile
 // tarayıcıyı asıl adrese (/file/twin/arhiw.html) yönlendirir (meta refresh: istasyonun CSP'si satır içi scripti engelleyebilir)
 // Nasos popup'ı (eski TV Px sayfalarında, aynı pencerede): nasos.html#PMP-03 kartın kendisi;
 // dugme/<ID>.html Workbench'te nasos resminin üstüne konan saydam WebBrowser kutusunun sayfası
-// (ord = file:^twin/dugme/PMP-03.html). Tıklanınca dugme.js popup'ı Px sayfasının üstüne açar.
+// (ord = file:^twin/dugme/PMP-03.html). Niagara kutuyu kendi dosya görünümüyle sarar ve sayfadaki
+// /file/... yollarını bozar; bu yüzden bu sayfa yalnız asıl düğmeye yönlendirir (arhiw_git gibi):
+// /file/twin/dugme.html#PMP-03. Tıklanınca dugme.js popup'ı Px sayfasının üstüne açar.
 fs.copyFileSync(path.join(OUT, 'index.html'), path.join(OUT, 'nasos.html'))
 fs.mkdirSync(path.join(OUT, 'dugme'), { recursive: true })
 const dugmeler = []
 for (const s of stations) for (const e of s.equipment.filter((x) => x.type === 'pump_hsc')) {
   fs.writeFileSync(path.join(OUT, 'dugme', `${e.id}.html`),
-    '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/file/twin/dugme.css">' +
-    '<script src="/file/twin/dugme.js" defer></script></head><body></body></html>\n')
+    `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/file/twin/dugme.html#${e.id}">` +
+    '</head><body style="margin:0;background:transparent"></body></html>\n')
   dugmeler.push(e.id)
 }
 fs.writeFileSync(path.join(OUT, 'arhiw_git.html'), '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/file/twin/arhiw.html"></head><body style="background:#384b5a"></body></html>\n')
