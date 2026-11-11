@@ -11,8 +11,12 @@ import { ensureLogin, H } from './auth.mjs'
 
 const OUT = path.join(os.homedir(), 'Desktop', 'tv_yedek')
 fs.mkdirSync(OUT, { recursive: true })
-const rapor = []
-const log = (...a) => { const s = a.map((x) => typeof x === 'string' ? x : JSON.stringify(x, null, 1)).join(' '); console.log(s); rapor.push(s) }
+const RAPOR = path.join(OUT, 'tv-bak.txt')
+fs.writeFileSync(RAPOR, `tv-bak ${new Date().toLocaleString()}\n`)
+// Her satır anında dosyaya: script yarıda kalsa da rapor eskisi gibi kalmasın
+const log = (...a) => { const s = a.map((x) => typeof x === 'string' ? x : JSON.stringify(x, null, 1)).join(' '); console.log(s); fs.appendFileSync(RAPOR, s + '\n') }
+process.on('uncaughtException', (e) => { log('HATA: ' + (e?.stack ?? e)); process.exit(1) })
+process.on('unhandledRejection', (e) => { log('HATA: ' + (e?.stack ?? e)); process.exit(1) })
 
 const p = await open()
 await ensureLogin(p)
@@ -44,8 +48,11 @@ await p.sleep(9000)
 await p.shot(path.join(OUT, 'bak-1-pump.png'))
 const ifr = await p.eval(`(() => {
   const out = []
+  const izler = []
   const walk = (doc, ox, oy, derin) => {
-    for (const f of doc.querySelectorAll('iframe')) {
+    // WebBrowser HTML5'te iframe değil başka bir şey olarak çizilebilir: 'dugme' geçen her eleman
+    try { for (const e of doc.querySelectorAll('*')) { const a = [...e.attributes].map((x) => x.value).join(' '); if (/dugme|twin\\//i.test(a)) izler.push({ derin, tag: e.tagName, html: e.outerHTML.slice(0, 400) }) } } catch (e) { izler.push({ hata: String(e) }) }
+    for (const f of doc.querySelectorAll('iframe')) try {
       const r = f.getBoundingClientRect()
       const cx = r.left + r.width / 2, cy = r.top + r.height / 2
       const ust = doc.elementFromPoint(cx, cy)
@@ -57,10 +64,10 @@ const ifr = await p.eval(`(() => {
         gorunur: getComputedStyle(f).visibility + '/' + getComputedStyle(f).display, pointerNoneAtasi: pe,
         ortadakiEleman: ust ? (ust === f ? 'KENDİSİ' : ust.tagName + '#' + ust.id + '.' + ust.className) : null, ic })
       try { if (f.contentDocument) walk(f.contentDocument, ox + r.left, oy + r.top, derin + 1) } catch (e) { /* yok */ }
-    }
+    } catch (e) { out.push({ derin, hata: String(e && e.stack || e) }) }
   }
   walk(document, 0, 0, 0)
-  return { url: location.href, top: window.top === window, iframes: out }
+  return { url: location.href, top: window.top === window, iframes: out, izler }
 })()`)
 log(ifr)
 
@@ -81,7 +88,6 @@ if (dugmeler.length) {
   log('  Sayfada düğme iframe yok: WebBrowser kutusu eklenmemiş, kaydedilmemiş ya da HTML5 görünümde çizilmiyor.')
 }
 
-fs.writeFileSync(path.join(OUT, 'tv-bak.txt'), rapor.join('\n'))
-log('\nrapor: ' + path.join(OUT, 'tv-bak.txt'))
+log('\nrapor: ' + RAPOR)
 await p.close()
 process.exit(0)
