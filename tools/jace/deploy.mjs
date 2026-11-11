@@ -85,7 +85,7 @@ const OLD = ['index.html', 'stations.json', 'assets/main-BF0-mYbc.js', 'assets/s
   // eski TV noktalı nasos popup'ından önce
   'assets/index-wiFyZ5ue.js', 'assets/index-B0xUnFQ9.css',
   // popup kısaltılıp nasosun yanına alınmadan önce
-  'assets/index-DhKfojmy.js']
+  'assets/index-DhKfojmy.js', 'assets/index-DQTA0UBv.js']
 
 // `--plan`: JACE'e bağlanmadan yalnız kontrol edilecek nokta listesini yazar
 if (process.argv.includes('--plan')) {
