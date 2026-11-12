@@ -294,6 +294,47 @@ node tools\jace\deploy.mjs x y --station stations\ps-04.json --plan
 | **Arayüz kodu** | `web/` | `make paket`; istasyonda `make kur ADIM=8 BITIR=8` |
 | **Sürücü** | `driver/timescale/` (değişiklik notları: `DEGISIKLIKLER-1.7.md`) | `make surucu`, `make imzala` (p12 ve şifresi gerekir) → `paket/surucu/timescale-rt.jar`; her istasyonda §2.3 (2–4). Yeni tablo sütunu gerekiyorsa sürücünün şema koduna `ALTER TABLE … ADD COLUMN IF NOT EXISTS …` eklenir; tablolar silinmez. |
 
+### 6.1 Arayüzü yalnız Workbench ile güncelleme (PowerShell yok, internet yok)
+
+Twin noktaları kurulmuş bir istasyonda (ilk kurulumda adım 8 bir kez çalışmış olmalı) arayüz güncellemesi
+elle yapılabilir. `paket/<id>` klasörü hazır gelir (repoda; USB ile de taşınabilir), sahada derleme gerekmez.
+
+1. Workbench → sol ağaç → **My Host → My File System** → `…\otomasyon\paket\ps-04` klasörünü açın,
+   sağ tık → **Refresh** (Workbench klasör listesini önbellekte tutar; yeni eklenen dosyalar
+   Refresh yapılmadan görünmez ve kopyalanmaz).
+2. İçindekilerin hepsini seçin (Ctrl+A) → **Copy**.
+3. İstasyona bağlanın → **Files → twin** klasörünü açın (yoksa sağ tık → New → Folder → `twin`) → **Paste**,
+   "üzerine yaz" sorusuna **Yes to All**.
+4. Tarayıcıda Ctrl+F5.
+
+Eski `assets/index-*.js/css` dosyaları kalır; zararsızdır (yeni `index.html` yenilerini kullanır), isterseniz silin.
+
+### 6.2 Eski TV Px sayfalarında nasos popup'ı (yalnız Workbench)
+
+Popup tek sayfa: `twin/nasos.html`. Eski Px sayfalarının okuduğu noktaları doğrudan okur
+(`twin/eski_noktalar.json`; nokta adı farklı bir istasyonda bu dosya Workbench'te düzenlenir).
+Her nasosun düğme sayfası (`twin/dugme/PMP-01.html` …) paketle gelir.
+
+1. İstasyon bağlantısının altından (**My File System**'den DEĞİL — o yerel kopyadır)
+   **Files → TV_PX → Pump.px** (veya `MainPage.px`) → sağ tık → **Views → Px Editor**.
+2. **Window → Side Bars → Palette** → **workbench** modülü (yoksa **jxBrowser**) → **WebBrowser**'ı nasos
+   resminin üstüne sürükleyin, nasos büyüklüğüne getirin. Yeni eklenen kutu zaten en üstte çizilir;
+   bir yazının altında kalırsa **Widget Tree**'de listenin en altına taşıyın.
+3. Properties:
+   - **ord** = `file:^twin/dugme/PMP-01.html|view:web:FileDownloadView`
+     (sondaki ek Niagara'nın beyaz ara sayfasını atlar; eksiz de çalışır ama sayfa açılırken ~1 s beyaz görünür)
+   - **showProgressIndicator** = `false`
+   - **visible** = `true` (gizli kutu tıklamayı almaz)
+4. Diğer nasoslar: kopyala–yapıştır, yalnız ord'daki numarayı değiştirin. **Numara resimdeki N ile aynı
+   olmalı** (TV Pump.px'te en üstteki N-8, en alttaki N-1). Ctrl+S, tarayıcıda Ctrl+F5.
+
+Kutu görünmezdir (yalnız imleç el olur). Tıklanınca popup aynı pencerede, nasosun yanında açılır;
+nasosların üstünü kapatmaz. Başka nasosa tıklamak popup'ı ona geçirir; × veya Esc kapatır.
+
+Çalışmazsa salt okuyan kontrol: `powershell -ExecutionPolicy Bypass -File tools\jace\tv-bak.ps1`
+(rapor: `Desktop\tv_yedek\tv-bak.txt`): dosyalar istasyonda mı, Pump.px'te kaç kutu var, ord'ları,
+kutunun içinde hangi sayfa açılıyor, tıklayınca popup açılıyor mu.
+
 ---
 
 ## 7. Komutlar — `make` olmadan
