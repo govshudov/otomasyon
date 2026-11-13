@@ -1379,7 +1379,7 @@ function freshTick(){
     ' <span style="color:var(--tx3)">· soňky maglumat '+(s==null?"ýok":s<90?s+" min öň":Math.round(s/60)+" sag öň")+'</span>';
 }
 freshTick(); setInterval(freshTick,20000);
-document.getElementById("brandLogo").src=LOGO;
+const _bl=document.getElementById("brandLogo"); if(_bl)_bl.src=LOGO;   // yan menüde logo ýok (TV-niň öz sözbaşy bar); PDF-de bar
 route();
 
 }
