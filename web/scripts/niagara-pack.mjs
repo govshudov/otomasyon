@@ -106,6 +106,11 @@ fs.copyFileSync(path.join(ROOT, 'common', 'sozluk.json'), path.join(OUT, 'sozluk
 fs.copyFileSync(path.join(ROOT, 'common', 'nasos_egrileri.json'), path.join(OUT, 'nasos_egrileri.json'))
 // Nasos popup'ının okuduğu eski TV noktaları (sahada Workbench'te düzenlenebilir: Files → twin)
 fs.copyFileSync(path.join(ROOT, 'common', 'eski_noktalar.json'), path.join(OUT, 'eski_noktalar.json'))
+// SUW GEÇIRIJILER sahypası (gecirijiler.html, web/public): sayaçlar nokta adlarından bulunur; adlardan
+// çıkmayan bağlantılar ulgam.json'da (sahada Workbench'te düzenlenebilir). TV'deki MT.px'in WebBrowser
+// kutusu yönlendirme sayfasını açar (arhiw_git gibi; Niagara HTML'deki /file/ yollarını bozuyor).
+fs.copyFileSync(path.join(ROOT, 'common', 'ulgam.json'), path.join(OUT, 'ulgam.json'))
+fs.writeFileSync(path.join(OUT, 'gecirijiler_git.html'), '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/file/twin/gecirijiler.html"></head><body style="background:#384b5a"></body></html>\n')
 
 fs.writeFileSync(path.join(OUT, 'stations.json'), JSON.stringify({
   stations: list, default: list[0]?.id, niagara_root: 'slot:/Twin', niagara_station: niagaraStation,

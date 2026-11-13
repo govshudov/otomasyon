@@ -1,0 +1,32 @@
+{
+ "_aciklama": ["SUW GEÇIRIJILER sahypasynyň (gecirijiler.html) ulgam düzümi. Sahypa hasaplaýjylary maglumat binýadyndaky nokat adlaryndan özi tapýar:",
+  "  MT1 / MT2_1 (esasy turba), MT1_S2 (sazlaýjy), MT1_1_S3 (MT-1/1 sazlaýjysy), Saka4 (SAKA), BA4_G9 (gatla), PS21_T1_N1 (nasos); ahyry _Akym (akym) we _Toplam/_Jemi (jemi).",
+  "Bu faýla diňe atlardan çykmaýan baglanyşyklar ýazylýar. Workbench-de üýtgedip bolýar: Files -> twin -> ulgam.json.",
+  "saka_mt: SAKA haýsy MT-de; saka_sub: SAKA MT-niň kömekçi turbasynda bolsa; transfer: howza gidýän (sarp edilişe goşulmaýan) turbalar;",
+  "howuz: howza girýän / çykýan turbalar; beketler: nasos toparlary (topar -> MT); hat_sira: MT gövdesindäki fiziki tertip;",
+  "garasylyan: bolmaly hasaplaýjylar (maglumat binýadynda ýok bolsa 'maglumat ýok' görünýär, deňagramlylyk 'doly däl' diýýär)."],
+ "BIRINJI_MAY": {
+  "saka_mt": { "1": 1, "2": 1, "3": 1, "4": 1, "5": 3, "6": 3, "7": 4, "8": 5
+  },
+  "saka_sub": { "3": 2
+  },
+  "transfer": ["MT2_1", "MT2_2"],
+  "howuz": { "giren": ["MT2_1", "MT2_2"], "cykan": ["MT3", "MT4", "MT5"]
+  },
+  "beketler": [{ "id": "PS-21", "ad": "PS-21 Suw Göteriji Beket", "toparlar": [{ "ad": "1-nji topar", "mt": 1
+     },
+     { "ad": "2-nji topar", "mt": 2
+     }]
+   },
+   { "id": "PS-22", "ad": "PS-22 Suw Göteriji Beket", "toparlar": [{ "ad": "1-nji topar", "mt": 3
+     },
+     { "ad": "2-nji topar", "mt": 4
+     },
+     { "ad": "3-nji topar", "mt": 5
+     }]
+   }],
+  "hat_sira": { "1": ["sub:1", "saz:1", "saz:2", "saka:1", "saka:2", "sub:2", "saka:4"], "3": ["sub:1", "saz:1", "sub:2", "saz:2", "saz:3", "saz:4", "saz:5", "saka:5", "saz:6", "saka:6", "sub:3"], "4": ["sub:1", "saz:1", "saz:2", "saz:3", "sub:2", "saz:4", "saz:5", "saka:7"], "5": ["saz:1", "saz:2", "saz:3", "saz:4", "saz:5", "saz:6", "saz:7", "saz:8", "saz:9", "saz:10", "saz:11", "saz:12", "saz:13", "saz:14", "saz:15", "saz:16", "saka:8"]
+  },
+  "garasylyan": ["MT1", "MT1_S1", "MT1_S2", "MT1_1_S1", "MT1_1_S2", "MT1_1_S3", "MT1_1_S4", "MT1_1_S5", "MT1_1_S6", "Saka1", "BA1_G1", "BA1_G2", "BA1_G3", "BA1_G4", "BA1_G5", "BA1_G6", "BA1_G7", "BA1_G8", "BA1_G9", "Saka2", "BA2_G1", "BA2_G2", "MT1_2_S1", "MT1_2_S2", "Saka3", "BA3_G1", "Saka4", "BA4_G1", "BA4_G2", "BA4_G3", "BA4_G4", "BA4_G5", "BA4_G6", "BA4_G7", "BA4_G8", "BA4_G9", "BA4_G10", "BA4_G11", "BA4_G12", "BA4_G13", "BA4_G14", "BA4_G15", "BA4_G16", "MT2_1", "MT2_2", "MT3", "MT3_1_S1", "MT3_1_S2", "MT3_1_S3", "MT3_S1", "MT3_S2", "MT3_S3", "MT3_S4", "MT3_S5", "MT3_S6", "MT3_2_S1", "MT3_3_S1", "Saka5", "BA5_G1", "BA5_G2", "BA5_G3", "BA5_G4", "BA5_G5", "BA5_G6", "BA5_G7", "Saka6", "BA6_G1", "BA6_G2", "BA6_G3", "BA6_G4", "BA6_G5", "BA6_G6", "BA6_G7", "BA6_G8", "BA6_G9", "BA6_G10", "BA6_G11", "BA6_G12", "BA6_G13", "BA6_G14", "BA6_G15", "MT4", "MT4_1_S1", "MT4_2_S1", "MT4_S1", "MT4_S2", "MT4_S3", "MT4_S4", "MT4_S5", "Saka7", "BA7_G1", "BA7_G2", "BA7_G3", "BA7_G4", "BA7_G5", "BA7_G6", "BA7_G7", "BA7_G8", "BA7_G9", "MT5", "MT5_S1", "MT5_S2", "MT5_S3", "MT5_S4", "MT5_S5", "MT5_S6", "MT5_S7", "MT5_S8", "MT5_S9", "MT5_S10", "MT5_S11", "MT5_S12", "MT5_S13", "MT5_S14", "MT5_S15", "MT5_S16", "Saka8", "BA8_G1", "BA8_G2", "BA8_G3", "BA8_G4", "BA8_G5", "BA8_G6", "BA8_G7", "BA8_G8", "BA8_G9", "BA8_G10", "BA8_G11"]
+ }
+}

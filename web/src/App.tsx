@@ -54,6 +54,7 @@ export default function App() {
   }, [buildingFull, twin])
 
   const setPage = useCallback((p: Page) => { setPageRaw(p); store('twin.page', p) }, [])
+  const [hasap, setHasap] = useState(false)   // arhiw.html: "Hasaplaýjy hasabaty" sekmesi
   useEffect(() => { store('twin.side', mini ? 'mini' : 'full') }, [mini])
   useEffect(() => { niagaraUser().then((u) => u && setUser(u)) }, [])
 
@@ -295,10 +296,13 @@ export default function App() {
       {GOMULU_SEKME && (
         <div className="gomuluSekme">
           {([['charts', 'Grafikler'], ['reports', 'Hasabatlar']] as [Page, string][]).map(([p, t]) => (
-            <button key={p} className={page === p ? 'on' : ''} onClick={() => setPageRaw(p)}>{t}</button>
+            <button key={p} className={page === p && !hasap ? 'on' : ''} onClick={() => { setHasap(false); setPageRaw(p) }}>{t}</button>
           ))}
+          {/* Suw hasaplaýjy hasabaty: gecirijiler.html-iň hasabat bölümi (PDF / Excel çykyşy şol ýerden) */}
+          <button className={hasap ? 'on' : ''} onClick={() => setHasap(true)}>Hasaplaýjy hasabaty</button>
         </div>
       )}
+      {GOMULU_SEKME && hasap && <iframe className="gomuluHasap" src="gecirijiler.html#rapor" title="Hasaplaýjy hasabaty" />}
 
       {!GOMULU && <>
         <Header sid={sid} user={user} onMenu={() => setMini((m) => !m)}
