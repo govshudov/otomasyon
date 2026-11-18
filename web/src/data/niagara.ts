@@ -23,9 +23,16 @@ import type { SignalDef, TwinMap } from '../scene/types'
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Baja = any
 
-/** Sayfa istasyonun içinden mi açıldı? `?source=niagara` ile zorlanabilir. */
-export const NIAGARA = location.pathname.startsWith('/file/') ||
-  new URLSearchParams(location.search).get('source') === 'niagara'
+/**
+ * Deneme modu: `?demo` (arhiw.html?demo, grafikler.html?demo…). Niagara'ya ve canlı veriye
+ * dokunulmaz; istasyon PS-04, geçmiş ve nokta listesi `demo.ts`'ten üretilir. `?demo` yoksa
+ * hiçbir yol değişmez (demo kodu ayrı parçada, yalnız o zaman yüklenir).
+ */
+export const DEMO = new URLSearchParams(location.search).has('demo')
+
+/** Sayfa istasyonun içinden mi açıldı? `?source=niagara` ile zorlanabilir. Demoda hiç Niagara yok. */
+export const NIAGARA = !DEMO && (location.pathname.startsWith('/file/') ||
+  new URLSearchParams(location.search).get('source') === 'niagara')
 
 /** Uygulama dosyalarına göre adres (JACE'te /file/twin/…, geliştirmede /…). */
 export const asset = (p: string) => new URL(p, document.baseURI).href
@@ -43,6 +50,7 @@ let stationsP: Promise<StationsDoc> | null = null
 
 /** İstasyon listesi: API'den ya da (Niagara'da) uygulamayla gelen stations.json'dan. */
 export function fetchStations(): Promise<StationsDoc> {
+  if (DEMO) return import('./demo').then((m) => m.demoStations())
   if (!NIAGARA) return fetch('/api/stations').then((r) => r.json())
   stationsP ??= fetch(asset(`stations.json?v=${__BUILD_ID__}`)).then((r) => r.json())
   stationsP.catch(() => { stationsP = null })
@@ -51,6 +59,7 @@ export function fetchStations(): Promise<StationsDoc> {
 
 /** İstasyon konfigürasyonu (pompa → kolektör üyeliği 2D şema için). */
 export async function fetchStationConfig(sid: string): Promise<any> {
+  if (DEMO) return import('./demo').then((m) => m.demoStationConfig(sid))
   if (!NIAGARA) return fetch(`/api/station/${encodeURIComponent(sid)}`).then((r) => r.json())
   const e = (await fetchStations()).stations.find((s) => s.id === sid)
   if (!e?.config) throw new Error(`beket konfigurasiýasy ýok: ${sid}`)
@@ -180,12 +189,23 @@ let tsComp: Promise<any> | null = null
  * (tools/jace/okuma). Servis kurulu değilse null; sorgu hatası fırlatılır.
  */
 export async function tsQuery(req: string): Promise<any | null> {
+  if (DEMO) return import('./demo').then((m) => m.demoTs(req))
   tsComp ??= loadBaja().then((baja) => baja.Ord.make('station:|slot:/TsOkuma').get()).catch(() => null)
   const comp = await tsComp
   if (!comp) return null
   const j = JSON.parse(String(await comp.invoke({ slot: 'sorgu', value: req })))
   if (j?.error) throw new Error(j.error)
   return j
+}
+
+/** Veritabanındaki noktalar: [ad, label, grp, birim, tür] (TsOkuma op=points). Servis yoksa null. */
+export type DbPoint = [string, string, string, string | null, string]
+let ptsP: Promise<DbPoint[] | null> | null = null
+
+export function loadDbPoints(): Promise<DbPoint[] | null> {
+  ptsP ??= tsQuery('op=points').then((r) => (r?.points ?? null) as DbPoint[] | null).catch(() => null)
+  ptsP.then((p) => { if (!p) ptsP = null })          // servis sonradan kurulursa yeniden denensin
+  return ptsP
 }
 
 /** [epoch_sn, değer] kayıtları; geçmiş yoksa null. */

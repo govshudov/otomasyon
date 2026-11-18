@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { queryHistory, sessionSince, type Bucket, type Source } from '../data/history'
 import { Chart, fmtDateTime, fmtTime, type ChartProps, type Series } from './Chart'
+import { useCikar } from './cikar'
 import { Icon } from './icons'
 
 /**
- * Grafik panosu: ortak zaman seçici + grafik ızgarası. Bir grafiğe dokununca
- * büyür (referans ekrandaki tek büyük grafik); "Ähli grafikler" ile geri.
- * Zaman aralığı TÜM grafikler için tektir.
+ * Grafik panosu: ortak zaman seçici + grafik ızgarası. Hücrenin ⤢ düğmesi grafiği
+ * büyütür (referans ekrandaki tek büyük grafik); "Ähli grafikler" ile geri.
+ * Zaman aralığı TÜM grafikler için tektir: bir grafiğin üstünde fareyle yatay
+ * sürüklemek o aralığa yakınlaşır (veri ince kovalarla yeniden okunur); "Yzyna"
+ * ya da çift tıklama önceki aralığa döner (aralıklar yığında).
  */
 
 export interface ChartSpec extends Omit<ChartProps, 'from' | 'to' | 'series' | 'compact'> {
@@ -37,7 +40,12 @@ const toLocalInput = (s: number) => {
 }
 const fromLocalInput = (v: string) => new Date(v).getTime() / 1000
 
-const SRC_TK: Record<Source, string> = { api: 'serwer taryhy', timescale: 'maglumat binýady', niagara: 'Niagara taryhy', session: 'sahypa açylandan bäri' }
+const SRC_TK: Record<Source, string> = {
+  api: 'serwer taryhy', timescale: 'maglumat binýady', niagara: 'Niagara taryhy', session: 'sahypa açylandan bäri',
+  demo: 'synag maglumaty (demo, ölçeg däl)',
+}
+/** Yakınlaşmada en kısa aralık */
+const MIN_SPAN = 60
 
 export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileName, stack = false }: {
   title: string
@@ -55,6 +63,7 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
   const [loading, setLoading] = useState(false)
   const [big, setBig] = useState<string | null>(null)
   const [custom, setCustom] = useState({ from: toLocalInput(range.from), to: toLocalInput(range.to) })
+  const [back, setBack] = useState<Range[]>([])                // yakınlaşmadan önceki aralıklar
   const tagKey = tags.join('|')
 
   const load = useCallback(async (r: Range) => {
@@ -78,16 +87,31 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
     return () => clearInterval(t)
   }, [range.preset])
 
+  const show = (r: Range) => { setRange(r); setCustom({ from: toLocalInput(r.from), to: toLocalInput(r.to) }) }
   const pick = (s: number) => {
     try { localStorage.setItem('twin.range', String(s)) } catch { /* depolama kapalı */ }
     const to = Date.now() / 1000
-    const r = { preset: s, from: to - s, to }
-    setRange(r); setCustom({ from: toLocalInput(r.from), to: toLocalInput(r.to) })
+    setBack([])
+    show({ preset: s, from: to - s, to })
   }
   const applyCustom = () => {
     const f = fromLocalInput(custom.from), t = fromLocalInput(custom.to)
-    if (Number.isFinite(f) && Number.isFinite(t) && t > f) setRange({ preset: null, from: f, to: t })
+    if (Number.isFinite(f) && Number.isFinite(t) && t > f) { setBack([]); setRange({ preset: null, from: f, to: t }) }
   }
+  // Sürükleyerek yakınlaşma: önceki aralık yığına
+  const zoom = useCallback((f: number, t: number) => {
+    if (t - f < MIN_SPAN) { const c = (f + t) / 2; f = c - MIN_SPAN / 2; t = c + MIN_SPAN / 2 }
+    setBack((b) => [...b, range])
+    show({ preset: null, from: f, to: t })
+  }, [range])
+  const zoomOut = useCallback(() => {
+    if (!back.length) return
+    const prev = back[back.length - 1]
+    setBack(back.slice(0, -1))
+    // hazır aralığa dönülünce yine "şimdiye kadar" kayar
+    const now = Date.now() / 1000
+    show(prev.preset !== null ? { ...prev, from: now - prev.preset, to: now } : prev)
+  }, [back])
   const refresh = () => {
     if (range.preset !== null) { const to = Date.now() / 1000; setRange({ ...range, from: to - range.preset, to }) }
     else load(range)
@@ -96,10 +120,10 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
   const charts = useMemo(() => (data ? build(data) : []), [data, build])
 
   const exportCsv = () => {
-    const cols: { name: string; map: Map<number, number> }[] = []
+    const cols: { name: string; map: Map<number, number>; int: boolean }[] = []
     for (const c of charts) for (const s of c.series) {
       cols.push({ name: `${c.title} / ${s.label}${c.unit ? ` (${c.unit})` : ''}`,
-                  map: new Map(s.data.map((b) => [Math.round(b[0]), b[1]])) })
+                  map: new Map(s.data.map((b) => [Math.round(b[0]), b[1]])), int: c.digits === 0 })
     }
     const times = [...new Set(cols.flatMap((c) => [...c.map.keys()]))].sort((a, b) => a - b)
     const q = (s: string) => `"${s.replace(/"/g, '""')}"`
@@ -107,7 +131,8 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
     for (const t of times) {
       lines.push([fmtDateTime(t), ...cols.map((c) => {
         const v = c.map.get(t)
-        return v === undefined ? '' : String(Math.round(v * 1000) / 1000)
+        // tam sayılı grafik (temperatura, dakika, sayaç) CSV'de de tam sayı
+        return v === undefined ? '' : String(c.int ? Math.round(v) : Math.round(v * 1000) / 1000)
       })].join(';'))
     }
     // data: adresi — JACE'in CSP'si blob: adreslerini kısıtlayabiliyor
@@ -121,6 +146,12 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
   const srcNote = [...sources].map((s) => s === 'session' && since ? `${SRC_TK[s]} (${fmtTime(since, true)})` : SRC_TK[s]).join(' + ')
   const shown = big ? charts.filter((c) => c.key === big) : charts
 
+  // "Daşyna çykar": görünen grafikler (büyütülmüşse yalnız o), bu aralıkla
+  useCikar(() => (shown.length ? {
+    kind: 'charts', title: big ? `${title} · ${shown[0].title}` : title, from: range.from, to: range.to, charts: shown,
+    source: srcNote || undefined,
+  } : null))
+
   return (
     <div className="cboard">
       <div className="cbHead">
@@ -129,6 +160,11 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
         ) : <b className="cbTitle">{title}</b>}
         {big && <b className="cbTitle">{title} · {charts.find((c) => c.key === big)?.title}</b>}
         <span className="cbRange">{fmtDateTime(range.from)} → {fmtDateTime(range.to)}</span>
+        {back.length > 0 && (
+          <button className="small cbBack" title="Öňki aralyk (iki gezek basmak hem bolýar)" onClick={zoomOut}>
+            <Icon.back size={14} /> Yzyna{back.length > 1 ? ` (${back.length})` : ''}
+          </button>
+        )}
         <div className="spacer" />
         <div className="seg small">
           {PRESETS.map((p) => (
@@ -149,20 +185,21 @@ export function ChartBoard({ title, tags, build, onClose, buckets = 360, fileNam
         {shown.map((c) => {
           const { key, title: ct, series, ...rest } = c
           return (
-            <div key={key} className="cbCell" onClick={big ? undefined : () => setBig(key)}>
+            <div key={key} className="cbCell">
               <div className="cbCellHead">
                 <b>{ct}</b>
                 {c.unit && <span>{c.unit}</span>}
-                {!big && <i className="cbZoom" title="Ulalt"><Icon.full size={13} /></i>}
+                {!big && <button className="cbZoom" title="Ulalt" onClick={() => setBig(key)}><Icon.full size={13} /></button>}
               </div>
-              <Chart series={series} from={range.from} to={range.to} compact={!big} {...rest} />
+              <Chart series={series} from={range.from} to={range.to} compact={!big} {...rest} onZoom={zoom} onZoomOut={zoomOut} />
             </div>
           )
         })}
         {!charts.length && <div className="cbEmpty">{loading ? 'ýüklenýär…' : 'maglumat ýok'}</div>}
       </div>
       <div className="cbFoot">
-        {loading ? 'ýüklenýär…' : srcNote ? `Çeşme: ${srcNote}` : 'Taryhy maglumat tapylmady'}
+        <span>{loading ? 'ýüklenýär…' : srcNote ? `Çeşme: ${srcNote}` : 'Taryhy maglumat tapylmady'}</span>
+        <span className="cbHint">Ýakynlaşdyrmak: grafigiň üstünde syçanjygy saga-çepe çekiň · yzyna: iki gezek basyň</span>
       </div>
     </div>
   )

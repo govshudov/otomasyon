@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Bucket } from '../data/history'
 import { loadDbTree, type DbEnjam, type DbGroup } from '../data/sozluk'
 import { ChartBoard, type ChartSpec } from './ChartBoard'
+import { TEMP_COLORS } from './PumpCharts'
 import { Icon } from './icons'
 
 /**
@@ -82,7 +83,12 @@ export function PointExplorer({ sid }: { sid: string }) {
 
 function EnjamCharts({ sid, g, e }: { sid: string; g: DbGroup; e: DbEnjam }) {
   const tags = useMemo(() => e.olcegler.map((o) => `db:${o.name}`), [e])
-  const build = useCallback((d: Record<string, Bucket[]>): ChartSpec[] => e.olcegler.map((o, i) => ({
+  const build = useCallback((d: Record<string, Bucket[]>): ChartSpec[] => e.temp ? [{
+    // nasos temperaturası: sargılar (U1…W2) ve podşipnikler (kesik) bir grafikte, tam sayı
+    key: 'temp', title: 'Temperatura', unit: '°C', digits: 0, fill: false, yTitle: '°C',
+    series: e.olcegler.map((o, i) => ({ label: o.label, color: TEMP_COLORS[i % TEMP_COLORS.length], data: d[`db:${o.name}`] ?? [],
+                                         dashed: o.key.startsWith('PUMP.') })),
+  }] : e.olcegler.map((o, i) => ({
     key: o.name, title: o.label || e.label, unit: o.unit ?? undefined, digits: o.kind === 'sanag' ? 0 : 2,
     fill: o.kind !== 'sanag', stats: o.kind !== 'sanag',
     series: [{ label: o.label || e.label, color: COLORS[i % COLORS.length], data: d[`db:${o.name}`] ?? [] }],

@@ -3,7 +3,9 @@
     "Eski TV arayuzundeki nasos popup'inin (nasos.html) okudugu noktalar. Eski Px sayfalarinin (Pump.px, TOPLUM_1/2, OG_ELEKTRIK) kullandigi noktalarin aynisi.",
     "Sahada Workbench'te degistirilebilir: Files -> twin -> eski_noktalar.json (cift tik, metin duzenleyici), kaydet, popup'i yeniden ac.",
     "{n} = nasos numarasi (N-3 -> 3), {t} = toplum klasoru, {k} = nasosun toplum icindeki sirasi (1'den).",
-    "Bir anahtarda birden fazla yol varsa sirayla denenir (ornek: P2_OutLet buyuk L ile yazilmis). Yol sonundaki /out yazilmasa da olur."
+    "Bir anahtarda birden fazla yol varsa sirayla denenir (ornek: P2_OutLet buyuk L ile yazilmis). Yol sonundaki /out yazilmasa da olur.",
+    "Popupta 'Grafigi ac' (H-Q penceresi): basys (bar) -> H, akym (m3/sag, grafikte m3/s) -> Q, suw -> emme suyunun derejesi, yagday -> isleyar / inwertorda.",
+    "Istege bagli anahtarlar (H-Q penceresindeki Kuwwat, Tok, Ygylyk): kuwwat (kW), tok (A), ygylyk (Hz). Eski Px sayfasindaki yolu bilinince eklenir (ornek: \"tok\": [\"{y}/...\"]); eklenmezse pencerede - gorunur, transformatorda ygylyk 50 Hz sayilir."
   ],
   "kok": "station:|slot:/Drivers/NiagaraNetwork/PS21_JACE/points",
   "toplumlar": [

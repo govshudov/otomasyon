@@ -16,6 +16,8 @@ export type Overall = 'run' | 'stop' | 'warn' | 'fault' | 'unknown'
 
 export const TEMP_KEYS = ['MOTOR.t1', 'MOTOR.t2', 'MOTOR.t3', 'MOTOR.t4', 'MOTOR.t5', 'MOTOR.t6']
 export const BEARING_KEYS = ['PUMP.bearing1', 'PUMP.bearing2']
+export const TEMP_LABELS = ['U1', 'U2', 'V1', 'V2', 'W1', 'W2']
+export const BEARING_LABELS = ['Öň podşipnik', 'Arka podşipnik']
 export const LEVEL_EQ = 'BASIN-01'
 
 export const MODE_TK: Record<Mode, string> = {
@@ -41,7 +43,8 @@ export interface EqCfg {
  * Toplumlar: aynı borulara basabilen nasoslar ve o borular tek grup (bağlı bileşen).
  * Magtymguly gibi her borunun kendi nasosları olan istasyonda toplum = bir boru.
  * 1 Maý'da N-1…N-7 T-1, T-2, T-3'ün hepsine basabilir: bir toplum, üç boru.
- * Sıra: konfigürasyondaki ilk borunun sırası.
+ * Sıra ve numara nasoslara göre: N-1'i içeren toplum Toplum 1 (1 Maý: Toplum 1 = N-1…N-3 → T-2,
+ * Toplum 2 = N-4…N-10 → T-1, T-3, T-4). Borular toplum içinde konfigürasyondaki sırayla.
  */
 export function toplumlarOf(equipment: EqCfg[]): { headers: EqCfg[]; pumps: EqCfg[] }[] {
   const headers = equipment.filter((e) => e.type === 'header')
@@ -62,7 +65,8 @@ export function toplumlarOf(equipment: EqCfg[]): { headers: EqCfg[]; pumps: EqCf
     g.headers.push(h)
   }
   for (const p of pumps) byRoot.get(find(p.id))?.pumps.push(p)
-  return out
+  const ilk = (g: { pumps: EqCfg[] }) => g.pumps.length ? pumps.indexOf(g.pumps[0]) : Infinity
+  return out.sort((a, b) => ilk(a) - ilk(b))
 }
 
 /** Nasos → kendi emme hücresinin seviye datçiği (PMP-01 → LT-01); konfigürasyondan */
@@ -203,8 +207,8 @@ export function pumpView(sid: string, pump: { id: string; label: string }, value
     : state === 'STOPPED' || state === 'STOPPING' || state === 'FAULT' ? 'stop' : 'unknown'
   const running = mode === 'inv' || mode === 'pano' || mode === 'run'
 
-  const temps = TEMP_KEYS.map((k, i) => read(k, `T${i + 1}`))
-  const bearings = BEARING_KEYS.map((k, i) => read(k, `P${i + 1}`))
+  const temps = TEMP_KEYS.map((k, i) => read(k, TEMP_LABELS[i]))
+  const bearings = BEARING_KEYS.map((k, i) => read(k, ['Öň', 'Arka'][i]))
   const amp = n('current_a')
   // Suw derejesi: nasosun kendi emme hücresindeki datçik; yoksa howuzun seviyesi (lvl)
   const lt = pumpLevel.get(pump.id)

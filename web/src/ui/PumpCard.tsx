@@ -16,7 +16,7 @@ const sevCls = (s: Sev) => (s === 'fault' ? 'bad' : s === 'warn' ? 'mid' : 'good
 function TempCell({ r }: { r: Reading }) {
   return (
     <div className={`tc ${sevCls(r.sev)}`}>
-      <span>{r.label}</span><b>{r.v === null ? '—' : r.v.toFixed(1)}</b>
+      <span>{r.label}</span><b>{r.v === null ? '—' : r.v.toFixed(0)}</b>
     </div>
   )
 }

@@ -5,9 +5,10 @@ import { usePumpViews } from '../data/usePumps'
 import { LEVEL_EQ, MODE_TK, OVERALL_TK, fmtN, numOf, sigDef, thresholds, type Group } from '../data/pump'
 import { ChartBoard, type ChartSpec } from './ChartBoard'
 import { PointExplorer } from './PointExplorer'
-import { DbReportTables, dbReportCsvRows, useDbReport } from './DbReport'
+import { DbReportTables, dbReportCsvRows, dbReportPrintTables, useDbReport } from './DbReport'
 import { PumpChartBoard, combine } from './PumpCharts'
 import { fmtDateTime } from './Chart'
+import { useCikar, type CikarRow } from './cikar'
 import { Icon } from './icons'
 
 /** Duýduryşlar, Hasabatlar, Grafikler sayfaları. */
@@ -148,6 +149,50 @@ export function ReportsPage({ sid, groups }: { sid: string; groups: Group[] }) {
     rows.push(...dbReportCsvRows(db))
     csvDownload(`${sid}_hasabat_${fmtDateTime(Date.now() / 1000).replace(/[/: ]/g, '')}.csv`, rows)
   }
+
+  // "Daşyna çykar": ekrandaki tablolar (veritabanı grupları açık), üstte özet kutuları
+  const periodName = PERIODS.find((p) => p.k === period)?.t ?? ''
+  useCikar(() => {
+    const pumpRows: CikarRow[] = [], hdrRows: CikarRow[] = []
+    let run = 0, nP = 0, hInv = 0, hPano = 0, water = 0, kw = 0, anyH = false, anyW = false
+    for (const g of groups) for (const p of g.pumps) {
+      const v = views[p.id]
+      if (!v) continue
+      nP++; if (v.running) run++
+      kw += v.kw ?? 0
+      const di = d(p.id, 'hours_inv'), dp = d(p.id, 'hours_pano')
+      if (di !== null || dp !== null) { anyH = true; hInv += di ?? 0; hPano += dp ?? 0 }
+      pumpRows.push({ c: [g.name, p.label, v.running ? MODE_TK[v.mode] : OVERALL_TK[v.overall], fmtN(v.hours.inv, 1), fmtN(v.hours.pano, 1),
+        fmtN(v.hours.total, 1), fmtN(di, 2), fmtN(dp, 2), fmtN(v.amp, 1), fmtN(v.kw, 1), fmtN(v.press, 2)] })
+    }
+    for (const g of groups) g.headers.forEach((h, i) => {
+      const dw = d(h.id, 'total_m3')
+      if (dw !== null) { anyW = true; water += dw }
+      hdrRows.push({ c: [i === 0 ? g.name : '', h.label, fmtN(n(h.id, 'flow_m3h'), 1), fmtN(n(h.id, 'total_m3'), 0), fmtN(dw, 0),
+        i === 0 ? fmtN(g.pumps.reduce((a, p) => a + (views[p.id]?.kw ?? 0), 0), 1) : '', fmtN(n(h.id, 'press_bar'), 2)] })
+    })
+    const sag = (t: string, sub: string) => ({ t, sub, num: true })
+    return {
+      kind: 'tables', title: periodName, period: `${fmtDateTime(periodFrom(period))} – ${fmtDateTime(Date.now() / 1000)}`,
+      kpi: [
+        { l: 'Döwür', v: periodName },
+        { l: 'Işleýän nasoslar', v: `${run} / ${nP}` },
+        { l: 'Döwürde geçen suw', v: anyW ? fmtN(water, 0) : '—', u: 'm³' },
+        { l: 'Inwertorda işlän', v: anyH ? fmtN(hInv, 1) : '—', u: 'sag' },
+        { l: 'Transformatorda işlän', v: anyH ? fmtN(hPano, 1) : '—', u: 'sag' },
+        { l: 'Häzirki kuwwat', v: fmtN(kw, 0), u: 'kW' },
+      ],
+      tables: [
+        { title: 'Nasoslar', rows: pumpRows, cols: [{ t: 'Toplum' }, { t: 'Nasos' }, { t: 'Ýagdaýy' },
+          sag('Inwertor', 'jemi sag'), sag('Transformator', 'jemi sag'), sag('Jemi', 'sag'),
+          sag('Inwertorda', 'döwürde sag'), sag('Transformatorda', 'döwürde sag'), sag('Tok', 'A'), sag('Kuwwat', 'kW'), sag('Basyş', 'bar')] },
+        { title: 'Esasy turbalar', rows: hdrRows, cols: [{ t: 'Toplum' }, { t: 'Esasy turba' }, sag('Akym', 'm³/sag'),
+          sag('Jemi göwrüm', 'm³ (sanag)'), sag('Döwürde geçen suw', 'm³'), sag('Kuwwat', 'kW'), sag('Basyş', 'bar')] },
+        ...dbReportPrintTables(db),
+      ],
+      note: '“Döwürde” sütunlary taryhy maglumatdan hasaplanýar (sanagyň döwrüň başy bilen soňunyň tapawudy). Beýleki sütunlar häzirki baha.',
+    }
+  })
 
   return (
     <div className="page">

@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { queryHistory, type Bucket } from '../data/history'
 import { loadDbTree, type DbEnjam, type DbGroup, type DbOlceg } from '../data/sozluk'
 import { fmtN } from '../data/pump'
+import type { CikarRow, CikarTable } from './cikar'
 import { Icon } from './icons'
 
 /**
@@ -50,6 +51,8 @@ export function useDbReport(from: number, to: number): DbReportData {
 
 const of = (e: DbEnjam, kind: DbOlceg['kind']) => e.olcegler.find((o) => o.kind === kind)
 const delta = (s?: Stat) => (s ? Math.max(0, s.last - s.first) : null)
+/** temperatura tam sayı, diğer ölçegler iki onluk */
+const dg = (o: DbOlceg) => (o.unit === '°C' ? 0 : 2)
 
 /** Akym/sanag ölçegi olan enjamlar (ana tablo) ve diğer ölçegler (ikinci tablo). */
 function split(groups: DbGroup[]) {
@@ -71,10 +74,43 @@ export function dbReportCsvRows({ groups, stats }: DbReportData): (string | numb
     rows.push([], ['Topar', 'Enjam', 'Ölçeg', 'Ortaça', 'Iň pes', 'Iň ýokary'])
     for (const { g, e, o } of other) {
       const s = stats.get(o.name)
-      rows.push([g.label, e.label, o.label || '—', fmtN(s?.avg ?? null, 2), fmtN(s?.min ?? null, 2), fmtN(s?.max ?? null, 2)])
+      rows.push([g.label, e.label, o.label || '—', fmtN(s?.avg ?? null, dg(o)), fmtN(s?.min ?? null, dg(o)), fmtN(s?.max ?? null, dg(o))])
     }
   }
   return rows
+}
+
+/** PDF çıktısı: aynı iki tablo, bütün gruplar açık */
+export function dbReportPrintTables({ groups, stats }: DbReportData): CikarTable[] {
+  if (!groups) return []
+  const { main, other } = split(groups)
+  const st = (o?: DbOlceg) => (o ? stats.get(o.name) : undefined)
+  const rows: CikarRow[] = []
+  for (const { g, rows: es } of main) {
+    const sum = es.reduce<number | null>((acc, e) => { const d = delta(st(of(e, 'sanag'))); return d === null ? acc : (acc ?? 0) + d }, null)
+    rows.push({ cls: 'grp', c: [g.label, `${es.length} enjam`, '', '', fmtN(sum, 0)] })
+    for (const e of es) {
+      const a = st(of(e, 'akym')), c = st(of(e, 'sanag'))
+      rows.push({ cls: 'ind', c: [e.label, fmtN(a?.avg ?? null, 2), fmtN(a?.max ?? null, 2), fmtN(c?.last ?? null, 0), fmtN(delta(c), 0)] })
+    }
+  }
+  const out: CikarTable[] = [{
+    title: 'Ähli enjamlar', rows,
+    cols: [{ t: 'Enjam' }, { t: 'Akym', sub: 'ortaça', num: true }, { t: 'Akym', sub: 'iň ýokary', num: true },
+      { t: 'Sanag', sub: 'soňky', num: true }, { t: 'Döwürde', sub: 'sanag tapawudy', num: true }],
+  }]
+  if (other.length) {
+    const r2: CikarRow[] = []
+    let last = ''
+    for (const { g, e, o } of other) {
+      if (g.key !== last) { r2.push({ cls: 'grp', c: [g.label, '', '', '', ''] }); last = g.key }
+      const s = st(o)
+      r2.push({ cls: 'ind', c: [e.label, o.label || '—', fmtN(s?.avg ?? null, dg(o)), fmtN(s?.min ?? null, dg(o)), fmtN(s?.max ?? null, dg(o))] })
+    }
+    out.push({ title: 'Beýleki ölçegler', rows: r2,
+      cols: [{ t: 'Enjam' }, { t: 'Ölçeg' }, { t: 'Ortaça', num: true }, { t: 'Iň pes', num: true }, { t: 'Iň ýokary', num: true }] })
+  }
+  return out
 }
 
 export function DbReportTables({ data }: { data: DbReportData }) {
@@ -147,7 +183,7 @@ export function DbReportTables({ data }: { data: DbReportData }) {
                     return (
                       <tr key={o.name}>
                         <td className="ind">{e.label}</td><td>{o.label || '—'}</td>
-                        <td className="num">{fmtN(s?.avg ?? null, 2)}</td><td className="num">{fmtN(s?.min ?? null, 2)}</td><td className="num">{fmtN(s?.max ?? null, 2)}</td>
+                        <td className="num">{fmtN(s?.avg ?? null, dg(o))}</td><td className="num">{fmtN(s?.min ?? null, dg(o))}</td><td className="num">{fmtN(s?.max ?? null, dg(o))}</td>
                       </tr>
                     )
                   })}

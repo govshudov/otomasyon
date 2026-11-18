@@ -1,0 +1,17 @@
+/* Eski TV nasos popup'ı: "Grafigi aç" düğmesi ve H–Q penceresi (NasosEgri.tsx).
+   Pencerenin kendi görünüşü styles.css'teki .hq* sınıflarından (Umumy syn ile aynı). */
+.nasosSayfa .egriAc { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 10px; font-weight: 600; }
+.nasosSayfa .egriAc svg { color: var(--val); }
+.hqPanel.egriYuk .loading { position: static; padding: 40px 0; text-align: center; color: var(--dim); }
+
+/* nasos.html?egri#PMP-03: Px sayfasının ortasındaki büyük çerçeve — pencere çerçeveyi doldurur,
+   grafik kalan yüksekliğe sığar (çerçeve alçaksa küçülür, satırlar hep görünür) */
+.egriSayfa { position: fixed; inset: 0; }
+.egriSayfa .hqScrim { position: absolute; padding: 0; background: var(--panel-solid); }
+.egriSayfa .hqPanel { width: 100%; height: 100%; max-height: none; display: flex; flex-direction: column;
+  border: 0; border-radius: 0; box-shadow: none; padding: 14px 18px 12px; }
+.egriSayfa .hqPanel > * { flex: none; }
+.egriSayfa .hqPanel > .hq { flex: 0 1 auto; min-height: 200px; }
+.egriSayfa .hqHead b { font-size: 18px; }
+.egriSayfa .hqHead span { font-size: 13px; }
+.egriSayfa > .loading { padding: 40px; text-align: center; }

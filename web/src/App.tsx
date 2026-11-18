@@ -8,12 +8,15 @@ import { Timeline } from './ui/Timeline'
 import type { StationInfo } from './ui/StationPicker'
 import { SensorLabels } from './ui/SensorLabels'
 import { computeHealth } from './data/health'
-import { fetchStationConfig, fetchStations, niagaraUser, NIAGARA, stationMismatch } from './data/niagara'
+import { DEMO, fetchStationConfig, fetchStations, niagaraUser, NIAGARA, stationMismatch } from './data/niagara'
 import { enjamAdy, groupsOf, levelSev, pumpView, runStateOf, type StationCfg } from './data/pump'
+import { setTempStation } from './data/nasosTemp'
 import { Header, Sidebar, type Page } from './ui/Shell'
 import { PumpBoard } from './ui/PumpBoard'
 import { AlarmsPage, ChartsPage, ReportsPage } from './ui/Pages'
 import { KartaPage } from './ui/Karta'
+import { SazlamaPage } from './ui/Sazlama'
+import { cikar } from './ui/cikar'
 
 /** Son açılan sayfa/görünüm hatırlanır (kiosk yeniden başlayınca aynı ekran gelsin). */
 function saved<T extends string>(key: string, ok: (v: string) => boolean, def: T): T {
@@ -28,7 +31,8 @@ const store = (key: string, v: string) => { try { localStorage.setItem(key, v) }
  */
 const GOMULU: Page | null = /\/grafikler\.html$/i.test(location.pathname) ? 'charts'
   : /\/(hasabatlar|arhiw)\.html$/i.test(location.pathname) ? (/arhiw/i.test(location.pathname) ? 'charts' : 'reports') : null
-/** arhiw.html: eski TV arayüzünün "ARHIW MAGLUMATLARY" sayfasında; Grafikler | Hasabatlar sekmeleriyle */
+/** arhiw.html: eski TV arayüzünün "ARHIW MAGLUMATLARY" sayfasında; Grafikler | Hasabatlar | Sazlamalar
+ *  sekmeleri ve "Daşyna çykar" (açık sekmenin PDF'i, ui/cikar.ts) */
 const GOMULU_SEKME = /\/arhiw\.html$/i.test(location.pathname)
 
 export default function App() {
@@ -54,7 +58,7 @@ export default function App() {
   }, [buildingFull, twin])
 
   const setPage = useCallback((p: Page) => { setPageRaw(p); store('twin.page', p) }, [])
-  const [hasap, setHasap] = useState(false)   // arhiw.html: "Hasaplaýjy hasabaty" sekmesi
+  const [sazla, setSazla] = useState(false)   // arhiw.html: "Sazlamalar" sekmesi
   useEffect(() => { store('twin.side', mini ? 'mini' : 'full') }, [mini])
   useEffect(() => { niagaraUser().then((u) => u && setUser(u)) }, [])
 
@@ -91,17 +95,26 @@ export default function App() {
     fetchStations().then((d) => {
       const list: StationInfo[] = d.stations ?? []
       const first = list.find((x) => x.id === d.default) ?? list[0]
-      if (first) { setStation(first); connect(first.id) }
+      // Demoda bağlantı yok: canlı değerleri demo.ts üretir (aşağıda)
+      if (first) { setStation(first); if (!DEMO) connect(first.id) }
     }).catch((e) => setError(String(e)))
     return () => disconnect()
   }, [connect, disconnect])
+
+  useEffect(() => {
+    if (!DEMO || !station) return
+    let ok = true, stop: (() => void) | null = null
+    import('./data/demo').then((m) => { if (ok) stop = m.startDemoLive(station.id) })
+    return () => { ok = false; stop?.() }
+  }, [station])
 
   // İstasyon konfigürasyonu: toplumlar (hangi nasos hangi esasy turbaya basıyor)
   useEffect(() => {
     if (!station) return
     let ok = true
     setCfg(null)
-    fetchStationConfig(station.id).then((c) => { if (ok) setCfg(c) }).catch(() => {})
+    // nasos temperaturası noktalarının tanınması toplum sırasına bakar (data/nasosTemp.ts)
+    fetchStationConfig(station.id).then((c) => { if (ok) { setTempStation(station.id, c); setCfg(c) } }).catch(() => {})
     return () => { ok = false }
   }, [station])
   const groups = useMemo(() => groupsOf(cfg), [cfg])
@@ -296,17 +309,27 @@ export default function App() {
       {GOMULU_SEKME && (
         <div className="gomuluSekme">
           {([['charts', 'Grafikler'], ['reports', 'Hasabatlar']] as [Page, string][]).map(([p, t]) => (
-            <button key={p} className={page === p && !hasap ? 'on' : ''} onClick={() => { setHasap(false); setPageRaw(p) }}>{t}</button>
+            <button key={p} className={page === p && !sazla ? 'on' : ''} onClick={() => { setSazla(false); setPageRaw(p) }}>{t}</button>
           ))}
-          {/* Suw hasaplaýjy hasabaty: gecirijiler.html-iň hasabat bölümi (PDF / Excel çykyşy şol ýerden) */}
-          <button className={hasap ? 'on' : ''} onClick={() => setHasap(true)}>Hasaplaýjy hasabaty</button>
+          <button className={sazla ? 'on' : ''} onClick={() => setSazla(true)}>Sazlamalar</button>
+          <div className="spacer" />
+          {DEMO && <span className="demoBadge" title="Niagara-syz synag: maglumatlar emeli döredilýär">SYNAG · emeli maglumat</span>}
+          {/* Açık sekmenin PDF'i: suw geçirijiler sahypasynyň çykyşy ýaly (brauzeriň çap penjiresi → PDF) */}
+          <button className="cikarBtn" title="Açyk sahypany PDF hökmünde çykar" onClick={() => {
+            const ok = cikar({ page: sazla ? 'Sazlamalar' : page === 'reports' ? 'Hasabatlar' : 'Grafikler', station: station?.name ?? sid, sid })
+            if (!ok) alert('Bu sahypada çykarmak üçin maglumat ýok (enjam ýa-da grafik saýlaň).')
+          }}>
+            <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" /><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3" />
+            </svg>
+            Daşyna çykar
+          </button>
         </div>
       )}
-      {GOMULU_SEKME && hasap && <iframe className="gomuluHasap" src="gecirijiler.html#rapor" title="Hasaplaýjy hasabaty" />}
 
       {!GOMULU && <>
         <Header sid={sid} user={user} onMenu={() => setMini((m) => !m)}
-                onStation={(s) => { switchStation(s.id); setStation(s) }} />
+                onStation={(s) => { if (!DEMO) switchStation(s.id); setStation(s) }} />
         <Sidebar page={page} setPage={setPage} collapsed={mini} />
       </>}
       {mismatch && <div className="wrongStation">{mismatch}</div>}
@@ -362,8 +385,9 @@ export default function App() {
           {cfg && page === 'overview' && <PumpBoard sid={sid} groups={groups} cfg={cfg} />}
           {page === 'karta' && <KartaPage />}
           {page === 'alarms' && <AlarmsPage />}
-          {cfg && page === 'reports' && <ReportsPage sid={sid} groups={groups} />}
-          {cfg && page === 'charts' && <ChartsPage sid={sid} groups={groups} />}
+          {cfg && !sazla && page === 'reports' && <ReportsPage sid={sid} groups={groups} />}
+          {cfg && !sazla && page === 'charts' && <ChartsPage sid={sid} groups={groups} />}
+          {cfg && sazla && <SazlamaPage sid={sid} />}
         </main>
       )}
     </div>

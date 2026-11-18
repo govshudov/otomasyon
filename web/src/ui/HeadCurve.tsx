@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { fmtN } from '../data/pump'
 import { interp, type EgriModel, type IsNokady, type NormPoint } from '../data/egri'
+import type { CurveRow } from '../data/nasosEgri'
 
 /**
  * H–Q grafigi (KSB "Total developed head"): zawod egrisi, taslama nokady, Qmin
@@ -121,8 +122,6 @@ export function HeadCurve({ m, pt, cloud = [], dev = null }: {
     </svg>
   )
 }
-
-export interface CurveRow { label: string; value: string; cls?: string }
 
 export function CurveModal({ title, sub, m, pt, cloud, dev, rows, note, onClose }: {
   title: string; sub: string; m: EgriModel | null; pt: IsNokady | null

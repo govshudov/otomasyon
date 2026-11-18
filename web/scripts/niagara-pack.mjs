@@ -26,14 +26,22 @@ const nArg = process.argv.indexOf('--niagara')
 const niagaraStation = nArg > 0 ? process.argv[nArg + 1] : undefined
 
 if (!fs.existsSync(path.join(DIST, 'index.html'))) throw new Error('önce: npm run build')
-fs.rmSync(OUT, { recursive: true, force: true })
-fs.cpSync(DIST, OUT, { recursive: true })
 
 const stations = fs.readdirSync(path.join(ROOT, 'stations'))
   .filter((f) => f.endsWith('.json'))
   .map((f) => JSON.parse(fs.readFileSync(path.join(ROOT, 'stations', f), 'utf8')))
   .filter((s) => !only || only.includes(s.station_id))
   .sort((a, b) => a.station_id.localeCompare(b.station_id))
+// Çıktı klasörü silinmeden önce: istasyon bulunmazsa dur. Yanlış --stations/--out ile
+// (örn. --out ../paket) bütün paket klasörü silinip boş paketle değiştiriliyordu.
+if (!stations.length) throw new Error(`istasyon bulunmadı: --stations ${only?.join(',') ?? '(hepsi)'} (stations/*.json)`)
+if (fs.existsSync(path.join(OUT, 'surucu'))) throw new Error(`çıktı klasörü paketlerin kökü gibi görünüyor (içinde surucu/ var): ${OUT}`)
+
+fs.rmSync(OUT, { recursive: true, force: true })
+fs.cpSync(DIST, OUT, { recursive: true })
+// Synag (?demo) faýllary istasyona gitmesin: emeli nokat sanawy, egri nusgasy, gecirijiler-iň synag maglumaty
+fs.rmSync(path.join(OUT, 'demo'), { recursive: true, force: true })
+fs.rmSync(path.join(OUT, 'gecirijiler-demo.js'), { force: true })
 
 const keep = new Set()
 const list = stations.map((s) => {

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTwin } from '../data/store'
 import { usePumpViews, useRecent } from '../data/usePumps'
-import { LEVEL_EQ, fmtN, levelIdOf, levelSev, numOf, sigDef, thresholds, type Group, type StationCfg } from '../data/pump'
-import { gecmisNokatlar, isNokatlary, loadEgriler, modelOf, tapawut, tapawutSev, type EgriDoc, type NormPoint } from '../data/egri'
-import { queryHistory } from '../data/history'
-import { CurveModal, type CurveRow } from './HeadCurve'
+import { LEVEL_EQ, fmtN, levelSev, numOf, sigDef, thresholds, type Group, type StationCfg } from '../data/pump'
+import { isNokatlary, loadEgriler, modelOf, type EgriDoc } from '../data/egri'
+import { axisOf, egriPenceresi, invertOf, useGecmisBulut } from '../data/nasosEgri'
+import { CurveModal } from './HeadCurve'
 import { PumpCard } from './PumpCard'
 import { FlowCircle, LevelTank, PowerGauge } from './Gauges'
 
@@ -54,12 +54,10 @@ export function PumpBoard({ sid, groups, cfg }: {
   )
 }
 
-/** Konfigürasyondan sayı (stations/<id>.json) */
-const numParam = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
-
 /**
  * Bir nasosun H–Q penceresi. Q toplumun akym ölçeginden (aynı modelde işleýän nasoslar
  * eşit böler) ya da nasosun kuwwatından; H basyşdan ve emme suyunun derejesinden.
+ * Pencerenin içeriği nasosEgri.ts'te (eski TV nasos popup'ı da aynısını kullanır).
  */
 function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   sid: string; groups: Group[]; cfg: StationCfg | null; pumpId: string; onClose: () => void
@@ -70,34 +68,8 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   const values = useTwin((s) => s.values)
   const stale = useTwin((s) => s.stale)
   const g = groups.find((x) => x.pumps.some((p) => p.id === pumpId))
-  const [cloud, setCloud] = useState<NormPoint[]>([])
-  const raw = cfg as unknown as { hydraulics?: { basin?: { invert_el?: number } } } | null
-  const invert = numParam(raw?.hydraulics?.basin?.invert_el) ?? 0
-  const eqOf = (id: string) => cfg?.equipment.find((e) => e.id === id)
-
-  // Deňeşdirme: soňky 24 sagadyň (5 min kovalar) 50 Hz'e indirgenmiş iş nokatları
-  useEffect(() => {
-    if (!doc || !g) return
-    let ok = true
-    const tg = (eq: string, k: string) => `${sid}.${eq}.${k}`
-    const pumps = g.pumps.map((p) => {
-      const lt = levelIdOf(p.id)
-      return {
-        id: p.id, model: modelOf(doc, sid, p.id), axis: numParam(eqOf(p.id)?.params?.centerline_el_m),
-        lvlTag: lt ? tg(lt, 'level_m') : null,
-        press: tg(p.id, 'discharge_press_bar'), kw: tg(p.id, 'power_kw'), amp: tg(p.id, 'current_a'), hz: tg(p.id, 'vfd_freq_hz'),
-      }
-    })
-    const flowTags = g.headers.map((h) => tg(h.id, 'flow_m3h'))
-    const basinTag = tg(LEVEL_EQ, 'level_m')
-    const tags = [...pumps.flatMap((p) => [p.press, p.kw, p.amp, p.hz, ...(p.lvlTag ? [p.lvlTag] : [])]), ...flowTags, basinTag]
-    const to = Date.now() / 1000
-    queryHistory(tags, to - 86400, to, 288)
-      .then((r) => { if (ok) setCloud(gecmisNokatlar(doc, pumps, flowTags, basinTag, invert, r.data, pumpId)) })
-      .catch(() => { if (ok) setCloud([]) })
-    return () => { ok = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, g, sid, pumpId, invert])
+  const invert = invertOf(cfg)
+  const cloud = useGecmisBulut(doc, sid, g, cfg, pumpId)
 
   const v = views[pumpId]
   if (!g || !v) return null
@@ -107,7 +79,7 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
 
   const inputs = g.pumps.map((p) => {
     const pv = views[p.id]
-    const axis = numParam(eqOf(p.id)?.params?.centerline_el_m)
+    const axis = axisOf(cfg, p.id)
     const lvl = pv?.level ?? basinLvl
     return {
       id: p.id, model: modelOf(doc, sid, p.id), running: !!pv?.running, inverter: pv?.mode === 'inv',
@@ -118,47 +90,15 @@ function PumpCurve({ sid, groups, cfg, pumpId, onClose }: {
   const flows = g.headers.map((h) => n(h.id, 'flow_m3h'))
   const flow = flows.some((f) => f !== null) ? flows.reduce<number>((a, f) => a + (f ?? 0), 0) : null
   const pts = doc ? isNokatlary(doc, inputs, flow) : {}
-  const pt = pts[pumpId] ?? null
   const me = inputs.find((i) => i.id === pumpId)!
-  const m = me.model
-  const runN = inputs.filter((i) => i.running).length
-  const mixed = new Set(inputs.filter((i) => i.running).map((i) => i.model)).size > 1
+  const run = inputs.filter((i) => i.running)
 
-  const rows: CurveRow[] = [
-    { label: 'Akym Q', value: pt?.q != null ? `${fmtN(pt.q, 3)} m³/s` : '—' },
-    { label: 'Basyş beýikligi H', value: pt?.h != null ? `${fmtN(pt.h, 1)} m` : '—' },
-    { label: 'Basyş', value: `${fmtN(v.press, 2)} bar` },
-    { label: 'Kuwwat · Tok', value: `${fmtN(v.kw, 0)} kW · ${fmtN(v.amp, 1)} A` },
-    { label: 'Ýygylyk', value: `${fmtN(v.hz, 1)} Hz` },
-    { label: 'Suw derejesi', value: `${fmtN(v.level ?? basinLvl, 2)} m` },
-  ]
-  if (m) rows.push(
-    { label: 'Taslama Q', value: `${fmtN(m.taslama.q, 3)} m³/s` },
-    { label: 'Taslama H', value: `${fmtN(m.taslama.h, 1)} m` },
-    { label: 'Taslama η (PÝK)', value: `${fmtN(m.taslama.eta, 1)} %` },
-  )
-  // Zawod egrisinden tapawut: seçilen dönemin noktalarından (50 Hz'e indirgenmiş)
-  const dev = m ? tapawut(m, cloud) : null
-  const sev = tapawutSev(dev)
-  if (m) rows.push({
-    label: 'Egriden tapawut (24 sag)',
-    value: dev === null ? 'nokat az' : `${dev > 0 ? '+' : ''}${fmtN(dev, 1)} % · ${sev === 'ok' ? 'kadaly' : sev === 'warn' ? 'duýduryş' : 'näsazlyk'}`,
-    cls: sev === 'ok' ? 'good' : sev === 'warn' ? 'mid' : sev === 'fault' ? 'bad' : undefined,
+  const w = egriPenceresi({
+    title: v.label, m: me.model, running: v.running, pt: pts[pumpId] ?? null,
+    press: v.press, kw: v.kw, amp: v.amp, hz: v.hz, level: v.level ?? basinLvl, cloud,
+    akymOlcegi: g.header, runN: run.length, mixed: new Set(run.map((i) => i.model)).size > 1,
   })
-
-  const note = !v.running ? 'Nasos durýar: iş nokady ýok.'
-    : pt?.q == null ? 'Akym hasaplanyp bilmedi (akym ölçegi we kuwwat ýok).'
-    : pt.qUsul === 'akym' ? `Akym: ${g.header} akym ölçeginden${runN > 1
-        ? (mixed ? `, ${runN} işleýän nasosa kuwwatlaryna görä bölündi (dürli görnüşli nasoslar)` : `, ${runN} işleýän nasosa deň bölündi`) : ''}.`
-    : 'Akym: nasosyň kuwwatyndan, zawod egrisi boýunça (takmynan).'
-  const lvlNote = (v.running && pt?.dz == null ? ' Suw derejesi ýa-da nasos okunyň beýikligi ýok: H diňe basyşdan.' : '')
-    + (cloud.length ? ` Geçmiş: ${cloud.length} nokat${cloud.some((c) => c.inv) ? ', inwertordakylar 50 Hz-e getirildi' : ''}.` : '')
-
-  return (
-    <CurveModal title={v.label} sub={m ? `${m.ad} · ${m.motor_kw} kW · ${m.rpm} aýl/min` : 'Egri ýok'}
-                m={m} pt={pt} cloud={cloud} dev={dev}
-                rows={rows} note={note + lvlNote} onClose={onClose} />
-  )
+  return <CurveModal {...w} onClose={onClose} />
 }
 
 export function StationBar({ sid, groups }: { sid: string; groups: Group[] }) {

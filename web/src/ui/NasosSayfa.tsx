@@ -1,55 +1,47 @@
 import { useEffect, useMemo, useState } from 'react'
-import { abone, cykysWana, girisWana, loadEskiCfg, nasazOf, nasosOrds, num, yagdayOf, type EskiDeger } from '../data/eskiNokta'
+import { cykysWana, DEMO, girisWana, nasazOf, num, useEskiNokatlar, yagdayOf } from '../data/eskiNokta'
+import { Icon } from './icons'
+import { NasosEgri } from './NasosEgri'
 
 /**
  * nasos.html#PMP-03 — eski TV Px sayfalarındaki nasos resmine tıklanınca açılan popup'ın içi.
  * Veriler eski Px sayfalarının okuduğu noktalardan (eski_noktalar.json), aynı yazılarla.
  * Popup çerçevesini Px sayfasının üstüne dugme.js kurar; × ve Esc o çerçeveyi kaldırır.
+ * "Grafigi aç": nasosun H–Q penceresi (NasosEgri) — Px sayfasının ortasında büyük çerçevede.
  * Deneme: nasos.html?demo#PMP-03 (Niagara'sız, örnek değerler).
  */
 const KATMAN = 'twinNasosKatman'
-const DEMO = new URLSearchParams(location.search).has('demo')
 
 function yap() {
   try { window.parent.document.getElementById(KATMAN)?.remove(); return } catch { /* başka köken */ }
   window.parent.postMessage({ twin: 'nasos-yap' }, '*')
 }
 
-const demoDeger = (key: string): EskiDeger => {
-  const d: Record<string, [number, string]> = {
-    yagday: [2, ''], duydurys: [1, ''], nasazlyk: [0, ''], status: [4, ''], basys: [3.42, '3.42 bar'],
-    akym: [812.5, '812.5 m³/h'], tizlik: [1.84, '1.84 m/s'], jemi: [1254870, '1254870 m³'], suw: [2.71, '2.71 m'],
-    giris_wana: [2, ''], cykys_wana: [2, ''],
-    U1: [68, '68.0 °C'], U2: [70, '70.0 °C'], V1: [67, '67.0 °C'], V2: [69, '69.0 °C'], W1: [71, '71.0 °C'], W2: [72, '72.0 °C'],
-    On: [48, '48.0 °C'], Arka: [51, '51.0 °C'],
-  }
-  const [v, disp] = d[key] ?? [0, '']
-  return { v, disp, ok: true }
-}
-
 export function NasosSayfa() {
   const id = decodeURIComponent(location.hash.slice(1)).toUpperCase()
   const n = Number(/(\d+)\s*$/.exec(id)?.[1] ?? NaN)
-  const [vals, setVals] = useState<Record<string, EskiDeger>>({})
-  const [missing, setMissing] = useState<string[]>([])
-  const [err, setErr] = useState<string | null>(null)
+  const { vals, missing, err } = useEskiNokatlar(n)
+  /** popup'ın kendi içindeki H–Q penceresi (üst sayfa yoksa ya da üst sayfa büyük çerçeveyi açamadıysa) */
+  const [egri, setEgri] = useState(false)
 
+  // Esc popup'ı kapatır; içerideki H–Q penceresi açıksa yalnız onu (CurveModal kendisi kapatır)
   useEffect(() => {
-    let ok = true, stop = () => {}
+    if (egri) return
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') yap() }
     window.addEventListener('keydown', esc)
-    ;(async () => {
-      if (!Number.isFinite(n)) throw new Error(`nasos belgisi ýok (${id || '?'})`)
-      const cfg = await loadEskiCfg()
-      const { ords } = nasosOrds(cfg, n)
-      if (DEMO) { const all: Record<string, EskiDeger> = {}; for (const k of Object.keys(ords)) all[k] = demoDeger(k); setVals(all); return }
-      const r = await abone(ords, (key, d) => { if (ok) setVals((s) => ({ ...s, [key]: d })) })
-      stop = r.stop
-      if (!ok) { stop(); return }
-      setMissing(r.missing.map((m) => `${m.key}: ${m.ords.join(' | ')}`))
-    })().catch((e) => ok && setErr(String(e?.message ?? e)))
-    return () => { ok = false; stop(); window.removeEventListener('keydown', esc) }
-  }, [id, n])
+    return () => window.removeEventListener('keydown', esc)
+  }, [egri])
+
+  /** Px sayfasından (dugme.js) büyük çerçeveyi iste; üst sayfa yoksa ya da yanıt gelmezse popup'ın içinde aç */
+  const grafigiAc = () => {
+    if (window.parent === window) { setEgri(true); return }
+    let acyk = false
+    // yanıtı dugme.js'in çerçevesi gönderir (Px sayfasının kendisi değil): aynı köken yeter
+    const yanit = (e: MessageEvent) => { if (e.origin === location.origin && e.data?.twin === 'egri-acyk') acyk = true }
+    window.addEventListener('message', yanit)
+    window.parent.postMessage({ twin: 'egri-ac', id, demo: DEMO }, '*')
+    setTimeout(() => { window.removeEventListener('message', yanit); if (!acyk) setEgri(true) }, 700)
+  }
 
   // Popup çerçevesinin yüksekliği kartın boyuna uysun
   useEffect(() => {
@@ -81,41 +73,47 @@ export function NasosSayfa() {
     return (
       <div className="nasosSayfa">
         <button className="nasosYap" onClick={yap} aria-label="ýap">×</button>
-        <div className="loading bad">ýükleme ýalňyşlygy: {err ?? id}</div>
+        <div className="loading bad">ýükleme ýalňyşlygy: {err ?? `nasos belgisi ýok (${id || '?'})`}</div>
       </div>
     )
   }
 
   return (
-    <div className="nasosSayfa">
-      <div className={`card eskiKart ${cls}`}>
-        <div className="cardHead">
-          <div><b>N-{n}</b></div>
-          <span className={`chip ${yagCls}`}>{yagdayOf(yag) ?? 'Maglumat ýok'}</span>
-          <button className="x" onClick={yap} aria-label="ýap">×</button>
+    <>
+      <div className="nasosSayfa">
+        <div className={`card eskiKart ${cls}`}>
+          <div className="cardHead">
+            <div><b>N-{n}</b></div>
+            <span className={`chip ${yagCls}`}>{yagdayOf(yag) ?? 'Maglumat ýok'}</span>
+            <button className="x" onClick={yap} aria-label="ýap">×</button>
+          </div>
+
+          <div className={`eskiDurum ${duy !== null && duy > 0 ? 'warn' : ''}`}><em>Duýduryş</em>{nasazOf(duy) ?? '—'}</div>
+          <div className={`eskiDurum ${nas !== null && nas > 0 ? 'fault' : ''}`}><em>Näsazlyk</em>{nasazOf(nas) ?? '—'}</div>
+
+          <div className="kv">
+            <div className="row"><span>Basyş</span><span>{show('basys', 2)}</span></div>
+            <div className="row"><span>Akym</span><span>{show('akym')}</span></div>
+            <div className="row"><span>Tizlik</span><span>{show('tizlik', 2)}</span></div>
+            <div className="row"><span>Jemi</span><span>{show('jemi', 0)}</span></div>
+            <div className="row"><span>Suwuň derejesi</span><span>{show('suw', 2)}</span></div>
+            <div className="row"><span>Giriş / çykyş wana</span><span>{wana(girisWana(num(g('giris_wana'))))} / {wana(cykysWana(num(g('cykys_wana'))))}</span></div>
+          </div>
+
+          <div className="eskiBolum">Temperatura, °C</div>
+          <div className="miniTemps">
+            {temps.map(([k, l]) => <span key={k}><em>{l}</em>{sicak(k)}</span>)}
+          </div>
+
+          <button className="wide egriAc" onClick={grafigiAc}><Icon.chart size={16} />Grafigi aç</button>
+
+          {missing.length > 0 && (
+            <div className="eskiEksik" title={missing.join('\n')}>{missing.length} nokat tapylmady (eski_noktalar.json)</div>
+          )}
         </div>
-
-        <div className={`eskiDurum ${duy !== null && duy > 0 ? 'warn' : ''}`}><em>Duýduryş</em>{nasazOf(duy) ?? '—'}</div>
-        <div className={`eskiDurum ${nas !== null && nas > 0 ? 'fault' : ''}`}><em>Näsazlyk</em>{nasazOf(nas) ?? '—'}</div>
-
-        <div className="kv">
-          <div className="row"><span>Basyş</span><span>{show('basys', 2)}</span></div>
-          <div className="row"><span>Akym</span><span>{show('akym')}</span></div>
-          <div className="row"><span>Tizlik</span><span>{show('tizlik', 2)}</span></div>
-          <div className="row"><span>Jemi</span><span>{show('jemi', 0)}</span></div>
-          <div className="row"><span>Suwuň derejesi</span><span>{show('suw', 2)}</span></div>
-          <div className="row"><span>Giriş / çykyş wana</span><span>{wana(girisWana(num(g('giris_wana'))))} / {wana(cykysWana(num(g('cykys_wana'))))}</span></div>
-        </div>
-
-        <div className="eskiBolum">Temperatura, °C</div>
-        <div className="miniTemps">
-          {temps.map(([k, l]) => <span key={k}><em>{l}</em>{sicak(k)}</span>)}
-        </div>
-
-        {missing.length > 0 && (
-          <div className="eskiEksik" title={missing.join('\n')}>{missing.length} nokat tapylmady (eski_noktalar.json)</div>
-        )}
       </div>
-    </div>
+      {/* .nasosSayfa'nın zoom'u pencereye geçmesin: dışında */}
+      {egri && <NasosEgri n={n} vals={vals} onClose={() => setEgri(false)} />}
+    </>
   )
 }

@@ -8,7 +8,9 @@
     "B": "Böwetleýji gatla",
     "BG": "Esasy böwetleýji gatla",
     "S": "Sazlaýjy",
-    "N": "Nasos"
+    "N": "Nasos",
+    "Toplum": "Toplum",
+    "P": "Nasos"
   },
   "sayi": "Liniýa",
   "sozler": {
@@ -24,14 +26,27 @@
     "Line": "liniýa",
     "rssi": "signal güýji (RSSI)",
     "snr": "signal/şowhun (SNR)",
-    "gpio_input": "giriş"
+    "gpio_input": "giriş",
+    "Temps": "temperatura",
+    "Arka": "arka",
+    "Toplum_1": "Toplum 1",
+    "Toplum_2": "Toplum 2",
+    "Toplum_3": "Toplum 3",
+    "Toplum_4": "Toplum 4"
   },
   "olcegler": {
     "_aciklama": "Grafiklerde ve hasabatta gösterilen ölçegler (adın sonu → türü). akym: ortalama/en yüksek; sanag: sayaç, dönemdeki fark; ortaca: ortalama/en düşük/en yüksek. Burada olmayan sonlar (Status, CMD, rssi…) gösterilmez. Alt çizgisiz adlar (Awankamera M-1 Suw Derejesi) tek ölçeg sayılır.",
     "Akym": "akym",
     "Toplam": "sanag",
     "Jemi": "sanag",
-    "Suw_Tizligi": "ortaca"
+    "Suw_Tizligi": "ortaca",
+    "U1": "ortaca",
+    "U2": "ortaca",
+    "V1": "ortaca",
+    "V2": "ortaca",
+    "W1": "ortaca",
+    "W2": "ortaca",
+    "Arka": "ortaca"
   },
   "duzeltmeler": {}
 }

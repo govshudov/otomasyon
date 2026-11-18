@@ -335,6 +335,22 @@ nasosların üstünü kapatmaz. Başka nasosa tıklamak popup'ı ona geçirir; �
 (rapor: `Desktop\tv_yedek\tv-bak.txt`): dosyalar istasyonda mı, Pump.px'te kaç kutu var, ord'ları,
 kutunun içinde hangi sayfa açılıyor, tıklayınca popup açılıyor mu.
 
+Popup'taki **Grafigi aç** düğmesi o nasosun H–Q penceresini açar (ayrı kurulum gerekmez).
+
+### 6.3 ARHIW / SUW GEÇIRIJILER sazlamaları (yalnız Workbench)
+
+İki sayfa da noktaları veritabanındaki adlarından kendisi tanır (kurallar: `GUNCELLEME-2026-11-18.md` §1.3–1.4).
+Tanınmayan ya da yanlış eşleşen nokta sayfanın **Sazlamalar** sekmesinde listeden seçilir; **Ýatda sakla** dosyanın
+yeni metnini gösterir, metin istasyondaki dosyaya Workbench ile yazılır (sayfa henüz kendisi yazmıyor):
+
+| Sayfa | Dosya | Workbench |
+|---|---|---|
+| ARHIW → Sazlamalar (nasos sıcaklıkları) | `twin/nasos_temperatura.json` | yoksa: Not Defteri'nde UTF-8 kaydet → My File System → Copy → Files → twin → Paste |
+| SUW GEÇIRIJILER → Sazlamalar | `twin/ulgam.json` (üç istasyon tek dosyada, Niagara adıyla) | Files → twin → `ulgam.json` → çift tık → metni değiştir → Ctrl+S |
+
+Ardından sayfada Ctrl+F5. `ulgam.json` paketle de gelir: sahadaki değişikliği `common/ulgam.json`'a da işleyin,
+yoksa sonraki paket kurulumu onu ezer.
+
 ---
 
 ## 7. Komutlar — `make` olmadan

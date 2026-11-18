@@ -24,11 +24,14 @@ export interface EgriDoc {
   atama: Record<string, Record<string, string>>
 }
 
+const json = (p: string, init?: RequestInit) => fetch(asset(p), init).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+/** Deneme (?demo): geliştirme sunucusu common/ klasörünü vermez; dosyanın kopyası demo/ içinde */
+const DEMO = new URLSearchParams(location.search).has('demo')
+
 let docP: Promise<EgriDoc | null> | null = null
 export function loadEgriler(): Promise<EgriDoc | null> {
-  docP ??= fetch(asset('nasos_egrileri.json'), { cache: 'no-cache' })
-    .then((r) => (r.ok ? r.json() : null))
-    .catch(() => null)
+  docP ??= json('nasos_egrileri.json', { cache: 'no-cache' })
+    .then((d) => d ?? (DEMO ? json('demo/nasos_egrileri.json') : null))
   return docP
 }
 

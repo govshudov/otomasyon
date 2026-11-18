@@ -159,13 +159,13 @@
         "static_head_m": 38.0,
         "roughness_c": 130,
         "pumps": [
-          "PMP-01",
-          "PMP-02",
-          "PMP-03",
           "PMP-04",
           "PMP-05",
           "PMP-06",
-          "PMP-07"
+          "PMP-07",
+          "PMP-08",
+          "PMP-09",
+          "PMP-10"
         ]
       }
     },
@@ -181,11 +181,7 @@
         "pumps": [
           "PMP-01",
           "PMP-02",
-          "PMP-03",
-          "PMP-04",
-          "PMP-05",
-          "PMP-06",
-          "PMP-07"
+          "PMP-03"
         ]
       }
     },
@@ -199,13 +195,13 @@
         "static_head_m": 38.0,
         "roughness_c": 130,
         "pumps": [
-          "PMP-01",
-          "PMP-02",
-          "PMP-03",
           "PMP-04",
           "PMP-05",
           "PMP-06",
-          "PMP-07"
+          "PMP-07",
+          "PMP-08",
+          "PMP-09",
+          "PMP-10"
         ]
       }
     },
@@ -219,6 +215,10 @@
         "static_head_m": 38.0,
         "roughness_c": 130,
         "pumps": [
+          "PMP-04",
+          "PMP-05",
+          "PMP-06",
+          "PMP-07",
           "PMP-08",
           "PMP-09",
           "PMP-10"
@@ -228,13 +228,8 @@
     {
       "id": "PMP-01",
       "type": "pump_hsc",
-      "label": "T-1 N-1",
-      "header": "HDR-01",
-      "headers": [
-        "HDR-01",
-        "HDR-02",
-        "HDR-03"
-      ],
+      "label": "T-2 N-1",
+      "header": "HDR-02",
       "layout": {
         "cell": 0,
         "row": 0
@@ -270,13 +265,8 @@
     {
       "id": "PMP-02",
       "type": "pump_hsc",
-      "label": "T-1 N-2",
-      "header": "HDR-01",
-      "headers": [
-        "HDR-01",
-        "HDR-02",
-        "HDR-03"
-      ],
+      "label": "T-2 N-2",
+      "header": "HDR-02",
       "layout": {
         "cell": 1,
         "row": 1
@@ -312,13 +302,8 @@
     {
       "id": "PMP-03",
       "type": "pump_hsc",
-      "label": "T-1 N-3",
-      "header": "HDR-01",
-      "headers": [
-        "HDR-01",
-        "HDR-02",
-        "HDR-03"
-      ],
+      "label": "T-2 N-3",
+      "header": "HDR-02",
       "layout": {
         "cell": 2,
         "row": 0
@@ -358,8 +343,8 @@
       "header": "HDR-01",
       "headers": [
         "HDR-01",
-        "HDR-02",
-        "HDR-03"
+        "HDR-03",
+        "HDR-04"
       ],
       "layout": {
         "cell": 3,
@@ -400,8 +385,8 @@
       "header": "HDR-01",
       "headers": [
         "HDR-01",
-        "HDR-02",
-        "HDR-03"
+        "HDR-03",
+        "HDR-04"
       ],
       "layout": {
         "cell": 4,
@@ -442,8 +427,8 @@
       "header": "HDR-01",
       "headers": [
         "HDR-01",
-        "HDR-02",
-        "HDR-03"
+        "HDR-03",
+        "HDR-04"
       ],
       "layout": {
         "cell": 5,
@@ -484,8 +469,8 @@
       "header": "HDR-01",
       "headers": [
         "HDR-01",
-        "HDR-02",
-        "HDR-03"
+        "HDR-03",
+        "HDR-04"
       ],
       "layout": {
         "cell": 6,
@@ -522,8 +507,13 @@
     {
       "id": "PMP-08",
       "type": "pump_hsc",
-      "label": "T-4 N-8",
-      "header": "HDR-04",
+      "label": "T-1 N-8",
+      "header": "HDR-01",
+      "headers": [
+        "HDR-01",
+        "HDR-03",
+        "HDR-04"
+      ],
       "layout": {
         "cell": 7,
         "row": 1
@@ -559,8 +549,13 @@
     {
       "id": "PMP-09",
       "type": "pump_hsc",
-      "label": "T-4 N-9",
-      "header": "HDR-04",
+      "label": "T-1 N-9",
+      "header": "HDR-01",
+      "headers": [
+        "HDR-01",
+        "HDR-03",
+        "HDR-04"
+      ],
       "layout": {
         "cell": 8,
         "row": 0
@@ -596,8 +591,13 @@
     {
       "id": "PMP-10",
       "type": "pump_hsc",
-      "label": "T-4 N-10",
-      "header": "HDR-04",
+      "label": "T-1 N-10",
+      "header": "HDR-01",
+      "headers": [
+        "HDR-01",
+        "HDR-03",
+        "HDR-04"
+      ],
       "layout": {
         "cell": 9,
         "row": 1

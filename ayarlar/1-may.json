@@ -1,5 +1,5 @@
 {
-  "_aciklama": "1 Maý istasyonunun AYAR dosyası. DİKKAT: kolektorler ve nasos değerleri VARSAYIM — gerçek bağlantıya göre düzeltin. Alanlar: KURULUM.md §3.",
+  "_aciklama": "1 Maý istasyonunun AYAR dosyası. Kolektörler gerçek bağlantıya göre (18.11.2026): Toplum 1 = N-1…N-3 → T-2 (MT-2); Toplum 2 = N-4…N-10 → T-1, T-3, T-4 (MT-1, MT-3, MT-4; ortak hat). DİKKAT: nasos değerleri VARSAYIM. Alanlar: KURULUM.md §3.",
   "id": "PS-04",
   "ad": "1 Maý suw göteriji beket",
   "niagara": {
@@ -16,10 +16,10 @@
   "saklama_yil": 5,
   "sikistirma_gun": 7,
   "kolektorler": [
-    { "ad": "T-1 esasy turba", "nasoslar": [1, 2, 3, 4, 5, 6, 7] },
-    { "ad": "T-2 esasy turba", "nasoslar": [1, 2, 3, 4, 5, 6, 7] },
-    { "ad": "T-3 esasy turba", "nasoslar": [1, 2, 3, 4, 5, 6, 7] },
-    { "ad": "T-4 esasy turba", "nasoslar": [8, 9, 10] }
+    { "ad": "T-1 esasy turba", "nasoslar": [4, 5, 6, 7, 8, 9, 10] },
+    { "ad": "T-2 esasy turba", "nasoslar": [1, 2, 3] },
+    { "ad": "T-3 esasy turba", "nasoslar": [4, 5, 6, 7, 8, 9, 10] },
+    { "ad": "T-4 esasy turba", "nasoslar": [4, 5, 6, 7, 8, 9, 10] }
   ],
   "nasos": { "motor_kw": 160, "debi_m3h": 900, "basys_m": 45 }
 }

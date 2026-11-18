@@ -5,16 +5,19 @@
  *   timescale  istasyon: TimescaleDB (5 yıl), istasyondaki TsOkuma servisi üzerinden
  *   niagara    istasyon: servis yoksa noktanın Niagara geçmişi (BajaScript, kapasite kadar)
  *   session  ikisi de yoksa: sayfa açıldığından beri tarayıcının biriktirdiği değerler
+ *   demo     `?demo`: üretilmiş veri (demo.ts) — yukarıdakilerin hiçbirine gidilmez
  *
  * Hepsi aynı biçime indirgenir: zaman ekseninde eşit genişlikte kovalar,
  * [epoch_sn, ortalama, min, maks]. Değer gelmeyen kovada son değer sürdürülür
  * (COV verisi: değişmeyen değer yeniden gönderilmez).
  */
 import type { Sample } from './store'
-import { NIAGARA, niagaraHistory, hasNiagaraHistory, dbNameOf, historyNamesReady, tsQuery } from './niagara'
+import { DEMO, NIAGARA, niagaraHistory, hasNiagaraHistory, dbNameOf, historyNamesReady, tsQuery } from './niagara'
+import { tempDbName } from './nasosTemp'
 
 export type Bucket = [number, number, number, number]
-export type Source = 'api' | 'timescale' | 'niagara' | 'session'
+/** demo: `?demo` ile üretilmiş veri (ölçüm değil) */
+export type Source = 'api' | 'timescale' | 'niagara' | 'session' | 'demo'
 export interface HistResult { data: Record<string, Bucket[]>; sources: Set<Source> }
 
 // --------------------------------------------------------------------------- //
@@ -111,6 +114,7 @@ function rebucket(src: Bucket[], from: number, to: number, n: number): Bucket[] 
 let apiOk: boolean | null = null
 
 export async function queryHistory(tags: string[], from: number, to: number, n = 300): Promise<HistResult> {
+  if (DEMO) return (await import('./demo')).demoHistory([...new Set(tags)], from, to, n)
   const data: Record<string, Bucket[]> = {}
   const sources = new Set<Source>()
   let rest = [...new Set(tags)]
@@ -130,8 +134,11 @@ export async function queryHistory(tags: string[], from: number, to: number, n =
   if (NIAGARA) {
     await historyNamesReady()                        // sayfa yeni açıldıysa adlar eşlenene kadar
     const byName = new Map<string, string>()
-    // "db:<ad>" doğrudan veritabanındaki ad (Milesight vb.); diğerleri noktanın history adı
-    for (const t of rest) { const nm = t.startsWith('db:') ? t.slice(3) : dbNameOf(t); if (nm) byName.set(nm, t) }
+    // "db:<ad>" doğrudan veritabanındaki ad (Milesight vb.); nasos temperaturası adından tanınır
+    // (nasosTemp.ts: Toplum_1_Temps_P3_U1, Sazlamalar / nasos_temperatura.json üstüne yazar);
+    // diğerleri noktanın history adı
+    const temp = await Promise.all(rest.map((t) => (t.startsWith('db:') ? null : tempDbName(t).catch(() => null))))
+    rest.forEach((t, i) => { const nm = t.startsWith('db:') ? t.slice(3) : (temp[i] ?? dbNameOf(t)); if (nm) byName.set(nm, t) })
     if (byName.size) {
       try {
         const names = encodeURIComponent([...byName.keys()].join(','))

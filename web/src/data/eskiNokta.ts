@@ -3,7 +3,11 @@
  * noktalarını değil, eski Px sayfalarının okuduğu noktaları doğrudan okur. Böylece popup'ta
  * eski sayfalarda ne görünüyorsa o görünür ve hiçbir nokta elle bağlanmaz.
  */
+import { useEffect, useState } from 'react'
 import { asset, loadBaja } from './niagara'
+
+/** Deneme: nasos.html?demo#PMP-03 — Niagara'sız, örnek değerler (eski_noktalar.json da okunmaz) */
+export const DEMO = new URLSearchParams(location.search).has('demo')
 
 export interface EskiCfg {
   kok: string
@@ -94,12 +98,58 @@ export async function abone(ords: Record<string, string[]>, onChange: (key: stri
   return { stop: () => { try { sub.unsubscribeAll() } catch { /* */ } }, missing }
 }
 
+/** Nasos N'in eski noktaları (canlı abonelik; deneme modunda örnek değerler). */
+export function useEskiNokatlar(n: number): { vals: Record<string, EskiDeger>; missing: string[]; err: string | null } {
+  const [vals, setVals] = useState<Record<string, EskiDeger>>({})
+  const [missing, setMissing] = useState<string[]>([])
+  const [err, setErr] = useState<string | null>(null)
+  useEffect(() => {
+    if (!Number.isFinite(n)) return
+    let ok = true, stop = () => {}
+    ;(async () => {
+      if (DEMO) { setVals(demoDegerler(n)); return }
+      const cfg = await loadEskiCfg()
+      const { ords } = nasosOrds(cfg, n)
+      const r = await abone(ords, (key, d) => { if (ok) setVals((s) => ({ ...s, [key]: d })) })
+      stop = r.stop
+      if (!ok) { stop(); return }
+      setMissing(r.missing.map((m) => `${m.key}: ${m.ords.join(' | ')}`))
+    })().catch((e) => ok && setErr(String(e?.message ?? e)))
+    return () => { ok = false; stop() }
+  }, [n])
+  return { vals, missing, err }
+}
+
+/**
+ * Deneme değerleri. Nasoslar biraz farklı (Px deneme sayfasında ayırt edilsin): tek numaralılar
+ * transformatorda, çift numaralılar inwertorda (46 Hz). Basyş/akym/kuwwat RDLO 400-705 egrisine
+ * yakın (≈ −2 %), H–Q penceresinde iş nokady egriniň ýanynda dursun.
+ */
+function demoDegerler(n: number): Record<string, EskiDeger> {
+  const inv = n % 2 === 0
+  const [basys, akym, suw, kuwwat, tok] = inv ? [6.19, 1400, 3.05, 313, 35.4] : n === 1 ? [7.39, 1490, 3.15, 396, 44.9] : [7.27, 1580, 3.2, 411, 46.5]
+  const d: Record<string, [number, number?, string?]> = {
+    yagday: [inv ? 2 : 1], duydurys: [n === 3 ? 1 : 0], nasazlyk: [0], status: [4],
+    basys: [basys, 2, 'bar'], akym: [akym, 1, 'm³/h'], tizlik: [akym / 3600 / 0.19635, 2, 'm/s'], jemi: [1254870 + n * 73415, 0, 'm³'],
+    suw: [suw, 2, 'm'], kuwwat: [kuwwat, 0, 'kW'], tok: [tok, 1, 'A'], ...(inv ? { ygylyk: [46, 1, 'Hz'] } : {}),
+    giris_wana: [2], cykys_wana: [2],
+    U1: [68, 1, '°C'], U2: [70, 1, '°C'], V1: [67, 1, '°C'], V2: [69, 1, '°C'], W1: [71, 1, '°C'], W2: [72, 1, '°C'],
+    On: [48, 1, '°C'], Arka: [51, 1, '°C'],
+  }
+  const out: Record<string, EskiDeger> = {}
+  for (const [k, [v, dig, u]] of Object.entries(d)) out[k] = { v, disp: u ? `${v.toFixed(dig)} ${u}` : '', ok: true }
+  return out
+}
+
 // ---- eski Px sayfalarındaki dönüşümler (aynı kodlar, aynı yazılar) -------------------------- //
 // Niagara aralık eşlemesi "a:b": (a, b] — 0 = Durýar / Näsazlyk ýok, 1, 2 … sonraki aralıklar.
 const idx = (v: number) => (v <= 0 ? 0 : Math.ceil(v))
 
 export const YAGDAY = ['Durýar', 'Transformatorda', 'Inwertorda']
 export const yagdayOf = (v: number | null) => (v === null ? null : idx(v) <= 2 ? YAGDAY[idx(v)] : 'Işleýär')
+/** PowerMode 1: transformatordan (şebeke, 50 Hz); 2: inwertordan */
+export const transformatorda = (v: number | null) => v !== null && idx(v) === 1
+export const inwertorda = (v: number | null) => v !== null && idx(v) === 2
 
 const NASAZ = ['Näsazlyk ýok', 'Suwyň derejesi pes', 'Nasos gyzgynlygy ýokary', 'Suw pes we gyzgynlyk',
   'Amper ýokary', 'Amper ýokary we suw pes', 'Amper ýokary we gyzgynlyk', 'Amper, gyzgynlyk we suw pes']

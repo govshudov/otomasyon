@@ -9,8 +9,9 @@
  * sozluk.json pakette durur (common/sozluk.json → file:^twin/sozluk.json); her açılışta
  * önbelleğe bakılmadan okunur. Nokta listesi TsOkuma servisinden gelir.
  */
-import { asset, tsQuery } from './niagara'
+import { asset, DEMO, loadDbPoints } from './niagara'
 import { etiket, unescapeName, type OlcegTuru, type Sozluk } from './etiket'
+import { TEMP_OLCEG, parseTempName, tempPumpLabel } from './nasosTemp'
 
 let sozP: Promise<Sozluk | null> | null = null
 
@@ -18,11 +19,14 @@ export function loadSozluk(): Promise<Sozluk | null> {
   sozP ??= fetch(asset('sozluk.json'), { cache: 'no-cache' })
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null)
+    // geliştirme sunucusu common/ klasörünü sunmuyor: demoda sözlüğün kopyası
+    .then((s) => s ?? (DEMO ? import('./demo').then((m) => m.DEMO_SOZLUK) : null))
   return sozP
 }
 
 export interface DbOlceg { key: string; label: string; kind: OlcegTuru; name: string; unit: string | null }
-export interface DbEnjam { key: string; label: string; full: string; olcegler: DbOlceg[] }
+/** temp: nasos temperaturası (U1…W2, Öň, Arka) — bir grafikte birlikte çizilir */
+export interface DbEnjam { key: string; label: string; full: string; olcegler: DbOlceg[]; temp?: boolean }
 export interface DbGroup { key: string; label: string; enjamlar: DbEnjam[] }
 
 const HIDDEN = /^(TWIN_|AuditHistory$|LogHistory$|SecurityHistory$)/
@@ -40,16 +44,33 @@ export function loadDbTree(): Promise<DbGroup[] | null> {
 }
 
 async function build(): Promise<DbGroup[] | null> {
-  const [soz, res] = await Promise.all([loadSozluk(), tsQuery('op=points')])
-  if (!res?.points) return null
+  const [soz, points] = await Promise.all([loadSozluk(), loadDbPoints()])
+  if (!points) return null
   const olc = Object.entries(soz?.olcegler ?? { Akym: 'akym', Toplam: 'sanag' })
     .filter(([k, v]) => !k.startsWith('_') && KINDS.includes(v as OlcegTuru)) as [string, OlcegTuru][]
   const order = olc.map(([k]) => k)
 
   const groups = new Map<string, DbGroup>()
-  for (const [name, , , unit] of res.points as [string, string, string, string | null, string][]) {
+  for (const [name, , , unit] of points) {
     if (HIDDEN.test(name)) continue
     const plain = unescapeName(name)
+    // Nasos temperaturası (Toplum_1_Temps_P3_U1): toplum → nasos → U1…W2, Öň, Arka podşipnik.
+    // Sözlükle bölününce son eki olmayan (Öň podşipnik) ad düşüyor, toplumlar iki gruba ayrılıyordu.
+    const tp = parseTempName(name)
+    if (tp) {
+      const gk = `Toplum_${tp.toplum}_Temps`
+      let g = groups.get(gk)
+      if (!g) { g = { key: gk, label: `Toplum ${tp.toplum} · nasos temperaturasy`, enjamlar: [] }; groups.set(gk, g) }
+      const ek = `${gk}_P${tp.k}`
+      let e = g.enjamlar.find((x) => x.key === ek)
+      if (!e) {
+        const lab = tempPumpLabel(tp.toplum, tp.k) ?? `P${tp.k}`
+        e = { key: ek, label: lab, full: `Toplum ${tp.toplum} · ${lab} · temperatura`, olcegler: [], temp: true }
+        g.enjamlar.push(e)
+      }
+      e.olcegler.push({ key: tp.key, label: TEMP_OLCEG[tp.key], kind: 'ortaca', name, unit: unit ?? '°C' })
+      continue
+    }
     let gKey: string, eKey: string, oKey: string, kind: OlcegTuru
     if (!plain.includes('_')) {
       gKey = plain.split(' ')[0]; eKey = plain; oKey = ''; kind = 'ortaca'
@@ -77,7 +98,11 @@ async function build(): Promise<DbGroup[] | null> {
   for (const g of out) {
     // "Umumy" başta, sonra doğal sıra (Gatla 2 < Gatla 10)
     g.enjamlar.sort((a, b) => (a.label === 'Umumy' ? -1 : b.label === 'Umumy' ? 1 : cmp(a.label, b.label)))
-    for (const e of g.enjamlar) e.olcegler.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+    const tOrder = Object.keys(TEMP_OLCEG)
+    for (const e of g.enjamlar) {
+      e.olcegler.sort(e.temp ? (a, b) => tOrder.indexOf(a.key) - tOrder.indexOf(b.key)
+        : (a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+    }
   }
   return out
 }
