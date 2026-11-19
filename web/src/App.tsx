@@ -8,7 +8,7 @@ import { Timeline } from './ui/Timeline'
 import type { StationInfo } from './ui/StationPicker'
 import { SensorLabels } from './ui/SensorLabels'
 import { computeHealth } from './data/health'
-import { DEMO, fetchStationConfig, fetchStations, niagaraUser, NIAGARA, stationMismatch } from './data/niagara'
+import { DEMO, adminMi, fetchStationConfig, fetchStations, niagaraUser, NIAGARA, stationMismatch } from './data/niagara'
 import { enjamAdy, groupsOf, levelSev, pumpView, runStateOf, type StationCfg } from './data/pump'
 import { setTempStation } from './data/nasosTemp'
 import { Header, Sidebar, type Page } from './ui/Shell'
@@ -59,6 +59,8 @@ export default function App() {
 
   const setPage = useCallback((p: Page) => { setPageRaw(p); store('twin.page', p) }, [])
   const [sazla, setSazla] = useState(false)   // arhiw.html: "Sazlamalar" sekmesi
+  const [admin, setAdmin] = useState(false)   // Sazlamalar yalnız Niagara'nın admin kullanıcısına
+  useEffect(() => { adminMi().then(setAdmin) }, [])
   useEffect(() => { store('twin.side', mini ? 'mini' : 'full') }, [mini])
   useEffect(() => { niagaraUser().then((u) => u && setUser(u)) }, [])
 
@@ -311,7 +313,7 @@ export default function App() {
           {([['charts', 'Grafikler'], ['reports', 'Hasabatlar']] as [Page, string][]).map(([p, t]) => (
             <button key={p} className={page === p && !sazla ? 'on' : ''} onClick={() => { setSazla(false); setPageRaw(p) }}>{t}</button>
           ))}
-          <button className={sazla ? 'on' : ''} onClick={() => setSazla(true)}>Sazlamalar</button>
+          {admin && <button className={sazla ? 'on' : ''} onClick={() => setSazla(true)}>Sazlamalar</button>}
           <div className="spacer" />
           {DEMO && <span className="demoBadge" title="Niagara-syz synag: maglumatlar emeli döredilýär">SYNAG · emeli maglumat</span>}
           {/* Açık sekmenin PDF'i: suw geçirijiler sahypasynyň çykyşy ýaly (brauzeriň çap penjiresi → PDF) */}
@@ -387,7 +389,7 @@ export default function App() {
           {page === 'alarms' && <AlarmsPage />}
           {cfg && !sazla && page === 'reports' && <ReportsPage sid={sid} groups={groups} />}
           {cfg && !sazla && page === 'charts' && <ChartsPage sid={sid} groups={groups} />}
-          {cfg && sazla && <SazlamaPage sid={sid} />}
+          {cfg && sazla && admin && <SazlamaPage sid={sid} />}
         </main>
       )}
     </div>

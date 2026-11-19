@@ -340,7 +340,8 @@ Popup'taki **Grafigi aç** düğmesi o nasosun H–Q penceresini açar (ayrı ku
 ### 6.3 ARHIW / SUW GEÇIRIJILER sazlamaları (yalnız Workbench)
 
 İki sayfa da noktaları veritabanındaki adlarından kendisi tanır (kurallar: `GUNCELLEME-2026-11-18.md` §1.3–1.4).
-Tanınmayan ya da yanlış eşleşen nokta sayfanın **Sazlamalar** sekmesinde listeden seçilir; **Ýatda sakla** dosyanın
+Tanınmayan ya da yanlış eşleşen nokta sayfanın **Sazlamalar** sekmesinde listeden seçilir (sekme yalnız Niagara'ya
+**admin** kullanıcısıyla girilince görünür; diğer kullanıcılar yalnız izler). **Ýatda sakla** dosyanın
 yeni metnini gösterir, metin istasyondaki dosyaya Workbench ile yazılır (sayfa henüz kendisi yazmıyor):
 
 | Sayfa | Dosya | Workbench |

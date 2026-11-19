@@ -21,6 +21,13 @@
 'use strict'
 const DEMO = /[?&]demo\b/.test(location.search)
 const DEMO_BEKET = decodeURIComponent((location.search.match(/[?&]beket=([^&]+)/) || [])[1] || 'PS-04').toUpperCase()
+/* Sazlamalar diňe Niagara-nyň `admin` ulanyjysyna görünýär; beýlekiler diňe gözegçilik edýär.
+   Synagda admin; ?demo&ulanyjy=operator — beýleki ulanyjy. Ady okalmasa görünmeýär. */
+const DEMO_ULANYJY = decodeURIComponent((location.search.match(/[?&]ulanyjy=([^&]+)/) || [])[1] || 'admin')
+async function adminMi() {
+  if (DEMO) return DEMO_ULANYJY.toLowerCase() === 'admin'
+  try { const b = await loadBaja(); return String((b.getUserName && b.getUserName()) || '').toLowerCase() === 'admin' } catch (e) { return false }
+}
 const DAY = 86400000
 
 /* ---------- BajaScript + TsOkuma ---------- */
@@ -394,7 +401,7 @@ async function yukle() {
     if (m.flags.includes('veri') && !m.qOk) m.q = 0
   }
   return { METERS, START, DAYS, cfg, station, son, NOK, pts, BEKET, UD, fayl: !!fayl, saklanan: !!saklanan,
-    tanalmadyk: NOK.filter((n) => n.cls === 'tanalmadyk') }
+    tanalmadyk: NOK.filter((n) => n.cls === 'tanalmadyk'), admin: await adminMi() }
 }
 
 /* ---------- başla ---------- */
@@ -1149,10 +1156,10 @@ P.liste=()=>{
     ${kpi("⧉","#39B6EE","Hasaplaýjy",METERS.length,"","Nokat atlaryndan tapylan + garaşylýan")}
     ${kpi("✓","#5CD07A","Maglumatly",var1,"","Maglumat binýadynda bar")}
     ${kpi("✕",METERS.length-var1?"#F0A03C":"#5CD07A","Maglumat ýok",METERS.length-var1,"","ulgam.json-da garaşylýan")}
-    ${kpi("?",tn?"#F2635A":"#5CD07A","Tanalmadyk nokat",tn,"",tn?'<a href="#ayar" class="wr">Sazlamalarda belläň →</a>':"Ählisi tanaldy")}
+    ${kpi("?",tn?"#F2635A":"#5CD07A","Tanalmadyk nokat",tn,"",tn?(VERI.admin?'<a href="#ayar" class="wr">Sazlamalarda belläň →</a>':"administrator belläp biler"):"Ählisi tanaldy")}
   </div>
   ${tn?`<div class="pan" style="margin:0 0 14px;border-color:#8E3B36"><div class="pb" style="color:var(--tx2);font-size:12.5px;line-height:1.8">
-    <b style="color:var(--rd)">Tanalmadyk hasaplaýjy nokatlary:</b> ${VERI.tanalmadyk.map(n=>esc(n.ad)).join(", ")} — <a href="#ayar" style="color:var(--cy)">Sazlamalar</a> bölüminde belläň ýa-da gizläň.<br>
+    <b style="color:var(--rd)">Tanalmadyk hasaplaýjy nokatlary:</b> ${VERI.tanalmadyk.map(n=>esc(n.ad)).join(", ")} — ${VERI.admin?'<a href="#ayar" style="color:var(--cy)">Sazlamalar</a> bölüminde belläň ýa-da gizläň':'administrator Sazlamalar bölüminde belläp ýa-da gizläp biler'}.<br>
     Ady düzgüne laýyk bolmaly: MT1 · MT2_1 · MT1_S2 · MT1_1_S3 · Saka4 · BA4_G3 (+ _Akym / _Toplam / _Jemi).</div></div>`:""}
   <div class="pan" style="margin-top:0"><div class="ph">
     <div style="display:flex;gap:9px;flex-wrap:wrap">
@@ -1763,7 +1770,8 @@ const NAV=[
  {g:"Turbaly Suw Geçirijiler (MT)",items:MTS.map(m=>["mt/"+m,"≋","MT-"+m+(turbaAd(m)?' <span class="navsub">'+turbaAd(m)+"</span>":"")])},
  {g:"SAKA → Beton Akaba",items:SAKAS.map(s=>["saka/SAKA-"+s.saka,"◍","SAKA-"+s.saka+' <span class="navsub">'+(s.mt?"MT-"+s.mt+(s.sub?"/"+subLbl(s.sub):""):"MT ?")+"</span>"])},
 ].filter(s=>s.items.length).concat([
- {g:"",items:[["liste","☰","Hasaplaýjylaryň Sanawy"],["rapor","▤","Hasabatlar"],["ayar","⚙","Sazlamalar",VERI.tanalmadyk.length]]}
+ {g:"",items:[["liste","☰","Hasaplaýjylaryň Sanawy"],["rapor","▤","Hasabatlar"],
+   ...(VERI.admin?[["ayar","⚙","Sazlamalar",VERI.tanalmadyk.length]]:[])]}      // diňe admin
 ]);
 document.getElementById("navwrap").innerHTML=NAV.map(s=>
   (s.g?`<div class="navgrp">${s.g}</div>`:`<div style="height:9px"></div>`)+
@@ -1779,6 +1787,7 @@ function route(keep){
   let h=(location.hash||"#genel").slice(1);
   if(h.startsWith("ps/")){location.hash="#genel";return}       // köne beket sahypalary (PS-21/PS-22) ýok
   const [p,a]=h.split("/");
+  if(p==="ayar"&&!VERI.admin){location.hash="#genel";return}  // Sazlamalar diňe admin üçin
   document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("on",n.dataset.h===h));
   const v=document.getElementById("view");
   v.innerHTML = p==="mt"&&MTS.includes(+a)?P.mt(+a) : p==="saka"?P.saka(a) : p==="denge"?P.denge()

@@ -241,6 +241,17 @@ export async function niagaraUser(): Promise<string | null> {
 }
 
 /**
+ * Sazlamalar yalnız Niagara'nın `admin` kullanıcısına görünür; diğerleri yalnız izler.
+ * ?demo: admin (?demo&ulanyjy=operator — başka kullanıcı). Niagara'sız geliştirmede görünür.
+ * Ad okunamazsa görünmez. Bu bir görünürlük kuralı: ayar istasyona Workbench ile yazılıyor.
+ */
+export async function adminMi(): Promise<boolean> {
+  if (DEMO) return (new URLSearchParams(location.search).get('ulanyjy') ?? 'admin').toLowerCase() === 'admin'
+  if (!NIAGARA) return true
+  return (await niagaraUser())?.toLowerCase() === 'admin'
+}
+
+/**
  * Paket bu istasyonun mu? İstasyon klasörü başka PC'ye kopyalanırken eski ya da başka
  * istasyonun arayüzü (`file:^twin`) gelebilir; o zaman nasoslar uymaz. İstasyonun kendi adı
  * (`stationName`) paketteki `niagara_station` ile, `/Twin/<sid>` klasörünün varlığıyla

@@ -31,7 +31,8 @@ Flash belleğe kopyalanmış, push'lanmamış değişiklikler (12 Kasım `0b0a37
 - Twin nokta adları (`/Twin/PS-04/PMP-0x/...`) değişmedi.
 
 ### 1.3 ARHIW MAGLUMATLARY (`arhiw.html`)
-- Sekmeler: **Grafikler | Hasabatlar | Sazlamalar**. Suw geçirijiler'i yanlışlıkla içinde açan
+- Sekmeler: **Grafikler | Hasabatlar | Sazlamalar** (Sazlamalar yalnız Niagara'ya **admin** ile girilince görünür).
+  Suw geçirijiler'i yanlışlıkla içinde açan
   "Hasaplaýjy hasabaty" sekmesi kaldırıldı.
 - **Daşyna çykar:** Suw geçirijiler'deki gibi PDF (logolu başlık, istasyon, tarih aralığı, özet kutuları; grafikler
   gerçek grafik olarak, sonda min/ortalama/maks tablosu). Beket, nasos, Ähli nokatlar ve Hasabatlar'da çalışır.
@@ -59,8 +60,9 @@ Flash belleğe kopyalanmış, push'lanmamış değişiklikler (12 Kasım `0b0a37
   başındaki sayaç (giren) ile turbadaki bütün ölçülen çıkışlar (sazlaýjylar, şahalar, SAKA) karşılaştırılır;
   fark = kayıp (sızıntı, ölçülmeyen çekiş ya da hatalı sayaç). Bugün ve son 30 gün, m³ ve %.
   ≤ %5 kadaly, %5–10 üns beriň, > %10 gyzyl (`yitgi_cak` ile değişir).
-- **Sazlamalar:** bütün noktalar "ne olarak tanındı" bilgisiyle; tanınmayanlar en üstte (ata ya da gizle);
-  SAKA → MT / şaha bağları listeden seçilir.
+- **Sazlamalar** (yalnız **admin** kullanıcısına görünür; diğer kullanıcılarda menüde yok, `#ayar` adresi genel bakışa
+  döner): bütün noktalar "ne olarak tanındı" bilgisiyle; tanınmayanlar en üstte (ata ya da gizle); SAKA → MT / şaha
+  bağları listeden seçilir.
 - Haritalara göre yapı (`common/ulgam.json`; haritalar: `magtymguly.jpeg`, `yasyldepe.jpeg`, 1-nji Maý için `WhatsApp Image 2026-11-05 …jpeg` — hazırlık PC'sinde proje klasöründe, git'e eklenmedi):
 
 | İstasyon | Esasy turbalar | SAKA → beton akaba |
@@ -85,6 +87,7 @@ Proje kökünde: `.venv/bin/uvicorn main:app --app-dir api --port 8000` ve `web`
 - `http://localhost:5199/arhiw.html?demo`
 - `http://localhost:5199/gecirijiler.html?demo` (1-nji Maý), `…?demo&beket=PS-01` (Magtymguly), `…?demo&beket=PS-05` (Ýaşyldepe)
 - `http://localhost:5199/nasos.html?demo#PMP-03`
+- Sahte veri modunda kullanıcı admin sayılır; `&ulanyjy=operator` eklenirse başka kullanıcı gibi (Sazlamalar görünmez).
 
 ## 2. Workbench'te yapılacaklar
 
@@ -112,10 +115,11 @@ eksik Twin noktalarını ekler).
 - [ ] **ARHIW MAGLUMATLARY:** sekmeler Grafikler | Hasabatlar | Sazlamalar; "Hasaplaýjy hasabaty" yok.
 - [ ] Arhiw → Grafikler → bir nasos: Temperatura tam sayı, Işlän wagty üst üste sütun; sürükleyince yakınlaşıyor, Yzyna geri alıyor.
 - [ ] Arhiw → **Daşyna çykar** → yazdırma penceresi → PDF olarak kaydet: grafikler PDF'te görünüyor.
-- [ ] Arhiw → **Sazlamalar:** 10 nasos × 8 hücre (1 Maý) dolu; boş/kırmızı hücre varsa 2.4.
+- [ ] Arhiw → **Sazlamalar** (admin ile girin): 10 nasos × 8 hücre (1 Maý) dolu; boş/kırmızı hücre varsa 2.4.
+- [ ] Admin olmayan bir kullanıcıyla girin: Arhiw'de ve Suw geçirijiler'de **Sazlamalar görünmemeli**.
 - [ ] **SUW GEÇIRIJILER** (TV'de MT.px'teki kutu → `gecirijiler_git.html`): Umumy ulgam şeması istasyonun yapısını
   gösteriyor (1 Maý: Toplum 1 → MT-2; Toplum 2 → MT-1, MT-3, MT-4); havuz yok; "Suw deňagramlylygy" sayfası açılıyor.
-- [ ] Suw geçirijiler → **Sazlamalar:** "Tanalmadyk" listesi; SAKA → MT bağları haritayla aynı.
+- [ ] Suw geçirijiler → **Sazlamalar** (admin ile): "Tanalmadyk" listesi; SAKA → MT bağları haritayla aynı.
 - [ ] **Nasos popup'ı:** nasos resmine tıkla → popup → **Grafigi aç** → H–Q penceresi; × ve Esc kapatıyor.
 
 ### 2.4 Sazlamalar ekranındaki değişikliği kalıcı yapmak
